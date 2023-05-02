@@ -1,7 +1,7 @@
 # Le-Radio
 
-Web radio based on ESP8266 and VS1053
-This is a fork of https://github.com/karawin/Ka-Radio
+Web radio based on ESP8266 and VS1053 \
+This is a fork of https://github.com/karawin/Ka-Radio \
 The goal of this project is to migrate it to SDK 3 
 
 ## Wiring
