@@ -1,6 +1,6 @@
 /*
  * Copyright 2017 karawin (http://www.karawin.fr)
-*/
+ */
 
 #ifndef __WEBSOCKET_H__
 #define __WEBSOCKET_H__
@@ -10,13 +10,14 @@
 #include "lwip/opt.h"
 #include "lwip/arch.h"
 #include "lwip/api.h"
-#include "esp_common.h"
+#include "esp_system.h"
 #include "esp_softap.h"
 #include "esp_wifi.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
-#include "ssl/ssl_crypto.h"
+#include "openssl/ssl.h""
+
 #include "cencode_inc.h"
 #include "c_types.h"
 

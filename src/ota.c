@@ -69,7 +69,7 @@ void user_esp_upgrade_rsp(void *arg)
 void update_firmware(char* fname)
 {
     kprintf(PSTR("update  firmware \r%c"),0x0d);
-    uint8 current_id = system_upgrade_userbin_check();
+    uint8_t current_id = system_upgrade_userbin_check();
 //    kprintf(PSTR("current id %d\n"), current_id);
 	clientDisconnect(PSTR("Update"));
 //	char* client_url = "karadio.karawin.fr";
@@ -84,7 +84,7 @@ void update_firmware(char* fname)
 	server->upgrade_flag = true;
 	
     if (server->url == NULL) {
-        server->url = (uint8 *)malloc(512);
+        server->url = (uint8_t *)malloc(512);
     }
 
     flash_size_map f_size = system_get_flash_size_map();

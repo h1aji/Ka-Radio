@@ -57,8 +57,7 @@ void uart_div_modify(int no, unsigned int freq);
 uint8_t FlashOn = 5,FlashOff = 5;
 uint8_t FlashCount = 0xFF;
 uint8_t FlashVolume = 0;
-os_timer_t ledTimer;
-bool ledStatus = true; // true: normal blink, false: led on when playing
+
 sc_status status = 0;
 
 /*	
@@ -75,26 +74,14 @@ mdnsHandle* getMdns() { return mdns;}
 void setMdns(mdnsHandle* toset) {mdns= toset;}
 
 void testtask(void* p) {
-struct device_settings *device;	
 /*
 	int uxHighWaterMark;
 	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
 */
-
-	gpio2_output_conf();
+	struct device_settings *device;	
 	vTaskDelay(10);
-	
 	while(FlashCount==0xFF) {
-		if (ledStatus) gpio2_output_set(0);
-		vTaskDelay(FlashOff);
-		
-		if (ledStatus) // on led and save volume if changed
-		{		
-			gpio2_output_set(1);
-			vTaskDelay(FlashOn);
-		}	
-
 		// save volume if changed		
 		device = getDeviceSettings();
 		if (device != NULL)
@@ -102,13 +89,9 @@ struct device_settings *device;
 			if (device->vol != clientIvol){ 
 				device->vol = clientIvol;
 				saveDeviceSettings(device);
-
-//	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-//	printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
-
 			}
 			free(device);	
-		}	
+		}
 	}
 //	printf("t0 end\n");
 	vTaskDelete( NULL ); // stop the task
@@ -116,11 +99,10 @@ struct device_settings *device;
 
 
 ICACHE_FLASH_ATTR void ledCallback(void *pArg) {
-struct device_settings *device;	
+	struct device_settings *device;	
 
 	FlashCount++;
 		
-	if ((ledStatus)&&(FlashCount == FlashOff)) gpio2_output_set(1);
 	if (FlashCount == FlashOn)
 	{
 		if (FlashVolume++ == 5) // every 10 sec
@@ -135,7 +117,7 @@ struct device_settings *device;
 					if (device->vol != clientIvol)
 						if (xPortGetFreeHeapSize( ) > 4096)
 						{ 
-//printf("save vol %d\n",clientIvol);
+							//printf("save vol %d\n",clientIvol);
 							device->vol = clientIvol;
 							saveDeviceSettings(device);
 						}
@@ -144,24 +126,7 @@ struct device_settings *device;
 			}
 		}
 	}		
-	if ((ledStatus)&&(FlashCount == FlashOn)) // on led and save volume if changed
-	{		
-		gpio2_output_set(0);
-		FlashCount = 0;
-	}	
-		
 }
-
-ICACHE_FLASH_ATTR void initLed(void) 
-{	
-	os_timer_disarm(&ledTimer);
-	FlashCount = 0;
-	os_timer_setfn(&ledTimer, ledCallback, NULL);
-	os_timer_arm(&ledTimer, 10, true); //  and rearm
-	vTaskDelay(1);	
-//	printf("initLed done\n");
-}
-
 
 //-------------------------
 // mDNS management
@@ -179,8 +144,6 @@ void initMDNS(char* host,uint32_t ip)
 	mdns_start(mdns);
 }
 
-
-
 //-------------------------
 // Wifi  management
 //-------------------------
@@ -189,7 +152,7 @@ void initWifi()
 //-------------------------
 // AP Connection management
 //-------------------------
-	uint16 ap = 0;
+	uint16_t ap = 0;
 	int i = 0;	
 	char hostn[HOSTLEN];
 	struct ip_info *info;
@@ -363,9 +326,9 @@ void uartInterfaceTask(void *pvParameters) {
 
 	initWifi();
 	
-	uint16 ap = 0;
+	uint16_t ap = 0;
 	int i = 0;	
-	uint8 maxap;
+	uint8_t maxap;
 
 /*	int uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf("watermark uartInterfaceTask: %d  %d\n","uartInterfaceTask",uxHighWaterMark,xPortGetFreeHeapSize( ));
@@ -393,7 +356,6 @@ void uartInterfaceTask(void *pvParameters) {
 		kprintf(PSTR("ADC Div: %d from adc: %d\n"),adcdiv,ap);
 	}
 	FlashOn = 190;FlashOff = 10;
-	initLed(); // start the timer for led. This will kill the ttest task to free memory
 		
 //autostart	
 	device = getDeviceSettings();
@@ -407,9 +369,7 @@ void uartInterfaceTask(void *pvParameters) {
 		vTaskDelay(10); 
 		playStationInt(device->currentstation);
 	}
-//
-	ledStatus = ((device->options & T_LED)== 0);
-//
+
 	free(device);	
 
 	while(1) {
@@ -436,7 +396,7 @@ void uartInterfaceTask(void *pvParameters) {
 }
 
 /*
-UART_SetBaudrate(uint8 uart_no, uint32 baud_rate) {
+UART_SetBaudrate(uint8_t uart_no, uint32_t baud_rate) {
 	uart_div_modify(uart_no, UART_CLK_FREQ / baud_rate);
 }
 */
@@ -454,9 +414,9 @@ UART_SetBaudrate(uint8 uart_no, uint32 baud_rate) {
  * Parameters   : none
  * Returns      : rf cal sector
 *******************************************************************************/
-uint32 user_rf_cal_sector_set(void)
+uint32_t user_rf_cal_sector_set(void)
 {
-    uint32 rf_cal_sec = 0;
+    uint32_t rf_cal_sec = 0;
     flash_size_map size_map = system_get_flash_size_map();
     switch (size_map) {
         case FLASH_SIZE_4M_MAP_256_256:
@@ -494,7 +454,7 @@ uint32 user_rf_cal_sector_set(void)
 *******************************************************************************/
 /*void test_upgrade(void)
 {
-	uint8 autotest;
+	uint8_t autotest;
 	struct device_settings *settings;
 	struct shoutcast_info* station;
 	int j;

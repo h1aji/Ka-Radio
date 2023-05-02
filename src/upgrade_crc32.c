@@ -15,7 +15,7 @@
 
 #define BUFSIZE     512
 #define CRC_BLOCK_SIZE 512
-uint16 start_sec;
+uint16_t start_sec;
 static unsigned int *crc_table;
 
 #ifdef MEMLEAK_DEBUG
@@ -66,7 +66,7 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 	int fd;
 	int ret;
 	int i = 0;
-	uint8 error = 0;
+	uint8_t error = 0;
 	unsigned char *buf = (char *)zalloc(BUFSIZE);
 	if(buf == NULL){
 		printf("malloc crc buf failed\n");
@@ -76,10 +76,10 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 
 	unsigned int crc = 0xffffffff; 
 
-	uint16 sec_block = sumlength / CRC_BLOCK_SIZE ;
-	uint32 sec_last = sumlength % CRC_BLOCK_SIZE;
+	uint16_t sec_block = sumlength / CRC_BLOCK_SIZE ;
+	uint32_t sec_last = sumlength % CRC_BLOCK_SIZE;
 	for (i = 0; i < sec_block; i++) {		
-		if ( 0 != (error = spi_flash_read(start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE ,(uint32 *)buf, BUFSIZE))){
+		if ( 0 != (error = spi_flash_read(start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE ,(uint32_t *)buf, BUFSIZE))){
 				free(crc_table);
 				free(buf);
 				printf(PSTR("spi_flash_read error %d\n"),error);
@@ -88,7 +88,7 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 		crc = crc32(crc, buf, BUFSIZE);		
 	}
 	if(sec_last > 0 ) {
-		if (0 != (error = spi_flash_read(start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE, (uint32 *)buf, sec_last))){
+		if (0 != (error = spi_flash_read(start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE, (uint32_t *)buf, sec_last))){
 			free(crc_table);
 			free(buf);
 			printf(PSTR("spi_flash_read error %d\n"),error);
@@ -103,7 +103,7 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 }
 
 int ICACHE_FLASH_ATTR
-upgrade_crc_check(uint16 fw_bin_sec ,unsigned int sumlength)
+upgrade_crc_check(uint16_t fw_bin_sec ,unsigned int sumlength)
 {
 	int ret;
 	unsigned int img_crc;

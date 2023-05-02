@@ -31,8 +31,8 @@
 #define UPGRADE_RETRY_TIMES 10
 
 LOCAL os_timer_t upgrade_10s;
-LOCAL uint32 totallength = 0;
-LOCAL uint32 sumlength = 0;
+LOCAL uint32_t totallength = 0;
+LOCAL uint32_t sumlength = 0;
 LOCAL BOOL flash_erased=0;
 LOCAL BOOL giveup =0;
 
@@ -58,7 +58,7 @@ void wsUpgrade(const char* str,int count,int total)
 	}
 	else		
 	{
-		uint32 value = count*100/total;
+		uint32_t value = count*100/total;
 /*		if (value >= 100)
 			strcpy(answer,PSTR("{\"upgrade\":\"Done. Refresh the page.\"}"));
 		else*/

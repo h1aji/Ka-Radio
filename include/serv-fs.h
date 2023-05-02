@@ -11,17 +11,17 @@ struct servFile
 	struct servFile *next;
 };
 
-//ICACHE_ICACHE_RODATA_ATTR STORE_ATTR 
+//ICACHE_ICACHE_RODATA_ATTR STORE_ATTR
 #define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
 #define ICACHE_STORE_ATTR __attribute__((aligned(4)))
 #define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
 
-#include "../../webpage/index"
-#include "../../webpage/style"
-#include "../../webpage/style1"
-#include "../../webpage/script"
-#include "../../webpage/logo"
-#include "../../webpage/favicon"
+#include "../webpage/index"
+#include "../webpage/style"
+#include "../webpage/style1"
+#include "../webpage/script"
+#include "../webpage/logo"
+#include "../webpage/favicon"
 
 const struct servFile faviconFile = {
 	"/favicon.png",

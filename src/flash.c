@@ -12,7 +12,7 @@ ICACHE_FLASH_ATTR uint32_t flashRead( void *to, uint32_t fromaddr, uint32_t size
   WRITE_PERI_REG(0x60000914, 0x73);
   spi_take_semaphore();
   spi_clock(HSPI, 4, 10); //2MHz
-  ret = spi_flash_read(fromaddr, (uint32 *)to, size);
+  ret = spi_flash_read(fromaddr, (uint32_t *)to, size);
   spi_give_semaphore();
   return ret;
 }
@@ -26,7 +26,7 @@ ICACHE_FLASH_ATTR uint32_t flashWrite( void *data, uint32_t fromaddr, uint32_t s
   WRITE_PERI_REG(0x60000914, 0x73);
   spi_take_semaphore();
   spi_clock(HSPI, 4, 10); //2MHz
-  ret = spi_flash_write(fromaddr, (uint32 *)data, size);
+  ret = spi_flash_write(fromaddr, (uint32_t *)data, size);
   spi_give_semaphore();
   return ret;
 }

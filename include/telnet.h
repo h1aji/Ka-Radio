@@ -1,6 +1,6 @@
 /*
  * Copyright 2017 karawin (http://www.karawin.fr)
-*/
+ */
 
 #ifndef __TELNET_H__
 #define __TELNET_H__
@@ -21,7 +21,7 @@
 #include "c_types.h"
 
 #define NBCLIENTT 5
-//#define MAXDATAT	 256
+//#define MAXDATAT 256
 
 //extern const char strtWELCOME[] ;
 extern int telnetclients[NBCLIENTT];

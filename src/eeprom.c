@@ -67,7 +67,7 @@ uint32_t getFlashChipRealSize(void)
 ICACHE_FLASH_ATTR void eeGetDatax(uint32_t eeprom, int address, void* buffer, int size) { // address, size in BYTES !!!!
 int result;
 //printf("eeGetDatax, eeprom + address= %d, size= %d\n",eeprom + address,  size);
-	result = spi_flash_read(eeprom + address, (uint32 *)buffer, size);
+	result = spi_flash_read(eeprom + address, (uint32_t *)buffer, size);
 }
 
 ICACHE_FLASH_ATTR void eeGetData(int address, void* buffer, int size) { // address, size in BYTES !!!!
@@ -95,13 +95,13 @@ if (eebuf != NULL)
 //printf("set1 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
 //		spi_clock(HSPI, 4, 10); //2MHz
 //		WRITE_PERI_REG(0x60000914, 0x73); //WDT clear
-		spi_flash_read(sector, (uint32 *)eebuf, 4096);
+		spi_flash_read(sector, (uint32_t *)eebuf, 4096);
 		vTaskDelay(1);
 		spi_flash_erase_sector(sector >> 12);		
 		
 //printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
 		for(i=0; (i<size && i<maxsize); i++) eebuf8[i+startaddr] = inbuf[i];
-		result = spi_flash_write(sector, (uint32 *)eebuf, 4096);
+		result = spi_flash_write(sector, (uint32_t *)eebuf, 4096);
 //printf("set3 startaddr: %x, size:%x, maxsize: %x, result:%x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,result,sector,eebuf);
 		if(maxsize >= size) break;		
 		address += i;
@@ -132,7 +132,7 @@ ICACHE_FLASH_ATTR void eeSetClear(int address,uint8_t* eebuf) { // address, size
 		uint32_t sector = (Eeprom_start + address) & 0xFFF000;
 		spi_flash_erase_sector(sector >> 12);
 		for(i=0; i<4096; i++) eebuf[i] = 0;	
-		spi_flash_write(sector, (uint32 *)eebuf, 4096);
+		spi_flash_write(sector, (uint32_t *)eebuf, 4096);
 }
 
 ICACHE_FLASH_ATTR void eeSetClear1(int address,uint8_t* eebuf) { // address, size in BYTES !!!!
@@ -142,7 +142,7 @@ ICACHE_FLASH_ATTR void eeSetClear1(int address,uint8_t* eebuf) { // address, siz
 		uint32_t sector = (Eeprom_start1 + address) & 0xFFF000;
 		spi_flash_erase_sector(sector >> 12);
 		for(i=0; i<4096; i++) eebuf[i] = 0;	
-		spi_flash_write(sector, (uint32 *)eebuf, 4096);
+		spi_flash_write(sector, (uint32_t *)eebuf, 4096);
 }
 
 ICACHE_FLASH_ATTR void eeEraseAll() {

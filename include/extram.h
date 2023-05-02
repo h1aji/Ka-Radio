@@ -1,11 +1,11 @@
 /*
  * Copyright 2016 Piotr Sperka (http://www.piotrsperka.info)
-*/
+ */
 
 #ifndef __EXTRAM_H__
 #define __EXTRAM_H__
 
-#include "c_types.h"
+#include "stdint.h"
 
 void extramInit();
 void initBuffer();

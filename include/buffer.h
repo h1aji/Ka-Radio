@@ -1,13 +1,12 @@
 /*
  * Copyright 2016 Piotr Sperka (http://www.piotrsperka.info)
-*/
+ */
+
 #ifndef __BUFFER_H__
 #define __BUFFER_H__
 
 #include "c_types.h"
 
-// Comment line below if you don't want to use external SRAM
-//#define USE_EXTERNAL_SRAM 1
 #define BIGMEMORY 131072
 
 extern bool externram;

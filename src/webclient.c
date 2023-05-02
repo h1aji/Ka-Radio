@@ -22,8 +22,6 @@ enum clientStatus cstatus;
 //static uint32_t metacount = 0;
 //static uint16_t metasize = 0;
 
-extern bool ledStatus;
-
 xSemaphoreHandle sConnect, sConnected, sDisconnect, sHeader;
 
 uint8_t once = 0;
@@ -685,7 +683,6 @@ ICACHE_FLASH_ATTR void clientDisconnect(const char* from)
 	}
 	xSemaphoreGive(sDisconnect);
 
-	if (!ledStatus) gpio2_output_set(1);
 	vTaskDelay(10);
 //	clearHeaders();
 }
@@ -1027,7 +1024,6 @@ if (l > 80) dump(inpdata,len);
 				if (once == 0)vTaskDelay(20);
 				VS1053_SetVolume(volume);
 				kprintf(CLIPLAY,0x0d,0x0a);
-				if (!ledStatus) gpio2_output_set(0);
 			}	
 		}
 	}

@@ -73,9 +73,6 @@ sys.boot: reboot the webradio.\n\
 sys.patch(\"x\"): Change the status of the vs1053 patch at power on.\n\
 0 = Patch will not be loaded, 1 or up = Patch will be loaded (default) at power On \n\
 sys.patch: Display the vs1053 patch status\n\
-sys.led(\"x\"): Change the led indication:\n\
-0 = Led is in Play mode (lighted when a station is playing), 1 or up = Led is in Blink mode (default)\n\
-sys.led: Display the led indication status\n\
 sys.version: Display the Release and Revision numbers\n\
 sys.tzo(\"xx\"): Set the timezone offset of your country.%c"\
 };
@@ -841,37 +838,6 @@ ICACHE_FLASH_ATTR void syspatch(char* s)
 	free(device);	
 }
 
-ICACHE_FLASH_ATTR void sysled(char* s)
-{
-    char *t = strstr(s, parslashquote);
-	struct device_settings *device;
-	device = getDeviceSettings();
-	extern bool ledStatus;
-	if(t == NULL)
-	{
-		kprintf(PSTR("##Led is in %s mode#\n"),((device->options & T_LED)== 0)?"Blink":"Play");
-		free(device);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR,0x0d);
-		free(device);
-		return;
-    }	
-	uint8_t value = atoi(t+2);
-	if (value ==0) 
-	{device->options |= T_LED; ledStatus = false; if (getState()) gpio2_output_set(0);}
-	else 
-	{device->options &= NT_LED; ledStatus =true;} // options:0 = ledStatus true = Blink mode
-	
-	saveDeviceSettings(device);	
-	free(device);
-
-	sysled((char*) "");		
-}
-
 ICACHE_FLASH_ATTR void tzoffset(char* s)
 {
 	char *t = strstr(s, parslashquote);
@@ -952,7 +918,6 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 		else if(strcmp(tmp+4, "update") == 0) 	update_firmware("new");
 		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware("prv");
 		else if(startsWith (  "patch",tmp+4)) 	syspatch(tmp);
-		else if(startsWith (  "led",tmp+4)) 	sysled(tmp);
 		else if(strcmp(tmp+4, "date") == 0) 	ntp_print_time();
 		else if(strncmp(tmp+4, "version",4) == 0) 	kprintf(PSTR("Release: %s, Revision: %s, KaRadio\n"),RELEASE,REVISION);
 		else if(startsWith(   "tzo",tmp+4)) 	tzoffset(tmp);

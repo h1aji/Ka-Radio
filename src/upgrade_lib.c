@@ -14,24 +14,24 @@
 #include "interface.h"
 
 struct upgrade_param {
-    uint32 fw_bin_addr;
-    uint16 fw_bin_sec;
-    uint16 fw_bin_sec_num;
-    uint16 fw_bin_sec_earse;
-    uint8 extra;
-    uint8 save[4];
-    uint8 *buffer;
+    uint32_t fw_bin_addr;
+    uint16_t fw_bin_sec;
+    uint16_t fw_bin_sec_num;
+    uint16_t fw_bin_sec_earse;
+    uint8_t extra;
+    uint8_t save[4];
+    uint8_t *buffer;
 };
 
 LOCAL struct upgrade_param *upgrade;
 
 //extern SpiFlashChip *flashchip;
 
-LOCAL bool OUT_OF_RANGE(uint16 erase_sec)
+LOCAL bool OUT_OF_RANGE(uint16_t erase_sec)
 {
-	uint8 spi_size_map = system_get_flash_size_map();
-	uint16 sec_num = 0;
-	uint16 start_sec = 0;
+	uint8_t spi_size_map = system_get_flash_size_map();
+	uint16_t sec_num = 0;
+	uint16_t start_sec = 0;
 	
 
 	if (spi_size_map == FLASH_SIZE_8M_MAP_512_512 || 
@@ -66,10 +66,10 @@ LOCAL bool OUT_OF_RANGE(uint16 erase_sec)
  * Returns      :
 *******************************************************************************/
 LOCAL bool  
-system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, u32 len)
+system_upgrade_internal(struct upgrade_param *upgrade, uint8_t *data, u32 len)
 {
     bool ret = false;
-    uint16 secnm=0;
+    uint16_t secnm=0;
     if(data == NULL || len == 0)
     {
         return true;
@@ -102,7 +102,7 @@ system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, u32 len)
         return true;
     }
     
-    upgrade->buffer = (uint8 *)zalloc(len + upgrade->extra);
+    upgrade->buffer = (uint8_t *)zalloc(len + upgrade->extra);
 
     memcpy(upgrade->buffer, upgrade->save, upgrade->extra);
     memcpy(upgrade->buffer + upgrade->extra, data, len);
@@ -121,7 +121,7 @@ system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, u32 len)
             break;
         }
 
-        if (spi_flash_write(upgrade->fw_bin_addr, (uint32 *)upgrade->buffer, len) != SPI_FLASH_RESULT_OK) {
+        if (spi_flash_write(upgrade->fw_bin_addr, (uint32_t *)upgrade->buffer, len) != SPI_FLASH_RESULT_OK) {
             break;
         }
         
@@ -140,7 +140,7 @@ system_upgrade_internal(struct upgrade_param *upgrade, uint8 *data, u32 len)
  * Parameters   :
  * Returns      :
 *******************************************************************************/
-uint16 system_get_fw_start_sec()
+uint16_t system_get_fw_start_sec()
 {
 	if(upgrade != NULL) {
 		return upgrade->fw_bin_sec;
@@ -155,7 +155,7 @@ uint16 system_get_fw_start_sec()
  * Parameters   :
  * Returns      :
 *******************************************************************************/
-bool system_upgrade(uint8 *data, uint32 len)
+bool system_upgrade(uint8_t *data, uint32_t len)
 {
     bool ret;
 
@@ -182,8 +182,8 @@ bool system_upgrade(uint8 *data, uint32 len)
 void  
 system_upgrade_init(void)
 {
-    uint32 user_bin2_start,user_bin1_start;
-	uint8 spi_size_map = system_get_flash_size_map();
+    uint32_t user_bin2_start,user_bin1_start;
+	uint8_t spi_size_map = system_get_flash_size_map();
 	
 	if (upgrade == NULL) {
         upgrade = (struct upgrade_param *)zalloc(sizeof(struct upgrade_param));

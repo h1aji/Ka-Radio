@@ -1,6 +1,6 @@
 /*
  * Copyright 2016 karawin (http://www.karawin.fr)
-*/
+ */
 
 #pragma once
 
