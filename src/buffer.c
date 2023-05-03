@@ -2,6 +2,7 @@
  * Copyright 2016 Piotr Sperka (http://www.piotrsperka.info)
 */
 
+#include <stdlib.h>
 #include "esp_system.h"
 
 #include "buffer.h"

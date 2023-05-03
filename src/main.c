@@ -7,7 +7,8 @@
  * Description: entry file of user application
 *******************************************************************************/
 
-
+#include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -27,11 +28,10 @@
 #include "ntp.h"
 #include "telnet.h"
 #include "servers.h"
-
-//#include "eeprom.h"
-//#include <time.h>
-
 #include "interface.h"
+
+#define TAG "main"
+
 
 const char striDEF0[] ICACHE_RODATA_ATTR STORE_ATTR  = {"The default AP is  WifiKaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.%c"};
 const char striDEF1[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Erase the database and set ssid, password and ip's field%c"};
@@ -46,7 +46,7 @@ const char striWATERMARK[] ICACHE_RODATA_ATTR STORE_ATTR  = {"watermark %s: %d  
 
 //ip
 static char localIp[20] = {"0.0.0.0"};
-static mdnsHandle *mdns = NULL;
+
 void uart_div_modify(int no, unsigned int freq);
 
 //	struct station_config config;
@@ -66,10 +66,9 @@ void cb(sc_status stat, void *pdata)
 */
 
 char* getIp() { return (localIp);}
-mdnsHandle* getMdns() { return mdns;}
-void setMdns(mdnsHandle* toset) {mdns= toset;}
 
-void testtask(void* p) {
+void testtask(void* p)
+{
 /*
 	int uxHighWaterMark;
 	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
@@ -337,7 +336,7 @@ void uartInterfaceTask(void *pvParameters) {
 	printf(striUART,0x0d);
 
 	ap = 0;
-	ap =system_adc_read();
+	ap = system_adc_read();
 
 	if (ap <10) 
 	{		
@@ -485,7 +484,8 @@ uint32_t checkUart(uint32_t speed)
 {
 	uint32_t valid[] = {1200,2400,4800,9600,14400,19200,28800,38400,57600,76880,115200,230400};
 	int i = 0;
-	for (i;i<12;i++){
+	for (i;i<12;i++)
+	{
 		if (speed == valid[i]) return speed;
 	}
 	return 115200; // default
@@ -519,13 +519,42 @@ void user_init(void)
 	initBuffer();
 
 	
-	printf(PSTR("Release %s, Revision %s\n"),RELEASE,REVISION);
-	printf(PSTR("SDK %s\n"),system_get_sdk_version());
-	system_print_meminfo();
-	printf (PSTR("Heap size: %d\n"),xPortGetFreeHeapSize( ));
+	// Version infos
+	ESP_LOGI(TAG, "\n");
+	ESP_LOGI(TAG, "Project name: %s",esp_ota_get_app_description()->project_name);
+	ESP_LOGI(TAG, "Version: %s",esp_ota_get_app_description()->version);
+	ESP_LOGI(TAG, "Release %s, Revision %s",RELEASE,REVISION);
+//	ESP_LOGI(TAG, "Date: %s,  Time: %s",esp_ota_get_app_description()->date,esp_ota_get_app_description()->time);
+	ESP_LOGI(TAG, "SDK %s\n",esp_get_idf_version());	
+	ESP_LOGI(TAG, "Date %s, Time: %s\n", __DATE__,__TIME__ );
+	ESP_LOGI(TAG, "Heap size: %d",xPortGetFreeHeapSize());
+
+
 	clientInit();
 //	Delay(10);	
 	
+	//initialize mDNS service
+    err = mdns_init();
+    if (err) 
+        ESP_LOGE(TAG,"mDNS Init failed: %d", err);
+	else
+		ESP_LOGI(TAG,"mDNS Init ok"); 
+	
+	//set hostname and instance name
+	if ((strlen(g_device->hostname) == 0)||(strlen(g_device->hostname) > HOSTLEN)) 
+	{	
+		strcpy(g_device->hostname,"karadio32");
+	} 	
+	ESP_LOGI(TAG,"mDNS Hostname: %s",g_device->hostname ); 
+	err = mdns_hostname_set(g_device->hostname);	
+	if (err) 
+        ESP_LOGE(TAG,"Hostname Init failed: %d", err);	
+
+	ESP_ERROR_CHECK(mdns_instance_name_set(g_device->hostname));
+	ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));	
+	ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));	
+
+
     flash_size_map size_map = system_get_flash_size_map();
 	printf (PSTR("size_map: %d\n"),size_map);
 	printf(PSTR("Flash size: %d\n"),getFlashChipRealSize());

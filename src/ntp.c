@@ -8,13 +8,13 @@
 #include "lwip/sockets.h"
 #include "lwip/api.h"
 #include "lwip/netdb.h"
+#include "esp_libc.h"
 
 #include "ntp.h"
 #include "interface.h"
 
 // list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
 //time.nist.gov 
-/*
 
 // A task if needed
 /*
@@ -27,6 +27,7 @@ ICACHE_FLASH_ATTR void ntpTask(void *pvParams) {
 	}	
 }
 */
+
 // get ntp time and return an allocated tm struct (UTC)
 bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt) {
 	struct timeval timeout; 
@@ -44,7 +45,7 @@ bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt) {
 	time_t timestamp;
 //	int8_t tz;
 	
-	msg = zalloc(sizeof(ntp_t));
+	msg = os_zalloc(sizeof(ntp_t));
 	if (msg == NULL){
 		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"msg",0);
 		return false;
@@ -108,7 +109,7 @@ void ICACHE_FLASH_ATTR ntp_print_time() {
 	
 	if (ntp_get_time(&dt) )
 	{
-		tz =applyTZ(dt);
+		tz = applyTZ(dt);
 //	os_printf("##Time: isdst: %d %02d:%02d:%02d\n",dt->tm_isdst, dt->tm_hour, dt->tm_min, dt->tm_sec);		
 //	os_printf("##Date: %02d-%02d-%04d\n", dt->tm_mday, dt->tm_mon+1, dt->tm_year+1900);	
 		strftime(msg, 48, "%Y-%m-%dT%H:%M:%S", dt);
@@ -118,6 +119,5 @@ void ICACHE_FLASH_ATTR ntp_print_time() {
 			kprintf(PSTR("##SYS.DATE#: %s+%02d:00\n"),msg,tz);
 		else
 			kprintf(PSTR("##SYS.DATE#: %s%03d:00\n"),msg,tz);
-	}
-		
+	}		
 }

@@ -26,5 +26,7 @@ typedef struct {
 // print locale date time in ISO-8601 local time
 bool ntp_get_time(struct tm **dt);
 void ntp_print_time();
+int8_t  applyTZ(struct tm *time);
+
 
 #endif

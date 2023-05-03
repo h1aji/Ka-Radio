@@ -1,18 +1,27 @@
-/******************************************************************************
+/***************************************************
  *
  * Copyright 2017 karawin (http://www.karawin.fr)
  * il ne faut pas decoder KaRadio
  *
-*******************************************************************************/
+***************************************************/
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_spi_flash.h"
+#include "esp_partition.h"
+#include "esp_task_wdt.h"
+#include "esp_log.h"
+
+#include "stdio.h"
+#include "stdlib.h"
+#include <esp_libc.h>
 
 #include "eeprom.h"
 #include "flash.h"
-#include "spi.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "spi_flash.h"
-#include <esp_libc.h>
 #include "interface.h"
+#include "webclient.h"
+
+#define STORE_ATTR          __attribute__((aligned(4)))
 
 #define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
 #define ICACHE_STORE_ATTR __attribute__((aligned(4)))
@@ -32,6 +41,7 @@
 #define EEPROM_START1	0x3D0000 // Last 128k of flash (32Mbits or 4 MBytes)
 #endif
 */
+
 #define EEPROM_SIZE		0xFFFF	 // until xffff , 
 #define NBOLDSTATIONS	192
 #define NBSTATIONS		255

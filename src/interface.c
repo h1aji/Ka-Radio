@@ -1,17 +1,26 @@
-/******************************************************************************
- * Copyright 2015 Piotr Sperka (http://www.piotrsperka.info)/*
+/*
+ * Copyright 2015 Piotr Sperka (http://www.piotrsperka.info)
  * Copyright 2016 karawin (http://www.karawin.fr)
-*/
-#include "mdns/mdns.h"
-#include "interface.h"
-#include "user_interface.h"
-//#include "osapi.h"
+ */
+
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
 #include <stdarg.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "mdns.h"
+
 #include "eeprom.h"
 #include "ntp.h"
+#include "interface.h"
+
+
 char parslashquote[] = {"(\""};
 char parquoteslash[] = {"\")"};
 char msgsys[] = {"##SYS."};
@@ -154,24 +163,16 @@ int kasprintf(char *dest, const char *fmt, ...)
 unsigned short adcdiv;	
 void setHostname(char* s)
 {
-	struct ip_info  *info;
-	mdnsHandle* mydns = getMdns();
-	info = malloc(sizeof(struct ip_info));
-//	printf("HOSTAME0  %s. Need to restart\n",s);
-	if (mydns != NULL)
-	{
-		mdns_destroy(mydns);
-//		printf("HOSTAME0  Destroy\n");
-	}
-	vTaskDelay(1);
-//	printf("HOSTAME1\n");
-	wifi_get_ip_info ( STATION_IF, info );
-	vTaskDelay(1);
-//	printf("HOSTAME2\n");
-	initMDNS(s ,info->ip.addr);
-	vTaskDelay(1);
-	free(info);
+		ESP_ERROR_CHECK(mdns_service_remove("_http", "_tcp"));
+		ESP_ERROR_CHECK(mdns_service_remove("_telnet", "_tcp"));
+		vTaskDelay(10);
+		ESP_ERROR_CHECK(mdns_hostname_set(s));
+		ESP_ERROR_CHECK(mdns_instance_name_set(s));
+		vTaskDelay(10);
+		ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));	
+		ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));	
 }
+
 //display or change the hostname and services
 void chostname(char* s)
 {

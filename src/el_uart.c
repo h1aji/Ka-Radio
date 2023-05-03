@@ -1,3 +1,11 @@
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
+#include "driver/uart.h"
+#include "esp8266/uart_register.h"
+#include "esp8266/rom_functions.h"
+
 #include "el_uart.h"
 
 //#define DBG kprintf
@@ -5,7 +13,7 @@
 // if you get lots of rx_overruns, increase this (or read the data quicker!)
 #define UART_RX_QUEUE_SIZE 32
 
-xQueueHandle  uart_rx_queue;
+xQueueHandle uart_rx_queue;
 volatile uint16_t uart_rx_overruns;
 volatile uint16_t uart_rx_bytes;
 
@@ -48,8 +56,7 @@ static void uart_isr(void *arg)
  * -ve timeout value means wait forever
  * return the char, or -1 on error
  */
-int ICACHE_FLASH_ATTR 
-uart_getchar_ms(int timeout)
+int ICACHE_FLASH_ATTR uart_getchar_ms(int timeout)
 {
 	portBASE_TYPE ticks;
 	unsigned char ch;
@@ -76,8 +83,7 @@ uart_getchar_ms(int timeout)
  * Read at most len-1 chars from the UART
  * last char will in buf will be a null
  */
-char * ICACHE_FLASH_ATTR
-uart_gets(char *buf, int len)
+char * ICACHE_FLASH_ATTR uart_gets(char *buf, int len)
 {
 	int i=0; 
 	char *p=buf;
@@ -102,14 +108,12 @@ uart_gets(char *buf, int len)
 /* 
  * Return the number of characters available to read
  */
-int ICACHE_FLASH_ATTR
-uart_rx_available(void)
+int ICACHE_FLASH_ATTR uart_rx_available(void)
 {
 	return uxQueueMessagesWaiting(uart_rx_queue);
 }
 
-void ICACHE_FLASH_ATTR 
-uart_set_baud(int uart, int baud)
+void ICACHE_FLASH_ATTR uart_set_baud(int uart, int baud)
 {
 	uart_div_modify(uart, UART_CLK_FREQ / (baud));
 }
