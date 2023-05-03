@@ -9,13 +9,13 @@
   ***********************************************************************************************************************
 */
 
-#include "vs1053.h"
-#include "eeprom.h"
 #include "stdio.h"
 #include "spi.h"
-//#include "osapi.h"
 #include <math.h>
 #include "interface.h"
+#include "vs1053.h"
+#include "eeprom.h"
+
 extern uint8_t clientIvol ;
 
 	int vsVersion ; // the version of the chip
@@ -39,7 +39,7 @@ extern volatile uint32_t PIN_IN;
 extern volatile uint32_t PIN_0;
 extern volatile uint32_t PIN_2;
 
-ICACHE_FLASH_ATTR void VS1053_HW_init(){
+ICACHE_FLASH_ATTR void VS1053_HW_init() {
  	spi_init(HSPI);
 	spi_clock(HSPI, 4, 10); //2MHz
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, 3);
@@ -48,8 +48,7 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(){
 	PIN_OUT_SET |= (1<<RST_PIN)|(1<<CS_PIN)|(1<<XDCS_PIN);
 }
 
-ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
-{
+ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp() {
 	spi_clock(HSPI, 4, 2); //10MHz
 //	spi_clock(HSPI, 4, 3); //6.66MHz
 //	spi_clock(HSPI, 3, 3); //8.88MHz

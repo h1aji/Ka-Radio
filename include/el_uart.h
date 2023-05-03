@@ -1,7 +1,7 @@
 #ifndef _EL_UART_H_
 #define _EL_UART_H_
 
-#include "esp_common.h"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
@@ -19,4 +19,3 @@ void ICACHE_FLASH_ATTR uart_rx_init(void);
 void ICACHE_FLASH_ATTR uart_set_baud(int uart, int baud);
 
 #endif
-// vim: ts=4 sw=4 noexpandtab

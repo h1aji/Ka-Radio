@@ -4,22 +4,11 @@
 
 #ifndef __TELNET_H__
 #define __TELNET_H__
+
+#include <stdbool.h>
+#include <stddef.h> 
+
 // max size of the WS Message Header
-
-
-#include "lwip/opt.h"
-#include "lwip/arch.h"
-#include "lwip/api.h"
-#include "esp_common.h"
-#include "esp_softap.h"
-#include "esp_wifi.h"
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "ssl/ssl_crypto.h"
-#include "cencode_inc.h"
-#include "c_types.h"
-
 #define NBCLIENTT 5
 //#define MAXDATAT 256
 
@@ -36,7 +25,7 @@ bool telnetnewclient(int socket);
 // a socket with a telnet closed
 void telnetremoveclient(int socket);
 // is socket a telnet?
-bool istelnet( int socket);
+bool istelnet(int socket);
 
 //write a txt data
 void telnetWrite(uint32_t len,const char *fmt, ...);

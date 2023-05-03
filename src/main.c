@@ -8,21 +8,17 @@
 *******************************************************************************/
 
 
-#include "esp_common.h"
-#include "esp_softap.h"
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
-#include "el_uart.h"
-
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
-#include "mdns/mdns.h"
+#include "mdns.h"
 
+#include "el_uart.h"
 #include "webserver.h"
 #include "webclient.h"
 #include "buffer.h"

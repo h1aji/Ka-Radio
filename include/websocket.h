@@ -7,23 +7,9 @@
 // max size of the WS Message Header
 #define WEBSOCKETS_MAX_HEADER_SIZE  (14)
 
-#include "lwip/opt.h"
-#include "lwip/arch.h"
-#include "lwip/api.h"
-#include "esp_system.h"
-#include "esp_softap.h"
-#include "esp_wifi.h"
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "openssl/ssl.h""
-
-#include "cencode_inc.h"
-#include "c_types.h"
 
 #define NBCLIENT 5
 #define MAXDATA	 528
-
 
 
 typedef enum {

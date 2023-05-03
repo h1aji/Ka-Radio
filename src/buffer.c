@@ -2,14 +2,17 @@
  * Copyright 2016 Piotr Sperka (http://www.piotrsperka.info)
 */
 
+#include "esp_system.h"
+
 #include "buffer.h"
-#include "esp_common.h"
 #include "extram.h"
+
 /*
 #ifndef USE_EXTERNAL_SRAM
 	uint8_t buffer[BUFFER_SIZE];
 #endif
 */
+
 bool externram;
 uint32_t BUFFER_SIZE;
 uint8_t *buffer;

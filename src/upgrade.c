@@ -9,21 +9,20 @@
  * 2015/7/3, v1.0 create this file.
 *******************************************************************************/
 
+#include "esp_system.h"
+#include "lwip/mem.h"
+#include "lwip/sockets.h"
+#include "lwip/inet.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+//#include "upgrade.h"
+
 #include "interface.h"
 #include "websocket.h"
 
 #define PROGMEM  __attribute__((section(".irom.text")))
 #define STORE_ATTR __attribute__((aligned(4)))
 #define PSTR(s) (__extension__({ static const char __c[] STORE_ATTR __attribute__((section(".irom.text"))) = {s}; &__c[0];}))
-
-#include "esp_common.h"
-#include "lwip/mem.h"
-#include "lwip/sockets.h"
-#include "lwip/inet.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "upgrade.h"
-//#include "ssl/ssl_ssl.h"
 
 
 /*the size cannot be bigger than below*/

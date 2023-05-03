@@ -6,11 +6,18 @@
 	minimal implementaion for log and command
 */
 
-#include "telnet.h"
-#include "interface.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
+#include "lwip/opt.h"
+#include "esp_system.h"
+#include "lwip/sockets.h"
 
+#include "cencode_inc.h"
+#include "telnet.h"
+#include "interface.h"
+#include "c_types.h"
 
 //const char strtMALLOC1[] = {"Telnet %s malloc fails\n"};
 const char strtSOCKET[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Telnet Socket fails %s errno: %d\n"};

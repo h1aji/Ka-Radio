@@ -1,14 +1,21 @@
 /* (c)jp cocatrix May 2016 
  *
  * Copyright 2016 karawin (http://www.karawin.fr)
+ * 
+ */
 
-	quick and dirty websocket inplementation for wifi webradio
-	minimal implementaion for short data messages
-*/
+
+#include <string.h>
+#include "esp_system.h"
+#include "lwip/api.h"
+#include "lwip/sockets.h"
 
 #include "websocket.h"
 #include "interface.h"
-
+#include "webserver.h"
+#include "cencode_inc.h"
+#include "libsha1.h"
+#include "c_types.h"
 
 const char strwMALLOC[] ICACHE_RODATA_ATTR STORE_ATTR  = {"inwmalloc fails for %d\n"};
 const char strwMALLOC1[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Websocket %s malloc fails\n"};

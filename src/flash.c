@@ -1,6 +1,8 @@
-#include "flash.h"
-#include "esp_common.h"
+
+#include "esp_system.h"
 #include "spi.h"
+
+#include "flash.h"
 
 
 ICACHE_FLASH_ATTR uint32_t flashRead( void *to, uint32_t fromaddr, uint32_t size )
