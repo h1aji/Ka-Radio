@@ -1,12 +1,27 @@
 /*
  * Copyright 2016 karawin (http://www.karawin.fr)
-*/
+ */
 
+#include <string.h>
+#include "driver/uart.h"
+#include "esp_wifi.h"
+#include "esp_system.h"
+#include "lwip/opt.h"
+#include "lwip/arch.h"
+#include "lwip/api.h"
+#include "lwip/sockets.h"
 
+#include "interface.h"
+#include "webclient.h"
 #include "webserver.h"
 #include "serv-fs.h"
-#include "interface.h"
 #include "servers.h"
+#include "ota.h"
+#include "vs1053.h"
+#include "eeprom.h"
+#include "interface.h"
+
+
 static char apMode[]= {"*Hidden*"};
 xSemaphoreHandle semfile = NULL ;
 
@@ -20,8 +35,6 @@ const char strsID[] ICACHE_RODATA_ATTR STORE_ATTR = {"getstation, no id or Wrong
 //const char strsRAUTO[] ICACHE_RODATA_ATTR STORE_ATTR  = {"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:13\r\n\r\n{\"rauto\":\"%c\"}"};
 const char strsTHEME[] ICACHE_RODATA_ATTR STORE_ATTR  = {"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:13\r\n\r\n{\"theme\":\"%c\"}"};
 const char strsICY[] ICACHE_RODATA_ATTR STORE_ATTR  = {"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}"};
-
-
 
 
 os_timer_t sleepTimer;

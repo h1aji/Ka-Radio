@@ -1,10 +1,11 @@
 /*
  * Copyright 2016 Piotr Sperka (http://www.piotrsperka.info)
-*/
+ */
+
+#include "esp_system.h"
+#include "spi.h"
 
 #include "extram.h"
-#include "esp_common.h"
-#include "spi.h"
 #include "buffer.h"
 #include "interface.h"
 
@@ -25,8 +26,6 @@ void extramInit() {
 		printf(PSTR("\nExternal ram detected%c"),0x0d);
 	else
 		printf(PSTR("\nExternal ram not detected%c"),0x0d);
-	
-
 }
 
 uint32_t extramRead(uint32_t size, uint32_t address, uint8_t *buffer) {
@@ -64,4 +63,3 @@ uint32_t extramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 	spi_give_semaphore();
 	return i;
 }
-

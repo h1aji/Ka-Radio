@@ -6,19 +6,13 @@
  */
 
 #pragma once
+
 #include "c_types.h"
 
-//#include "freertos/FreeRTOS.h"
-//#include "stdio.h"
-//#include "stdlib.h"
-//#include "espconn.h"
-//#include "osapi.h"
-//#include "user/spi_ram_buffer.h"
-
-#define RST_PIN  0
-#define CS_PIN   15
-#define XDCS_PIN 5 //GPIO5 (!)
-#define DREQ_PIN 4 //GPIO4 (!)
+#define RST_PIN  0  // -1
+#define CS_PIN   15 //  2
+#define XDCS_PIN 5  // 16
+#define DREQ_PIN 4  // 10
 
 #define SET 1
 #define RESET 0
@@ -126,7 +120,6 @@ uint16_t VS1053_ReadRegister(uint8_t addressbyte);
 void VS1053_ResetChip();
 
 uint16_t MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift);
-
 
 void VS1053_regtest();
 void VS1053_SPI_SpeedUp();

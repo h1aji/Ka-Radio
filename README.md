@@ -19,6 +19,7 @@ The goal of this project is to migrate it to SDK 3
 |15   |D8    |XCS  |        |
 
 ## Issues
+ - Figure out how to replace upgrade.h
  - Get rid of c_types.h
  - Figure our what ledCallback is doing in main.c and get rid of it
  - fix includes

@@ -8,9 +8,10 @@
  * Modification history:
  * 2015/7/1, v1.0 create this file.
 *******************************************************************************/
-#include "esp_common.h"
+#include "esp_system.h"
 #include "lwip/mem.h"
-#include "upgrade.h"
+
+//#include "upgrade.h"
 #include "interface.h"
 
 struct upgrade_param {

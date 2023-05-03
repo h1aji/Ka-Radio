@@ -2,9 +2,8 @@
  * Copyright 2016 jp Cocatrix (http://www.karawin.fr)
  */
 
-#include "esp_common.h"
 #include "esp_system.h"
-#include "upgrade.h"
+//#include "upgrade.h"
 #include "math.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

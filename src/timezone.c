@@ -9,8 +9,9 @@
 // custom function to apply a timezone to the supplied tm struct
 // hard coded rules
 
-#include "esp_common.h"
+#include "esp_system.h"
 #include <time.h>
+
 #include "eeprom.h"
 
 ICACHE_FLASH_ATTR int8_t  applyTZ(struct tm *time) {
