@@ -5,6 +5,8 @@
 	quick and dirty telnet inplementation for wifi webradio
 	minimal implementaion for log and command
 */
+#define TAG "TELNET"
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -17,23 +19,22 @@
 #include "cencode_inc.h"
 #include "telnet.h"
 #include "interface.h"
-#include "c_types.h"
 
-//const char strtMALLOC1[] = {"Telnet %s malloc fails\n"};
-const char strtSOCKET[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Telnet Socket fails %s errno: %d\n"};
-const char strtWELCOME[] ICACHE_RODATA_ATTR STORE_ATTR  ={"Karadio telnet\n> "};
+
+//const char strtMALLOC1[] = {"Telnet %s kmalloc fails\n"};
+#define strtSOCKET	"Telnet Socket fails %s errno: %d"
+const char strtWELCOME[]  ={"Karadio telnet\n> "};
 
 
 int telnetclients[NBCLIENTT];
 //set of socket descriptors
-fd_set readfdst;
 // reception buffer
-char brec[256];
-char iac[3];
-bool inIac = false; // if in negociation
-char *obrec;
-uint16_t irec;
-uint8_t iiac;
+static char brec[256];
+static char iac[3];
+static bool inIac = false; // if in negociation
+static char *obrec;  //precedent received command
+static uint16_t irec;
+static uint8_t iiac;
 xSemaphoreHandle sTELNET = NULL;
 
 static uint8_t telnet_take_semaphore() {
@@ -59,7 +60,7 @@ void telnetinit(void)
 	memset(brec,0,sizeof(brec));
 	irec = 0;
 	iiac = 0;
-	obrec = malloc(2);
+	obrec = kmalloc(2);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -103,85 +104,67 @@ bool istelnet( int socket)
 }
 
 
-ICACHE_FLASH_ATTR bool telnetAccept(int tsocket)
+bool telnetAccept(int tsocket)
 {
-int32_t recbytes = 0;
-
 	if ((!istelnet(tsocket ))&&(telnetnewclient(tsocket))) 
 	{
-		char * fmt = malloc(strlen(strtWELCOME)+16);
-		if (fmt != NULL)
-		{			
-			flashRead(fmt,strtWELCOME,strlen(strtWELCOME));
-			fmt[strlen(strtWELCOME)] = 0;
 //			printf("telnet write accept\n");
-			write(tsocket, fmt, strlen(strtWELCOME));  // reply to accept	
-			free(fmt);
+			write(tsocket, strtWELCOME, strlen(strtWELCOME));  // reply to accept	
 			return true;
-		} else close(tsocket);
 	} else close(tsocket);
 	return false;
 }
-
+void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap)
+{
+	char *buf = NULL;
+	int i;
+	
+	buf = (char *)kmalloc(lenb+1);
+	if (buf == NULL) return;
+	buf[0] = 0;
+	vsprintf(buf,fmt, ap);	
+	// write to all clients
+	telnet_take_semaphore();
+	for (i = 0;i<NBCLIENTT;i++)	
+		if (istelnet( telnetclients[i]))
+		{
+			write( telnetclients[i],  buf, strlen(buf));
+		}	
+	telnet_give_semaphore();		
+	free (buf);
+}
 
 //broadcast a txt data to all clients
 void telnetWrite(uint32_t lenb,const char *fmt, ...)
 {
 	int i ;
 	char *buf = NULL;
-	char* lfmt;
-	int len ,rlen;
-	buf = (char *)malloc(lenb+1);
+	int rlen;
+	buf = (char *)kmalloc(lenb+1);
 	if (buf == NULL) return;
 	buf[0] = 0;
 	strcpy(buf,"ok\n");
 	
 	va_list ap;
-	va_start(ap, fmt);
-//printf("=================================\ntelnet write lenb: %d, fmt: %x\n",lenb,(int)fmt);
-	
-	if (fmt> (char*)0x40100000)  // in flash
-	{
-		len = strlen(fmt);
-		lfmt = (char *)malloc(len+16);
-		if (lfmt!=NULL)
-		{
-			flashRead( lfmt, fmt, len );
-			lfmt[len] = 0; // if aligned, trunkate
-//			printf("lfmt: %s\n",lfmt);
-			rlen = vsprintf(buf,lfmt, ap);
-			if (rlen > lenb)
-			{ // big problem fatal error
-				printf(PSTR("WARNING Fatal error in telnetWrite. \n"));
-				free (lfmt);
-				free (buf);
-				va_end(ap);
-				return;
-			}		
-			free (lfmt);
-		}
-	}	
-	else 
-	{
-		rlen = vsprintf(buf,fmt, ap);		
-	}
+	va_start(ap, fmt);	
+	rlen = 0;
+	rlen = vsprintf(buf,fmt, ap);		
 	va_end(ap);
 	buf = realloc(buf,rlen+1);
-//printf("telnet write len: %d, %s\n",rlen,buf);
 	if (buf == NULL) return;
 	// write to all clients
 	telnet_take_semaphore();
 	for (i = 0;i<NBCLIENTT;i++)	
 		if (istelnet( telnetclients[i]))
 		{
-			write( telnetclients[i],  buf, rlen);//strlen(buf));
+			write( telnetclients[i],  buf, strlen(buf));
 		}	
-	telnet_give_semaphore();	
+	telnet_give_semaphore();		
 	free (buf);
-//printf("telnet write exit lenb:%d\n--------------------------\n",lenb);
+
 }
 
-ICACHE_FLASH_ATTR int telnetNego(int tsocket)
+void telnetNego(int tsocket)
 {
 	const uint8_t NONEG[2] = {0xFF,0xFC}; // WON't
 
@@ -196,13 +179,13 @@ ICACHE_FLASH_ATTR int telnetNego(int tsocket)
 	}
 }
 	
-ICACHE_FLASH_ATTR int telnetCommand(int tsocket)
+void telnetCommand(int tsocket)
 {
 	if (irec == 0) return;
-//printf(PSTR("%sHEAPd0: %d #\n"),"##SYS.",xPortGetFreeHeapSize( ));	
+	ESP_LOGV(TAG,"%sHEAPd0: %d #\n","##SYS.",xPortGetFreeHeapSize( ));	
 	brec[irec] = 0x0;
 	write(tsocket,"\n> ",1);
-//	printf("%s\n",brec);
+	ESP_LOGV(TAG,"brec: %s\n",brec);
 	obrec = realloc(obrec,strlen(brec)+1);
 	strcpy(obrec,brec); // save old command
 	checkCommand(irec, brec);
@@ -210,16 +193,17 @@ ICACHE_FLASH_ATTR int telnetCommand(int tsocket)
 	irec = 0;
 }
 
-ICACHE_FLASH_ATTR int telnetRead(int tsocket)
+int telnetRead(int tsocket)
 {
 	char *buf ;
 	int32_t recbytes ;
 	int i;	
-	buf = (char *)malloc(MAXDATAT);	
+	buf = (char *)kmalloc(MAXDATAT);	
+	recbytes = 0;
     if (buf == NULL)
 	{
 		vTaskDelay(100); // wait a while and retry
-		buf = (char *)malloc(MAXDATAT);	
+		buf = (char *)kmalloc(MAXDATAT);	
 	}	
 	if (buf != NULL)
 	{
@@ -230,7 +214,7 @@ ICACHE_FLASH_ATTR int telnetRead(int tsocket)
 			{
 				if (errno != ECONNRESET )
 				{
-					printf (strtSOCKET,"read", errno);	
+					ESP_LOGE(TAG,strtSOCKET,"read", errno);	
 				} 
 			} 
 			free(buf);
@@ -238,7 +222,7 @@ ICACHE_FLASH_ATTR int telnetRead(int tsocket)
 		}	
 
 		buf = realloc(buf,recbytes+2);
-//		printf(PSTR("%sHEAPdi1: %d #\nrecbytes: %d\n"),"##SYS.",xPortGetFreeHeapSize(),recbytes);	
+//		printf("%sHEAPdi1: %d #\nrecbytes: %d\n","##SYS.",xPortGetFreeHeapSize(),recbytes);	
 		if (buf != NULL)
 		{
 			for (i = 0;i< recbytes;i++)
@@ -293,6 +277,3 @@ ICACHE_FLASH_ATTR int telnetRead(int tsocket)
 	}
 	return recbytes;
 }
-
-
-
