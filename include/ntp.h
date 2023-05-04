@@ -1,9 +1,6 @@
 /*
- * Copyright 2017 jp Cocatrix (http://www.karawin.fr)
+ * Copyright 2016 jp Cocatrix (http://www.karawin.fr)
  */
-
-#ifndef __NTP_H__
-#define __NTP_H__
 
 #include <time.h>
 
@@ -27,6 +24,5 @@ typedef struct {
 bool ntp_get_time(struct tm **dt);
 void ntp_print_time();
 int8_t  applyTZ(struct tm *time);
-
-
-#endif
+extern void* kmalloc(size_t memorySize);
+extern void* kcalloc(size_t elementCount, size_t elementSize);
