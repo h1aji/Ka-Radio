@@ -11,11 +11,11 @@ extern xQueueHandle  uart_rx_queue;
 extern volatile uint16_t uart_rx_overruns;
 extern volatile uint16_t uart_rx_bytes;
 
-int ICACHE_FLASH_ATTR uart_getchar_ms(int timeout);
+int uart_getchar_ms(int timeout);
 #define uart_getchar() uart_getchar_ms(-1)
 #define uart_rx_flush() xQueueReset(uart_rx_queue)
-int ICACHE_FLASH_ATTR uart_rx_available(void);
-void ICACHE_FLASH_ATTR uart_rx_init(void);
-void ICACHE_FLASH_ATTR uart_set_baud(int uart, int baud);
+int  uart_rx_available(void);
+void uart_rx_init(void);
+void uart_set_baud(int uart, int baud);
 
 #endif
