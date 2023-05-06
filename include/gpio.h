@@ -1,13 +1,11 @@
-/******************************************************************************
- * 
- * Copyright 2017 karawin (http://www.karawin.fr)
- *
-*******************************************************************************/
+
 #pragma once
 
 #include "nvs_flash.h"
 #include "driver/spi.h"
 #include "driver/adc.h"
+#include "driver/gpio.h"
+
 #include "app_main.h"
 
 #define GPIO_NONE 255
