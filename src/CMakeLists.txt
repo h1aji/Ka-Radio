@@ -1,13 +1,9 @@
-# Edit following two lines to set component requirements (see docs)
-set(COMPONENT_REQUIRES "")
+# Edit following two lines to set component requirements (see docs) wolfssl
+set(COMPONENT_REQUIRES mdns )
 set(COMPONENT_PRIV_REQUIRES )
 
 set(COMPONENT_SRCS 
-        "buffer.c"
-        "cdecode.c"
-        "cencode.c"
         "eeprom.c"
-        "extram.c"
         "gpio.c"
         "interface.c"
         "main.c"
@@ -16,11 +12,8 @@ set(COMPONENT_SRCS
         "servers.c"
         "telnet.c"
         "timezone.c"
-        "upgrade.c"
-        "upgrade_crc32.c"
-        "upgrade_lib.c"
-        "vs1053b-patches.c"
         "vs1053.c"
+        "vs1053b-patches.c"
         "webclient.c"
         "webserver.c"
         "websocket.c"

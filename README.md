@@ -8,15 +8,19 @@ The goal of this project is to migrate it to SDK 3
 
 |GPIO |ESP8266  |VS1053  |23LC1024  |
 |-----|------|-----------|----------|
-|16   |D0    |-    |CS      |
-|05   |D1    |XDCS |        |
-|04   |D2    |DREQ |        |
-|00   |D3    |XRST |        |
-|02   |D4    |-    |        |
+|16   |D0    |XDCS |        |
+|05   |D1    |     |        |
+|04   |D2    |     |        |
+|00   |D3    |     |        |
+|02   |D4    |XCS  |        |
 |14   |D5    |SCK  |SCK     |
 |12   |D6    |MISO |SO/SIO1 |
 |13   |D7    |MOSI |SI/SIO0 |
-|15   |D8    |XCS  |        |
+|15   |D8    |     |CS      |
+|10   |SDD3  |DREQ |        |
 
 ## Issues
- - TIMERG0 in ota.c (line 260)
+ - VS1053 needs to be ported
+ - TIMERG0 in ota.c (line 260) and main.c
+ - WolfSSL component not loading
+ - Implement addon.c later

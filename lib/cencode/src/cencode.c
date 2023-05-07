@@ -7,7 +7,7 @@ For details, see http://sourceforge.net/projects/libb64
 
 
 #ifndef CORE_HAS_LIBB64
-#include "cencode_inc.h"
+#include "cencode.h"
 
 const int CHARS_PER_LINE = 72;
 

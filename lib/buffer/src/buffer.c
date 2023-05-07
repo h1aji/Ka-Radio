@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright 2013-2015 Espressif Systems
  *
- * FileName: user_main.c
+ * FileName: buffer.c
  *
  * Description: Routines to use a SPI RAM chip as a big FIFO buffer. Multi-
  * thread-aware: the reading and writing can happen in different threads and
@@ -22,21 +22,13 @@
 #include "buffer.h"
 #include "spiram.h"
 
-//comment if external SPI RAM chip used
-//#define FAKE_SPI_BUFF
-
 #define SPIREADSIZE 64
-
-static int fifoRpos;
-static int fifoWpos;
-static int fifoFill;
-static xSemaphoreHandle semCanRead;
-static xSemaphoreHandle semCanWrite;
-static xSemaphoreHandle mux;
-static long fifoOvfCnt, fifoUdrCnt;
 
 //Low watermark where we restart the reader thread.
 #define FIFO_LOWMARK (32*1024)
+
+//Comment if external SPI RAM chip is used
+//#define FAKE_SPI_BUFF
 
 #ifdef FAKE_SPI_BUFF
 //Re-define a bunch of things so we use the internal buffer
@@ -51,6 +43,14 @@ static  char fakespiram[SPIRAMSIZE];
 #define spiRamWrite(pos, buf, n) memcpy(&fakespiram[pos], buf, n)
 #define spiRamRead(pos, buf, n) memcpy(buf, &fakespiram[pos], n)
 #endif
+
+static int fifoRpos;
+static int fifoWpos;
+static int fifoFill;
+static xSemaphoreHandle semCanRead;
+static xSemaphoreHandle semCanWrite;
+static xSemaphoreHandle mux;
+static long fifoOvfCnt, fifoUdrCnt;
 
 //Initialize the FIFO
 int spiRamFifoInit() {

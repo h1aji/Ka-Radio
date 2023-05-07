@@ -22,6 +22,7 @@
 #include "esp8266/gpio_struct.h"
 #include "esp8266/spi_register.h"
 #include "driver/spi.h"
+#include "driver/gpio.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -33,30 +34,21 @@
 
 #define TAG	"Spiram"
 
+
 //Initialize the SPI port to talk to the chip.
 void spiRamInit() {
 	char dummy[64];
     ESP_LOGI(TAG, "Init HSPI");
 
-/*
-	//hspi overlap to spi, two spi masters on cspi
-	SET_PERI_REG_MASK(0x3ff00028, BIT(7));
+    // Set CS pin as output and high
+    //gpio_output_set(1 << GPIO_Pin_15, 0, 1 << GPIO_Pin_15, 0);
 
-	//set higher priority for spi than hspi
-	SET_PERI_REG_MASK(SPI_EXT3(SPI), 0x1);
-	SET_PERI_REG_MASK(SPI_EXT3(HSPI), 0x3);
-	SET_PERI_REG_MASK(SPI_USER(HSPI), BIT(5));
-
-	//select HSPI CS2 , disable HSPI CS0 and CS1
-	CLEAR_PERI_REG_MASK(SPI_PIN(HSPI), SPI_CS2_DIS);
-	SET_PERI_REG_MASK(SPI_PIN(HSPI), SPI_CS0_DIS |SPI_CS1_DIS);
-
-	//SET IO MUX FOR GPIO0 , SELECT PIN FUNC AS SPI CS2
-	//IT WORK AS HSPI CS2 AFTER OVERLAP(THERE IS NO PIN OUT FOR NATIVE HSPI CS1/2)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_SPICS2);
-*/
-	//Set GPIO15 as CS pin
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_HSPI_CS0);
+    // Configure the SPI interface
+    WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105); // Configure pins to use for SPI
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO); // GPIO12 for MISO
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); // GPIO13 for MOSI
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);   // GPIO14 for CLK
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_HSPI_CS0);   // GPIO15 for CS
 
 	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
 					(((0)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
