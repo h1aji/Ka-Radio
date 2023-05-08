@@ -1,10 +1,12 @@
-/* 
+/******************************************************************************
+ * 
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
- * Main task for the web websocket and telnet servers.
- */
+*******************************************************************************/
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define TAG	"Servers"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -19,7 +21,6 @@
 #include "eeprom.h"
 
 #define stack  	5400 //4400
-#define TAG	"Servers"
 
 #define  strsTELNET  "Servers Telnet Socket fails %s errno: %d"
 #define  strsWSOCK  "WebServer Socket fails %s errno: %d"

@@ -3,6 +3,7 @@
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
+
 #ifndef __have__addon_h__
 #define __have__addon_h__
 

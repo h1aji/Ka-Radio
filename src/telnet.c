@@ -1,12 +1,11 @@
-/* (c)jp cocatrix May 2016 
+/******************************************************************************
+ * 
+ * Copyright 2017 karawin (http://www.karawin.fr)
  *
- * Copyright 2016 karawin (http://www.karawin.fr)
+*******************************************************************************/
 
-	quick and dirty telnet inplementation for wifi webradio
-	minimal implementaion for log and command
-*/
-#define TAG "TELNET"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define TAG "Telnet"
 
 #include <stdio.h>
 #include <stdarg.h>

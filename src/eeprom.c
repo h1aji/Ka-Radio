@@ -17,15 +17,12 @@
 #include "esp_partition.h"
 #include "esp_task_wdt.h"
 #include "esp_log.h"
-//#include "driver/uart.h"
-//#include "spi_flash.h"
-//#include <esp_libc.h>
 
 #include "interface.h"
 #include "eeprom.h"
 
 #define NBSTATIONS		255
-#define PARTITIONLEN		4096
+#define PARTITIONLEN	4096
 
 const static char *TAG = "eeprom";
 static xSemaphoreHandle muxDevice;

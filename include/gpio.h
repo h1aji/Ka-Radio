@@ -1,3 +1,8 @@
+/******************************************************************************
+ * 
+ * Copyright 2018 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
 #pragma once
 
@@ -9,7 +14,6 @@
 #include "app_main.h"
 
 #define GPIO_NONE 255
-
 
 // Must be HSPI or VSPI
 #define KSPI HSPI_HOST

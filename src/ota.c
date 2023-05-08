@@ -1,9 +1,12 @@
-/*
- * Copyright 2017 jp Cocatrix (http://www.karawin.fr)
- */
+/******************************************************************************
+ * 
+ * Copyright 2017 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
-#define TAG "OTA"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define TAG "OTA"
+
 #include <string.h>
 #include <sys/socket.h>
 #include "esp_system.h"

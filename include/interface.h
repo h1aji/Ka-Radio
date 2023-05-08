@@ -3,17 +3,14 @@
  * Copyright 2018 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
+
 #ifndef INTERFACE_H
 #define INTERFACE_H
 #include "esp_log.h"
 #include "telnet.h"
 
-// need this for ported soft to esp32
-#define ESP32_IDF
-
 #define PSTR(s) (s)
 #define MAXDATAT	 256
-
 
 #define RELEASE "3.0"
 #define REVISION "0"

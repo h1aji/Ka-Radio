@@ -6,6 +6,7 @@
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "GPIO"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -108,26 +109,34 @@ void gpio_get_spi_bus(uint8_t *spi_no,gpio_num_t *miso,gpio_num_t *mosi,gpio_num
 	esp_err_t err;
 	nvs_handle hardware_handle;
 	// init default
-	if (miso != NULL)*miso = PIN_NUM_MISO;	
-	if (mosi != NULL)*mosi = PIN_NUM_MOSI;	
-	if (sclk != NULL)*sclk = PIN_NUM_CLK;
-	if (spi_no != NULL)*spi_no = KSPI;
-	
+	if (miso != NULL)
+		*miso = PIN_NUM_MISO;
+	if (mosi != NULL)
+		*mosi = PIN_NUM_MOSI;
+	if (sclk != NULL)
+		*sclk = PIN_NUM_CLK;
+	if (spi_no != NULL)
+		*spi_no = KSPI;
+
 	if (open_partition(hardware, gpio_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
 	{
 		ESP_LOGD(TAG,"spi_bus");
 		return;
 	}
-	err = ESP_OK;
-	if (spi_no != NULL)err = nvs_get_u8(hardware_handle, "K_SPI",(uint8_t *) spi_no);
-	if (miso != NULL) err |= nvs_get_u8(hardware_handle, "P_MISO",(uint8_t *) miso);
-	if (mosi != NULL)err |=nvs_get_u8(hardware_handle, "P_MOSI",(uint8_t *) mosi);
-	if (sclk != NULL)err |=nvs_get_u8(hardware_handle, "P_CLK", (uint8_t *)sclk);
-	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_spi_bus err 0x%x",err);
-	close_partition(hardware_handle,hardware);
-	
-}
 
+	err = ESP_OK;
+	if (spi_no != NULL)
+	err = nvs_get_u8 (hardware_handle, "K_SPI", (uint8_t *) spi_no);
+	if (miso != NULL)
+	err |= nvs_get_u8 (hardware_handle, "P_MISO", (uint8_t *) miso);
+	if (mosi != NULL)
+	err |= nvs_get_u8 (hardware_handle, "P_MOSI", (uint8_t *) mosi);
+	if (sclk != NULL)
+	err |= nvs_get_u8 (hardware_handle, "P_CLK", (uint8_t *) sclk);
+	if (err != ESP_OK)
+	ESP_LOGD (TAG, "g_get_spi_bus err 0x%x", err);
+	close_partition(hardware_handle,hardware);
+}
 
 void gpio_get_vs1053(gpio_num_t * xcs,gpio_num_t *rst,gpio_num_t *xdcs,gpio_num_t *dreq)
 {
@@ -148,8 +157,9 @@ void gpio_get_vs1053(gpio_num_t * xcs,gpio_num_t *rst,gpio_num_t *xdcs,gpio_num_
 	err |=nvs_get_u8(hardware_handle, "P_RST",(uint8_t *) rst);
 	err |=nvs_get_u8(hardware_handle, "P_XDCS", (uint8_t *)xdcs);
 	err |=nvs_get_u8(hardware_handle, "P_DREQ", (uint8_t *)dreq);
-	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_vs1053 err 0x%x",err);
-	close_partition(hardware_handle,hardware);	
+	if (err != ESP_OK)
+		ESP_LOGD (TAG, "g_get_vs1053 err 0x%x", err);
+  	close_partition(hardware_handle,hardware);	
 }
 
 void option_get_audio_output(output_mode_t *oom)
@@ -164,7 +174,8 @@ void option_get_audio_output(output_mode_t *oom)
 		return;
 	}				
 	err = nvs_get_u8(hardware_handle, "O_AUDIO",(uint8_t *) oom);
-	if (err != ESP_OK) ESP_LOGD(TAG,"get_audio err 0x%x",err);
+	if (err != ESP_OK)
+		ESP_LOGD(TAG,"get_audio err 0x%x",err);
 	close_partition(hardware_handle,hardware);		
 }
 
@@ -180,11 +191,11 @@ bool option_get_esplay()
 		return ret;
 	}				
 	err = nvs_get_u8(hardware_handle, "O_ESPLAY",(uint8_t *)&ret);
-	if (err != ESP_OK) ESP_LOGD(TAG,"get_esplay err 0x%x",err);
+	if (err != ESP_OK)
+		ESP_LOGD(TAG,"get_esplay err 0x%x",err);
 	close_partition(hardware_handle,hardware);	
 	return ret;
 }
-
 
 void option_get_lcd_info(uint8_t *enca,uint8_t* rt)
 {
@@ -205,7 +216,8 @@ void option_get_lcd_info(uint8_t *enca,uint8_t* rt)
 	if (typ != 255) *enca = typ;
 	if (rot != 255) *rt = rot;
 	if (*rt) *rt = 1;
-	if (err != ESP_OK) ESP_LOGD(TAG,"oget_lcd_info err 0x%x",err);
+	if (err != ESP_OK)
+		ESP_LOGD(TAG,"oget_lcd_info err 0x%x",err);
 	close_partition(hardware_handle,hardware);		
 }
 void option_set_lcd_info(uint8_t enca, uint8_t rt)

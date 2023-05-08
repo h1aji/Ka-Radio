@@ -1,6 +1,8 @@
-/*
- * Copyright 2016 karawin (http://www.karawin.fr)
- */
+/******************************************************************************
+ * 
+ * Copyright 2018 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
 #ifndef __WEBCLIENT_H__
 #define __WEBCLIENT_H__
