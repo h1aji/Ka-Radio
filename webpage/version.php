@@ -4,49 +4,28 @@
 <html>
 <body>
 
-    <p><span class="label label-success">Release <span id="firmware_last">1.9 Rev 7 </span> - Built on 2020/12/20
+    <p><span class="label label-success">Release <span id="firmware_last">2.1 Rev 1 </span> - Built on 2021/03/12
 	</span>
 	</p>
 	
     New:
 	<ul id="ordered">
-		<li> 1.9 R7: 
+		<li> 2.1 R1: 
 		<ul id="ordered">
-		<li>New vs1053b patch Rev 2.9 .</li>
-		<li></li>
-	</ul></li>	
-	<ul id="ordered">
-		<li> 1.9 R6: 
+		<li> Some mistakes on the wifi init for AP1 and AP2</li>
+		</ul></li>
+		<li> 2.1 R0: 
 		<ul id="ordered">
-		<li>Parse playlist fix.</li>
-		<li></li>
-	</ul></li>
-		<li> 1.9 R5: 
+		<li>Security: the ssid passwords are no longer sent on each "Setting" display, but only when changed.</li>
+		<li>Bug fixed: in parse playlist. Possible memory leak. Thanks to HmarikBel</li>
+		<li>Bug fixed: Special char in station name was incorrectly sent.</li>
+		<li>Some minors improvements.</li>
+		</ul></li>				<li> 2.0 R0: 
 		<ul id="ordered">
-		<li>json parsing correction for char " in a string</li>
-		<li></li>
-	</ul></li>
-		<li> 1.9 R4: 
-		<ul id="ordered">
-		<li>LWIP layer tuned. Better errno 11 computing.</li>
-		</ul>
-		<li> 1.9 R3: 
-		<ul id="ordered">
-		<li>Instant play: new button "Add/Edit", and update fields on cli commands.</li>
-		</ul>
-		<li> 1.9 R2: 
-		<ul id="ordered">
-		<li>AP mode no working. A wrong lwip was the cause. Now 192.168.4.1 is working.</li>
-		</ul>
-		<li> 1.9 R1: 
-		<ul id="ordered">
-		<li>Keyboard on web page correction.</li>
-		<li>cli.list correction.</li>
-		</ul>
-		<li> 1.9 R0: 
-		<ul id="ordered">
-		<li>Use of the RTOS SDK 2.0.0.</li>
-		</ul>
+		<li> Better handling of the large "header moved"</li> 
+		<li> Better monitoring</li> 
+		<li> timezone suggestion on the setting page</li>
+		</ul></li>	
     </ul>
 
     <div class="alert alert-danger">

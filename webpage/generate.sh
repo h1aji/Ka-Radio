@@ -1,4 +1,5 @@
 #!/bin/bash
+# Need python3. Install it with pacman -Sy python3
 
 echo style
 cp style.css style.ori
@@ -22,7 +23,7 @@ mv style1.ori style1.css
 
 echo script
 cp script.js script.ori
-#python3 ./css-html-js-minify.py script.js 
+#python3 ./css-html-js-minify.py script.js
 gzip  script.js 
 mv script.js.gz script.js
 xxd -i script.js > script
