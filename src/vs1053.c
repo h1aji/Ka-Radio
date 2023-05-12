@@ -195,7 +195,8 @@ uint8_t SPIGetChar() {
 }
 
 void ControlReset(uint8_t State) {
-	//gpio_set_level(PIN_NUM_RST, State);
+	gpio_set_level(GPIO_NUM_2, State);
+	gpio_set_level(GPIO_NUM_16, State);
 }
 
 void SCI_ChipSelect(uint8_t State) {
@@ -363,7 +364,7 @@ void VS1053_Start() {
 	ControlReset(SET);
 	vTaskDelay(10);
 	ControlReset(RESET);
-	vTaskDelay(50);	
+	vTaskDelay(100);	
 	if (CheckDREQ() == 0) vTaskDelay(50);	// wait a bit more
 	//Check DREQ
 	if (CheckDREQ() == 0)
