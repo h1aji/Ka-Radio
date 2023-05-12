@@ -7,6 +7,7 @@
 #pragma once
 
 #include "esp_system.h"
+#include "audio_renderer.h"
 
 //define for bit array options
 #define T_THEME 	1

@@ -15,7 +15,7 @@
 #include "esp_system.h"
 #include "lwip/sockets.h"
 
-#include "cencode_inc.h"
+#include "cencode.h"
 #include "telnet.h"
 #include "interface.h"
 
@@ -181,7 +181,7 @@ void telnetNego(int tsocket)
 void telnetCommand(int tsocket)
 {
 	if (irec == 0) return;
-	ESP_LOGV(TAG,"%sHEAPd0: %d #\n","##SYS.",xPortGetFreeHeapSize( ));	
+	ESP_LOGV(TAG,"%sHEAPd0: %d #\n","##SYS.",esp_get_free_heap_size());	
 	brec[irec] = 0x0;
 	write(tsocket,"\n> ",1);
 	ESP_LOGV(TAG,"brec: %s\n",brec);
@@ -221,7 +221,7 @@ int telnetRead(int tsocket)
 		}	
 
 		buf = realloc(buf,recbytes+2);
-//		printf("%sHEAPdi1: %d #\nrecbytes: %d\n","##SYS.",xPortGetFreeHeapSize(),recbytes);	
+//		printf("%sHEAPdi1: %d #\nrecbytes: %d\n","##SYS.",esp_get_free_heap_size(),recbytes);	
 		if (buf != NULL)
 		{
 			for (i = 0;i< recbytes;i++)

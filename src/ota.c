@@ -25,8 +25,7 @@
 
 #define BUFFSIZE 1024
 
-const char strupd[]  = {\
-"GET /%s.bin HTTP/1.1\r\nHost: karadio.karawin.fr:80\r\n\r\n"};
+const char strupd[] = {"GET /%s.bin HTTP/1.1\r\nHost: karadio.karawin.fr:80\r\n\r\n"};
 
 /*an ota data write buffer ready to write to the flash*/
 static char ota_write_data[BUFFSIZE + 1] = { 0 };
@@ -64,9 +63,8 @@ void wsUpgrade(const char* str,int count,int total)
 	}
 	websocketbroadcast(answer, strlen(answer));
 }
-	
-	
-	
+
+
 /*read buffer by byte still delim ,return read bytes counts*/
 static int read_until(char *buffer, char delim, int len)
 {
@@ -147,8 +145,7 @@ static void ota_task(void *pvParameter)
     }
     ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
              running->type, running->subtype, running->address);
-	
-		
+
 	// prepare connection to the server
 	serv =(struct hostent*)gethostbyname("karadio.karawin.fr");
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -160,7 +157,6 @@ static void ota_task(void *pvParameter)
     dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0]))); // remote server ip
 	ESP_LOGI(TAG,"distant ip: %x   ADDR:%s\n", dest.sin_addr.s_addr, inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0])));
 
-	
 	/*---Connect to server---*/
 	if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0)
 		{ESP_LOGI(TAG,"Connected to server");}
@@ -171,8 +167,7 @@ static void ota_task(void *pvParameter)
 		wsUpgrade("Connect to server failed!" , 0,100);
 		goto exit;
 	}
-	
-	
+
 	 int res = -1;
     /*send GET request to http server*/
 	sprintf(http_request,strupd,name);
@@ -224,8 +219,7 @@ static void ota_task(void *pvParameter)
 				ESP_LOGI(TAG, "must receive:%d bytes",reclen);
 				kprintf("must receive:%d bytes\n",reclen);
 			}
-			
-			
+
         } else if (buff_len > 0 && resp_body_start) { /*deal with response body*/
             memcpy(ota_write_data, text, buff_len);
             err = esp_ota_write( update_handle, (const void *)ota_write_data, buff_len);

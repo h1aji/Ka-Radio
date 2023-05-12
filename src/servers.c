@@ -200,7 +200,7 @@ void serversTask(void* pvParams) {
 				{
 					while (1) 
 					{
-//						printf ("Heap size server: %d\n",xPortGetFreeHeapSize( ));
+//						printf ("Heap size server: %d\n",esp_get_free_heap_size());
 //						printf ("Accept socket %d\n",client_sock);
 						if (xSemaphoreTake(semclient,portMAX_DELAY))
 						{						

@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright 2013-2015 Espressif Systems
  *
- * FileName: user_main.c
+ * FileName: spiram.c
  *
  * Description: Driver for a 23LC1024 or similar chip connected to the SPI port.
  * The chip is connected to the same pins as the main flash chip except for the
@@ -29,25 +29,32 @@
 #include "freertos/semphr.h"
 #include "spiram.h"
 
-#define SPI 	0
-#define HSPI	1
-
 #define TAG	"Spiram"
 
+xSemaphoreHandle sSPI = NULL;
+
+uint8_t spiTakeSemaphore() {
+	if(sSPI)
+		if(xSemaphoreTake(sSPI, portMAX_DELAY))
+			return 1;
+	return 0;
+}
+
+void spiGiveSemaphore() {
+	if(sSPI)
+		xSemaphoreGive(sSPI);
+}
 
 //Initialize the SPI port to talk to the chip.
 void spiRamInit() {
 	char dummy[64];
-    ESP_LOGI(TAG, "Init HSPI");
-
-    // Set CS pin as output and high
-    //gpio_output_set(1 << GPIO_Pin_15, 0, 1 << GPIO_Pin_15, 0);
+    ESP_LOGI(TAG, "Init SPIRAM SPI");
 
     // Configure the SPI interface
-    WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105); // Configure pins to use for SPI
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO); // GPIO12 for MISO
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); // GPIO13 for MOSI
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);   // GPIO14 for CLK
+//    WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105); // Configure pins to use for SPI
+//    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO); // GPIO12 for MISO
+//    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); // GPIO13 for MOSI
+//    PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);   // GPIO14 for CLK
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_HSPI_CS0);   // GPIO15 for CS
 
 	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
@@ -68,6 +75,14 @@ void spiRamInit() {
 
 //Read bytes from a memory location. The max amount of bytes that can be read is 64.
 void spiRamRead(int addr, char *buff, int len) {
+	spiTakeSemaphore();
+	//13MHz
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					(((2)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+					(((1)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
+					(((2>>1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
+					((0&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
+
 	int *p=(int*)buff;
 	int d;
 	int i=0;
@@ -92,10 +107,18 @@ void spiRamRead(int addr, char *buff, int len) {
 		len-=4;
 		i++;
 	}
+	spiGiveSemaphore();
 }
 
 //Write bytes to a memory location. The max amount of bytes that can be written is 64.
 void spiRamWrite(int addr, char *buff, int len) {
+	spiTakeSemaphore();
+	//13MHz
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					(((2)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+					(((1)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
+					(((2>>1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
+					((0&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
 	int i;
 	int d;
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
@@ -116,10 +139,11 @@ void spiRamWrite(int addr, char *buff, int len) {
 		WRITE_PERI_REG(SPI_W(HSPI, (i)), d);
 	}
 	SET_PERI_REG_MASK(SPI_CMD(HSPI), SPI_USR);
+	spiGiveSemaphore();
 }
 
-//Simple routine to see if the SPI actually stores bytes. This is not a full memory test, but will tell
-//you if the RAM chip is connected well.
+//Simple routine to see if the SPI actually stores bytes. 
+//This is not a full memory test, but will tell you if the RAM chip is connected well.
 int spiRamTest() {
 	int x;
 	int err=0;

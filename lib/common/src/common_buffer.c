@@ -21,6 +21,8 @@
 
 #define TAG "common"
 
+#define MALLOC_CAP_DEFAULT (1<<12) ///< Memory can be returned in a non-capability-specific memory allocation (e.g. malloc(), calloc()) call
+
 /* creates a buffer struct and its storage on the heap */
 buffer_t *buf_create(size_t len)
 {
