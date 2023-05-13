@@ -31,24 +31,10 @@
 
 #define TAG	"Spiram"
 
-xSemaphoreHandle sSPI = NULL;
-
-uint8_t spiTakeSemaphore() {
-	if(sSPI)
-		if(xSemaphoreTake(sSPI, portMAX_DELAY))
-			return 1;
-	return 0;
-}
-
-void spiGiveSemaphore() {
-	if(sSPI)
-		xSemaphoreGive(sSPI);
-}
-
 //Initialize the SPI port to talk to the chip.
 void spiRamInit() {
 	char dummy[64];
-    ESP_LOGI(TAG, "Init SPIRAM SPI");
+    ESP_LOGI(TAG, "Init 23LC1024 SPI RAM");
 
     // Configure the SPI interface
 //    WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105); // Configure pins to use for SPI
@@ -70,19 +56,12 @@ void spiRamInit() {
 }
 
 //Macro to quickly access the W-registers of the SPI peripherial
-#define SPI_W(i, j)                   (REG_SPI_BASE(i) + 0x40 + ((j)*4))
+#define SPI_W(i, j)           (REG_SPI_BASE(i) + 0x40 + ((j)*4))
 
 
 //Read bytes from a memory location. The max amount of bytes that can be read is 64.
 void spiRamRead(int addr, char *buff, int len) {
-	spiTakeSemaphore();
-	//13MHz
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
-					(((2)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
-					(((1)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
-					(((2>>1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-					((0&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
-
+	spi_set_clk_div(HSPI, 5); //16mhz
 	int *p=(int*)buff;
 	int d;
 	int i=0;
@@ -107,18 +86,11 @@ void spiRamRead(int addr, char *buff, int len) {
 		len-=4;
 		i++;
 	}
-	spiGiveSemaphore();
 }
 
 //Write bytes to a memory location. The max amount of bytes that can be written is 64.
 void spiRamWrite(int addr, char *buff, int len) {
-	spiTakeSemaphore();
-	//13MHz
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
-					(((2)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
-					(((1)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
-					(((2>>1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-					((0&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
+	spi_set_clk_div(HSPI, 5); //16mhz
 	int i;
 	int d;
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
@@ -139,7 +111,6 @@ void spiRamWrite(int addr, char *buff, int len) {
 		WRITE_PERI_REG(SPI_W(HSPI, (i)), d);
 	}
 	SET_PERI_REG_MASK(SPI_CMD(HSPI), SPI_USR);
-	spiGiveSemaphore();
 }
 
 //Simple routine to see if the SPI actually stores bytes. 

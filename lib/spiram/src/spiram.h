@@ -7,9 +7,6 @@
 //for a 23LC1024 chip
 #define SPIRAMSIZE (128*1024)
 
-uint8_t spiTakeSemaphore();
-void spiGiveSemaphore();
-
 void spiRamInit();
 void spiRamRead(int addr, char *buff, int len);
 void spiRamWrite(int addr, char *buff, int len);

@@ -124,17 +124,17 @@ uint32_t spi_transaction (uint8_t spi_no, uint8_t cmd_bits, uint16_t cmd_data,
 			}
 		}
     }
-  SET_PERI_REG_MASK (SPI_CMD(spi_no),SPI_USR);
+  SET_PERI_REG_MASK(SPI_CMD(spi_no),SPI_USR);
   if (din_bits)
     {
-      while (READ_PERI_REG (SPI_CMD(spi_no))&SPI_USR);	//wait for SPI transaction to complete
-      if (READ_PERI_REG (SPI_USER(spi_no))&SPI_RD_BYTE_ORDER)
+      while (READ_PERI_REG(SPI_CMD(spi_no))&SPI_USR);	//wait for SPI transaction to complete
+      if (READ_PERI_REG(SPI_USER(spi_no))&SPI_RD_BYTE_ORDER)
 	{
-	  return READ_PERI_REG (SPI_W0(spi_no))>>(32-din_bits);	//Assuming data in is written to MSB. TBC
+	  return READ_PERI_REG(SPI_W0(spi_no))>>(32-din_bits);	//Assuming data in is written to MSB. TBC
 	}
       else
 	{
-	  return READ_PERI_REG (SPI_W0(spi_no));	//Read in the same way as DOUT is sent. Note existing contents of SPI_W0 remain unless overwritten! 
+	  return READ_PERI_REG(SPI_W0(spi_no)); //Read in the same way as DOUT is sent. Note existing contents of SPI_W0 remain unless overwritten! 
 	}
       return 0;	//something went wrong
     }
