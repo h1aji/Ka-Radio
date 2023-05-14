@@ -62,8 +62,8 @@ int spiRamFifoInit() {
 	vSemaphoreCreateBinary(semCanRead);
 	vSemaphoreCreateBinary(semCanWrite);
 	mux=xSemaphoreCreateMutex();
-	//spiRamInit();
-	//return (spiRamTest());
+	spiRamInit();
+	return (spiRamTest());
 }
 
 void spiRamFifoReset() {

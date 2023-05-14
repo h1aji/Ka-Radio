@@ -20,7 +20,7 @@ The goal of this project is to migrate it to SDK 3
 |10   |SDD3  |DREQ |        |
 
 ## Issues
- - VS1053 needs to be ported
- - TIMERG0 in ota.c (line 260) and main.c
- - WolfSSL component not loading
+ - TIMERG0 in ota.c (line 260)
+ - SSL functionality not ported
  - Implement addon.c later
+ - interface.c line 1276, 1283

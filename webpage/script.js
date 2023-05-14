@@ -35,7 +35,6 @@ function openwebsocket(){
 		if (arr["iport"]) {document.getElementById('instant_port').value = arr["iport"];buildURL();}
 	} catch(e){ console.log("error"+e);}
 }
-
 	websocket.onopen = function (event) {
 		console.log("Open, url:"+"ws://"+window.location.host+"/");
 		if(window.timerID){ /* a setInterval has been fired */
@@ -1030,7 +1029,7 @@ function checkhistory()
 	 xhr.onload = function() {
 		document.getElementById('History').innerHTML = xhr.responseText;	
     }
-	xhr.open("GET","http://KaraDio.karawin.fr/history132.php", false);
+	xhr.open("GET","http://karadio.karawin.fr/history1.php", false);
 	try{
 		xhr.send(null );
 	}catch(e){;}
@@ -1046,7 +1045,7 @@ function checkinfos()
 	 xhr.onload = function() {
 		document.getElementById('Infos').innerHTML = xhr.responseText;	
     }
-	xhr.open("GET","http://KaraDio.karawin.fr/infos.php", false);
+	xhr.open("GET","http://karadio.karawin.fr/infos.php", false);
 	try{
 		xhr.send(null );
 	}catch(e){;}
@@ -1063,7 +1062,7 @@ function checkversion()
 		document.getElementById('Version').innerHTML = xhr.responseText;	
 		document.getElementById('newrelease').innerHTML = document.getElementById('firmware_last').innerHTML;
     }
-	xhr.open("GET","http://KaraDio.karawin.fr/version32.php", false);
+	xhr.open("GET","http://karadio.karawin.fr/version.php", false);
 	try{
 		xhr.send(null );
 	}catch(e){;}

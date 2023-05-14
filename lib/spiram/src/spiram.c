@@ -51,8 +51,6 @@ void spiRamInit() {
 
 	//Dummy read to clear any weird state the SPI ram chip may be in
 	spiRamRead(0x0, dummy, 64);
-
-	return ESP_OK;
 }
 
 //Macro to quickly access the W-registers of the SPI peripherial
@@ -61,8 +59,7 @@ void spiRamInit() {
 
 //Read bytes from a memory location. The max amount of bytes that can be read is 64.
 void spiRamRead(int addr, char *buff, int len) {
-	spi_set_clk_div(HSPI, 5); //16mhz
-	int *p=(int*)buff;
+	//int *p=(int*)buff;
 	int d;
 	int i=0;
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
@@ -90,7 +87,6 @@ void spiRamRead(int addr, char *buff, int len) {
 
 //Write bytes to a memory location. The max amount of bytes that can be written is 64.
 void spiRamWrite(int addr, char *buff, int len) {
-	spi_set_clk_div(HSPI, 5); //16mhz
 	int i;
 	int d;
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;

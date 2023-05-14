@@ -7,7 +7,7 @@
 # please read the ESP-IDF documents if you need to do this.
 #
 
-COMPONENT_SRCDIRS := .
+COMPONENT_SRCDIRS := src
 
 CFLAGS += -Wno-error=unused-label -Wno-error=return-type -Wno-error=missing-braces -Wno-error=pointer-sign -Wno-error=parentheses
 

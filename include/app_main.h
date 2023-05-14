@@ -17,14 +17,6 @@
 #define TIMERVALUE(x) (x*5000000ULL )
 #define TIMERVALUE1MS(x) (x*10) 
 #define TIMERVALUE1mS(x) (x*10000 )
-#define TIMERGROUP TIMER_GROUP_0 
-#define TIMERGROUP1MS TIMER_GROUP_1
-#define TIMERGROUP1mS TIMER_GROUP_1
-#define msTimer	TIMER_0
-#define microsTimer	TIMER_1
-#define sleepTimer  TIMER_0
-#define wakeTimer TIMER_1
-
 
 // event for timers and encoder
 #define TIMER_SLEEP   0   

@@ -43,14 +43,12 @@
 			</div>
 		</div>	
 	</div>	
-
-	
 	<div id="MAIN">	
 		<div id="HEADER"  onclick="wtop()"> 
 			<div class="LEFT"><img title="Click on the logo to change the theme" onClick= "theme()" src="logo.png"></div>
 			<div class="RIGHT">
-			<a href="https://github.com/karawin/Ka-Radio32" target="_blank">KaraDio32</a><br/>
-			<a href="https://github.com/karawin/Ka-Radio32" target="_blank">V2.3 R0</a><br/>
+			<a href="https://github.com/karawin/Ka-Radio" target="_blank">KaraDio</a><br/>
+			<a href="https://github.com/karawin/Ka-Radio" target="_blank">V2.3 R0</a><br/>
 			<div id="rssi" >0 dBm</div><br/>
 <!--			<a href="https://github.com/PiotrSperka/ESP8266-WebRadio" style="font-size:8px" target="_blank">From PiotrSperka</a> -->
 			</div>
@@ -58,7 +56,6 @@
 			<span class="bold4"><span id="meta">Karadio32</span></span>
 			</div>	
 </div>	
-			
 		<div id="MAINCONTENT" class="CONTENT" >
 				<ul class="tabs">
 				<li>
@@ -86,13 +83,11 @@
 					<input type="button" value="Stop"  onClick="stopStation()">
 -->					
 					</p></span><p>
-					
-
                      <span class="bold2">Volume: </span>
 					 &nbsp;&nbsp;<span id="vol1_span"></span><br/>
 					<input type="range" id="vol1_range" name="vol1"  onChange="onRangeVolChange(this.value,true)"  min=0 max=254 style="height:25px;">
 					</p>				
-				 <h1>Station No <span id="curst"></span>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" checked  id="Full"  onclick="full()"/> Full</h1>				  
+				<h1>Station No <span id="curst"></span>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" checked  id="Full"  onclick="full()"/> Full</h1>				  
 					<p><span class="bold1" >Name: </span><span id="name"></span>&nbsp;&nbsp;<img id="icon" src=""  height="16px" width="16px"> </p>
 					<p><span id="ldescr"> <span class="bold1">Description: </span><span id="descr"></span></span></p>
 					<p><span id="lnot1"><span class="bold1">Notice: </span><span id="not1"></span> <span id="not2"></span></span></p>
