@@ -16,17 +16,17 @@
  *     2015/06/01, v1.0 File created.
  *     2015/06/12, modifications for SPI in QSPI mode
 *******************************************************************************/
-#include "esp_system.h"
-#include "esp8266/eagle_soc.h"
-#include "esp8266/pin_mux_register.h"
-#include "esp8266/gpio_struct.h"
-#include "esp8266/spi_register.h"
-#include "driver/spi.h"
-#include "driver/gpio.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
+#include "esp8266/eagle_soc.h"
+#include "esp8266/spi_struct.h"
+#include "esp8266/pin_mux_register.h"
+#include "esp8266/spi_register.h"
+#include "esp8266/gpio_struct.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
 #include "spiram.h"
 
 #define TAG	"Spiram"
