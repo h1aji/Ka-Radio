@@ -10,22 +10,26 @@
 
 #include <sys/types.h>
 #include "common_component.h"
-#include "audio_renderer.h"
 
 int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read);
 
-
 typedef enum {
-    CMD_NONE, CMD_START, CMD_STOP
+    CMD_NONE, 
+    CMD_START, 
+    CMD_STOP
 } player_command_t;
 
 typedef enum {
-    BUF_PREF_FAST, BUF_PREF_SAFE
+    BUF_PREF_FAST, 
+    BUF_PREF_SAFE
 } buffer_pref_t;
 
-typedef enum
-{
-    MIME_UNKNOWN = 1, OCTET_STREAM, AUDIO_AAC, AUDIO_MP4, AUDIO_MPEG
+typedef enum {
+    MIME_UNKNOWN = 1, 
+    OCTET_STREAM, 
+    AUDIO_AAC, 
+    AUDIO_MP4, 
+    AUDIO_MPEG
 } content_type_t;
 
 typedef struct {
@@ -46,7 +50,6 @@ component_status_t get_player_status();
 void audio_player_init(player_t *player_config);
 void audio_player_start();
 void audio_player_stop();
-//void audio_player_destroy();
 
 
 #endif /* INCLUDE_AUDIO_PLAYER_H_ */

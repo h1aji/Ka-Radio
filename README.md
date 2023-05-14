@@ -24,3 +24,4 @@ The goal of this project is to migrate it to SDK 3
  - SSL functionality not ported
  - Implement addon.c later
  - interface.c line 1276, 1283
+ - Mdns is not working
