@@ -18,19 +18,7 @@
 #define ICY_HEADERS_COUNT 9
 #define ICY_HEADER_COUNT 10
 
-// audio buffer size in k
-// default to 30
-#define DEFAULTRAM	45
-// for https
-#define HTTPSRAM	25
-#define HTTPSVSRAM	50
-// for vs1053 output on woover
-#define SMALLRAM 	60
-// for wrover
-#define BIGRAM		400
-
-typedef enum
-{
+typedef enum {
     KMIME_UNKNOWN = 1,
 	KOCTET_STREAM,
 	KAUDIO_AAC,
@@ -39,8 +27,7 @@ typedef enum
 	KAUDIO_OGG
 } contentType_t;
 
-struct icyHeader
-{
+struct icyHeader {
 	union
 	{
 		struct
@@ -60,7 +47,15 @@ struct icyHeader
 	} members;
 };
 
-enum clientStatus {C_HEADER0, C_HEADER, C_HEADER1,C_METADATA, C_DATA, C_PLAYLIST, C_PLAYLIST1};
+enum clientStatus {
+	C_HEADER0,
+	C_HEADER,
+	C_HEADER1,
+	C_METADATA,
+	C_DATA,
+	C_PLAYLIST,
+	C_PLAYLIST1
+};
 
 void clientInit();
 uint8_t clientIsConnected();
@@ -73,7 +68,6 @@ bool clientPrintHeaders();
 void clientPrintState();
 bool getState();
 char* getMeta();
-void ramInit();
 
 struct icyHeader* clientGetHeader();
 void clientConnect();
@@ -87,6 +81,5 @@ void wsVol(char* vol);
 void wsMonitor();
 void wsStationNext();
 void wsStationPrev();
-uint8_t wolfSSL_getLogState();
 
 #endif
