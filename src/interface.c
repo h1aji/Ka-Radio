@@ -7,27 +7,29 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Interface"
 
-#include "interface.h"
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
-#include "eeprom.h"
-#include "ntp.h"
-#include "webclient.h"
-#include "webserver.h"
-#include "vs1053.h"
-#include "gpio.h"
-#include "ota.h"
-#include "app_main.h"
 
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
-#include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "driver/gpio.h"
 #include "mdns.h"
 
+#include "buffer.h"
+
+#include "app_main.h"
+#include "eeprom.h"
+#include "gpio.h"
+#include "interface.h"
+#include "ntp.h"
+#include "ota.h"
+#include "vs1053.h"
+#include "webclient.h"
+#include "webserver.h"
 
 const char parslashquote[] = {"(\""};
 const char parquoteslash[] = {"\")"};
@@ -104,8 +106,6 @@ sys.prerelease: start an OTA of the next release in alpha stage\n\
 sys.boot: reboot.\n\
 sys.patch and sys.patch(\"x\"): Display and Change the status of the vs1053 patch at power on.\n\
  0 = Patch will not be loaded, 1 or up = Patch will be loaded (default) at power On \n\
-sys.led and sys.led(\"x\"): Display and Change the led indication:\n\
- 1 = Led is in Play mode (lighted when a station is playing), 0 = Led is in Blink mode (default)\n\
 sys.version: Display the Release and Revision numbers\n\
 sys.tzo and sys.tzo(\"x:y\"): Display and Set the timezone offset of your country.\n\
 "};
@@ -123,14 +123,12 @@ sys.lcd and sys.lcd(\"x\"): Display and Change the lcd type to x on next reset\n
 "};
 
 static const char stritHELP5[]  = {"\
-sys.ledgpio and sys.ledgpio(\"x\"): Display and Change the default Led GPIO (4) to x\n\
 sys.ddmm and sys.ddmm(\"x\"):  Display and Change  the date format. 0:MMDD, 1:DDMM\n\
 sys.host and sys.host(\"your hostname\"): display and change the hostname for mDNS\n\
 sys.rotat and sys.rotat(\"x\"): Change and display the lcd rotation option (reset needed). 0:no rotation, 1: rotation\n\
 sys.henc0 or sys.henc1: Display the current step setting for the encoder. Normal= 4 steps/notch, Half: 2 steps/notch\n\
 sys.hencx(\"y\") with y=0 Normal, y=1 Half\n\
 sys.cali[brate]: start a touch screen calibration\n\
-sys.ledpola and sys.ledpola(\"x\"): display or set the polarity of the system led\n\
 sys.conf: Display the label of the csv file\n\
 ///////////\n\
   Other\n\
@@ -144,7 +142,6 @@ A command error display:\n\
 }; 
 
 uint16_t currentStation = 0;
-static gpio_num_t led_gpio = GPIO_NONE;
 static IRAM_ATTR uint32_t lcd_out = 0xFFFFFFFF;
 static IRAM_ATTR uint32_t lcd_stop = 0xFFFFFFFF;
 
@@ -836,9 +833,10 @@ void clientWake(char *s)
         strncpy(label, t+2, (t_end-t));
 		if (atoi(label)==0)
 			stopWake();
-		else startWake(atoi(label));
+		else 
+			startWake(atoi(label));
 		free(label);
-    }	
+    }
 	clientWake((char*)"");
 }
 void clientSleep(char *s)
@@ -901,37 +899,6 @@ void syspatch(char* s)
 	kprintf(stritPATCH,(g_device->options & T_PATCH)!= 0?"unloaded":"Loaded");
 }
 
-// the gpio to use for the led indicator
-void sysledgpio(char* s)
-{
-    char *t = strstr(s, parslashquote);
-	if(t == NULL)
-	{
-		kprintf("##Led GPIO is %d#\n",g_device->led_gpio);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-	uint8_t value = atoi(t+2);
-    if ((t_end == NULL)||(value >= GPIO_NUM_MAX))
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }	
-	setLedGpio(value);
-	gpio_output_conf(value);
-	saveDeviceSettings(g_device);	
-	gpio_set_ledgpio(value); // write in nvs if any
-	sysledgpio((char*) "");
-//	led_gpio = GPIO_NONE; // for getLedGpio
-}
-
-void setLedGpio(uint8_t val) { led_gpio = val;g_device->led_gpio = val;}
-
-IRAM_ATTR uint8_t getLedGpio()
-{
-	return led_gpio;	
-}
-
 // display or change the lcd type
 void syslcd(char* s)
 {
@@ -939,7 +906,7 @@ void syslcd(char* s)
 	if(t == NULL)
 	{
 		kprintf("##LCD is %d#\n",g_device->lcd_type);
-		kprintf("##LCD Width %d, Height %d#\n",GetWidth(),GetHeight());
+		//kprintf("##LCD Width %d, Height %d#\n",GetWidth(),GetHeight());
 		return;
 	}
 	char *t_end  = strstr(t, parquoteslash);
@@ -951,7 +918,7 @@ void syslcd(char* s)
 	uint8_t value = atoi(t+2);
 	g_device->lcd_type = value; 
 	saveDeviceSettings(g_device);	
-	option_set_lcd_info(value,rotat );
+	//option_set_lcd_info(value,rotat );
 	kprintf("##LCD is %d on next reset#\n",value);
 }
 
@@ -982,7 +949,7 @@ void sysddmm(char* s)
 		g_device->options32 |= T_DDMM;
 	ddmm = (value)?1:0;
 	saveDeviceSettings(g_device);	
-	option_set_ddmm(ddmm);
+	//option_set_ddmm(ddmm);
 	sysddmm((char*) "");
 }
 /*
@@ -1060,7 +1027,7 @@ void sysrotat(char* s)
 	else 
 		g_device->options32 |= T_ROTAT;
 	rotat = value;
-	option_set_lcd_info(g_device->lcd_type,rotat );
+	//option_set_lcd_info(g_device->lcd_type,rotat );
 	saveDeviceSettings(g_device);	
 	sysrotat((char*) "");
 }
@@ -1087,9 +1054,9 @@ void syslcdout(char* s)
 	if ((value <5)&&value) value = 5; // min value
 	lcd_out = value;
 //	saveDeviceSettings(g_device);	
-	option_set_lcd_out(lcd_out);
+	//option_set_lcd_out(lcd_out);
 	syslcdout((char*) "");
-	wakeLcd();
+	//wakeLcd();
 }
 // Timer in seconds to switch off the lcd on stop state
 void syslcdstop(char* s)
@@ -1110,20 +1077,20 @@ void syslcdstop(char* s)
 	uint16_t value = atoi(t+2); 
 	if ((value <5)&& value) value = 5;
 	lcd_stop = value;	
-	option_set_lcd_stop(lcd_stop);
+	//option_set_lcd_stop(lcd_stop);
 	syslcdstop((char*) "");
-	wakeLcd();
+	//wakeLcd();
 }
 // Backlight value
 void syslcdblv(char* s)
 {
-	int lcd_blv = getBlv();
+	//int lcd_blv = getBlv();
 	
     char *t = strstr(s, parslashquote);
 	if(t == NULL)
 	{
 		kprintf("##LCD blv is ");
-		kprintf("%d#\n",lcd_blv);
+	//	kprintf("%d#\n",lcd_blv);
 		return;
 	}
 	char *t_end  = strstr(t, parquoteslash);
@@ -1135,17 +1102,17 @@ void syslcdblv(char* s)
 	int value = atoi(t+2); 
 	if (value > 100) value = 100;
 	if (value < 2) value = 2;
-	lcd_blv = value;	
-	option_set_lcd_blv(lcd_blv);
-	backlight_percentage_set(lcd_blv);
-	setBlv(lcd_blv);  // in addon
-	syslcdblv((char*) "");
-	wakeLcd();
+	//lcd_blv = value;	
+	//option_set_lcd_blv(lcd_blv);
+	//backlight_percentage_set(lcd_blv);
+	//setBlv(lcd_blv);  // in addon
+	//syslcdblv((char*) "");
+	//wakeLcd();
 }
 
 uint32_t getLcdOut()
 {
-	option_get_lcd_out(&lcd_out,&lcd_stop);
+	//option_get_lcd_out(&lcd_out,&lcd_stop);
 	return lcd_out;
 }
 uint32_t getLcdStop()
@@ -1153,73 +1120,7 @@ uint32_t getLcdStop()
 	return lcd_stop;
 }
 
-// mode of the led indicator. Blink or play/stop
-void sysled(char* s)
-{
-	extern bool ledStatus, ledPolarity;
-    char *t = strstr(s, parslashquote);
-	if(t == NULL)
-	{
-		kprintf("##Led is in %s mode#\n",((g_device->options & T_LED)== 0)?"Blink":"Play");
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }	
-	uint8_t value = atoi(t+2);
-	if (value !=0) // play mode
-	{
-	 g_device->options |= T_LED; // set
-	 ledStatus = false; 
-	 if (getState()) 
-	 { if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 0 : 1);}
-	}
-	else  // blink mode
-	{ g_device->options &= NT_LED;  // clear
-		ledStatus =true;} // options:0 = ledStatus true = Blink mode
-	
-	saveDeviceSettings(g_device);
-	sysled((char*) "");	
-}
 
-// mode of the led indicator. polarity 0 or 1
-void sysledpol(char* s)
-{
-    char *t = strstr(s, parslashquote);
-	extern bool ledPolarity;
-	if(t == NULL)
-	{
-		kprintf("##Led polarity is %d#\n",(g_device->options & T_LEDPOL)?1:0);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }	
-	uint8_t value = atoi(t+2);
-	if (value !=0) 
-	{
-		g_device->options |= T_LEDPOL; // set
-		ledPolarity = true; 
-		if (getState()) 
-		{ 
-			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(),ledPolarity ? 0 : 1);
-		}
-	}
-	else 
-	{
-		g_device->options &= NT_LEDPOL; 
-		ledPolarity =false;
-	} // options:0 = ledPolarity 
-	
-	saveDeviceSettings(g_device);	
-	sysledpol((char*) "");
-}
 
 
 // display or change the tzo for ntp
@@ -1244,13 +1145,13 @@ void tzoffset(char* s)
 	g_device->tzoffsetm = tzoffsetm;
 	saveDeviceSettings(g_device);	
 	tzoffset((char*) "");
-	addonDt(); // for addon, force the dt fetch
+	//addonDt(); // for addon, force the dt fetch
 }
 
 // print the heapsize
 void heapSize()
 {
-	kprintf("%sHEAP: %d, Internal: %d #\n",msgsys,xPortGetFreeHeapSize(),heap_caps_get_free_size(MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT) );
+	kprintf("%sHEAP: %d, Internal: %d #\n",msgsys,esp_get_free_heap_size(),heap_caps_get_free_size(MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT) );
 }
 
 // set hostname in mDNS
@@ -1363,29 +1264,16 @@ void setLogTelnet(char* s)
 	{ 
 		g_device->options &= NT_LOGTEL;  // clear
 		logTel = false;
-	} // options:0 = ledStatus true = Blink mode
-
+	}
 	setLogTelnet((char*)"");
 	saveDeviceSettings(g_device);
 }
 
-/*
-void fmSeekUp()
-{seekUp();seekingComplete(); kprintf("##FM.FREQ#: %3.2f MHz\n",getFrequency());}
-void fmSeekDown()
-{seekDown();seekingComplete(); kprintf("##FM.FREQ#: %3.2f MHz\n",getFrequency());}
-void fmVol(char* tmp)
-{clientVol(tmp);}
-void fmMute()
-{RDA5807M_unmute(RDA5807M_FALSE); }
-void fmUnmute()
-{RDA5807M_unmute(RDA5807M_TRUE);}
-*/
-
 void sys_conf()
 {
-	char* label;
+/*	char* label;
 	kprintf("##CONFIG#\n");
+	
 	gpio_get_label(&label);
 	kprintf("#LABEL: ");
 	if (label != NULL)
@@ -1401,7 +1289,7 @@ void sys_conf()
 		kprintf("%s\n",label);
 		free (label);
 	} else kprintf("no comment\n");
-}
+*/}
 
 void dbgSSL(char* s)
 {
@@ -1497,19 +1385,9 @@ void checkCommand(int size, char* s)
 		else if(strcmp(tmp+4, "heap") == 0) 	heapSize();
 		else if(strcmp(tmp+4, "boot") == 0) 	esp_restart();
 		else if(strcmp(tmp+4, "conf") == 0) 	sys_conf();
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)		
-		else if(strcmp(tmp+4, "update") == 0) 	update_firmware((char*)"KaRadio32_4");
-		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware((char*)"KaRadio32_4prv");
-#else
 		else if(strcmp(tmp+4, "update") == 0) 	update_firmware((char*)"KaRadio32");
 		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware((char*)"KaRadio32prv");
-#endif	
-		
 		else if(startsWith (  "patch",tmp+4)) 	syspatch(tmp);
-		else if(startsWith (  "ledg",tmp+4)) 	sysledgpio(tmp); //ledgpio
-		else if(startsWith (  "ledpol",tmp+4)) 	sysledpol(tmp);
-		else if(startsWith (  "led",tmp+4)) 	sysled(tmp);
 		else if(strcmp(tmp+4, "date") == 0) 	ntp_print_time();
 		else if(strncmp(tmp+4, "vers",4) == 0) 	kprintf("Release: %s, Revision: %s, KaRadio32\n",RELEASE,REVISION);
 		else if(startsWith(   "tzo",tmp+4)) 	tzoffset(tmp);
@@ -1521,7 +1399,6 @@ void checkCommand(int size, char* s)
 		else if(strcmp(tmp+4, "logv") == 0) 	setLogLevel(ESP_LOG_VERBOSE); 
 		else if(startsWith(   "logt",tmp+4)) 	setLogTelnet(tmp); 
 		else if(strcmp(tmp+4, "dlog") == 0) 	displayLogLevel();
-		else if(strncmp(tmp+4, "cali",4) == 0) 	xpt_calibrate();
 		else if(startsWith(   "log",tmp+4)) 	; // do nothing
 		else if(startsWith (  "lcdo",tmp+4)) 	syslcdout(tmp); // lcdout timer to switch off the lcd
 		else if(startsWith (  "lcds",tmp+4)) 	syslcdstop(tmp); // lcdout timer to switch off the lcd on stop state
@@ -1530,8 +1407,6 @@ void checkCommand(int size, char* s)
 		else if(startsWith (  "ddmm",tmp+4)) 	sysddmm(tmp);
 		else if(startsWith (  "host",tmp+4)) 	hostname(tmp);
 		else if(startsWith (  "rotat",tmp+4)) 	sysrotat(tmp);
-		else if(startsWith (  "henc0",tmp+4)) 	syshenc(0,tmp);
-		else if(startsWith (  "henc1",tmp+4)) 	syshenc(1,tmp);
 		else printInfo(tmp);
 	} else 
 	{
