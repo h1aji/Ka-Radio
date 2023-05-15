@@ -53,9 +53,8 @@
 #define TEMPO_SAVE_VOL	10000
 
 typedef enum {
-    I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF, BTOOTH
+    I2S, DAC_BUILT_IN, PDM, VS1053
 } output_mode_t;
-
 
 typedef struct {
     int type;               /*!< event type */
@@ -63,29 +62,12 @@ typedef struct {
     int i2;                 /*!< TIMER_xxx timer number */
 } queue_event_t;
 
-output_mode_t get_audio_output_mode() ;
-
 uint8_t getIvol();
 void setIvol( uint8_t vol);
 bool bigSram();
 
 void* kmalloc(size_t memorySize);
 void* kcalloc(size_t elementCount, size_t elementSize);
-
-
-//void sleepCallback(void *pArg);
-//void wakeCallback(void *pArg);
-uint64_t getSleep();
-uint64_t getWake();
-void startSleep(uint32_t delay);
-void stopSleep();
-void startWake(uint32_t delay);
-void stopWake();
-void noInterrupt1Ms();
-void interrupt1Ms();
-
-#define noInterrupts noInterrupt1Ms
-#define interrupts interrupt1Ms
 
 char* getIp();
 void (*serviceAddon)(void);

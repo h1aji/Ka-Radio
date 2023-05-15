@@ -1,9 +1,13 @@
-# Edit following two lines to set component requirements (see docs) wolfssl
-set(COMPONENT_REQUIRES mdns )
+# Edit following two lines to set component requirements (see docs)
+set(COMPONENT_REQUIRES
+  "mdns"
+  "nvs_flash"
+)
 set(COMPONENT_PRIV_REQUIRES )
 
 set(COMPONENT_SRCS 
         "eeprom.c"
+        "addon.c"
         "gpio.c"
         "interface.c"
         "main.c"
