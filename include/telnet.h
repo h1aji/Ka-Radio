@@ -1,10 +1,11 @@
-/*
+/******************************************************************************
+ * 
  * Copyright 2017 karawin (http://www.karawin.fr)
- */
+ *
+*******************************************************************************/
 
 #ifndef __TELNET_H__
 #define __TELNET_H__
-
 #include <stdbool.h>
 #include <stddef.h> 
 
@@ -29,9 +30,12 @@ bool istelnet(int socket);
 
 //write a txt data
 void telnetWrite(uint32_t len,const char *fmt, ...);
-//broadcast a txt data to all clients
+void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap);
+int telnetRead(int tsocket);
 
 // the telnet server task
 void telnetTask(void* pvParams) ;
 
+extern void* kmalloc(size_t memorySize);
+extern void* kcalloc(size_t elementCount, size_t elementSize);
 #endif

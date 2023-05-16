@@ -1,4 +1,4 @@
-#include "c_types.h"
+#include "stdint.h"
 
 //#define CACHE_FLASH __attribute__((section(".irom0.rodata")))
 

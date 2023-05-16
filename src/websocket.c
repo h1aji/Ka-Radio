@@ -1,55 +1,36 @@
-/* (c)jp cocatrix May 2016 
- *
- * Copyright 2016 karawin (http://www.karawin.fr)
+/******************************************************************************
  * 
- */
+ * Copyright 2017 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define TAG	"Websocket"
 
+//#include <stddef.h> /* for size_t */
 #include <string.h>
 #include "esp_system.h"
 #include "lwip/api.h"
 #include "lwip/sockets.h"
 
-#include "websocket.h"
+#include "cencode.h"
+#include "cencode.h"
+#include "libsha1.h"
+
 #include "interface.h"
 #include "webserver.h"
-#include "cencode_inc.h"
-#include "libsha1.h"
-#include "c_types.h"
+#include "websocket.h"
 
-const char strwMALLOC[] ICACHE_RODATA_ATTR STORE_ATTR  = {"inwmalloc fails for %d\n"};
-const char strwMALLOC1[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Websocket %s malloc fails\n"};
-const char strwSOCKET[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Websocket socket fails %s errno: %d\n"};
+const char strwMALLOC[] ICACHE_RODATA_ATTR = {"inwmalloc fails for %d\n"};
+const char strwMALLOC1[] ICACHE_RODATA_ATTR = {"Websocket %s malloc fails\n"};
+const char strwSOCKET[] ICACHE_RODATA_ATTR = {"Websocket socket fails %s errno: %d\n"};
 
 client_t webserverclients[NBCLIENT];
 //set of socket descriptors
 fd_set readfds;
 
-/**
- * base64_encode
- * @param data uint8_t *
- * @param length size_t
- * @param output char*
- */
- 
-void *inwmalloc(size_t n)
-{
-	void* ret;
-//printf ("ws Malloc of %d,  Heap size: %d\n",n,xPortGetFreeHeapSize( ));
-	ret = malloc(n);
-		if (ret == NULL) printf(strwMALLOC,n);
-//	printf ("ws Malloc after of %d bytes ret:%x  Heap size: %d\n",n,ret,xPortGetFreeHeapSize( ));
-	return ret;
-}	
-void inwfree(void *p,char* from)
-{
-	if (p != NULL) free(p);
-//	printf ("ws free of %x,  from %s             Heap size: %d\n",p,from,xPortGetFreeHeapSize( ));
-} 
- 
-void base64_encode(uint8_t * data, size_t length, char* output) {
-    size_t size = ((length * 1.6f) + 1);
-
+void base64_encode_local(uint8_t * data, size_t length, char* output) {
+//    size_t size = ((length * 1.6f) + 1);
     if(output) {
         base64_encodestate _state;
         base64_init_encodestate(&_state);
@@ -58,22 +39,21 @@ void base64_encode(uint8_t * data, size_t length, char* output) {
     }
 }
 
-
 /**
  * generate the key for Sec-WebSocket-Accept
  * @param clientKey char*
  * @param Output char*
  */
-void  websocketacceptKey(char* clientKey,char* Output) {
+void websocketacceptKey(char* clientKey,char* Output) {
     uint8_t sha1HashBin[20] = { 0 };
     strcat(clientKey ,"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+	
     SHA1_CTX ctx;
+	
     SHA1Init(&ctx);
-    SHA1Update(&ctx, clientKey, strlen(clientKey));
+    SHA1Update(&ctx, (const unsigned char*)clientKey, strlen(clientKey));
     SHA1Final(&sha1HashBin[0], &ctx);
-    base64_encode(sha1HashBin, 20,Output);
-//    key.trim();
-//	printf ("ws key: \"%s\"  output:\"%s\"\n",clientKey,Output);
+    base64_encode_local(sha1HashBin, 20,Output);
 }
 
 void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen) {
@@ -89,7 +69,6 @@ void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonL
 }
 
 
-
 ///////////////////////
 // init some data
 void websocketinit(void)
@@ -100,21 +79,20 @@ void websocketinit(void)
 		webserverclients[i].socket = -1;
 	}
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 // decode and build the accept answer to open the websocket
-const char str1[]  = {"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: "};
-const char s[3] = "\r\n";
 uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 {
+	const char str1[98] = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
+	const char s[3] = "\r\n";
 //	const char str2[5] = "\r\n\r\n";
 	char *tokens[12];
 	uint32_t index = 1;
-	uint32_t i;
 	char key [24+36+1]; //24 bytes
 	uint32_t outputLength;
 	char encodedSha1 [41];
 	uint32_t encodedLength;
-//	printf("ws decode entry outputMessage: %x\n",outputMessage);
 	//Split the message into substrings to identify it
 	tokens[0] = strtok(inputMessage, s);
 	while( (tokens[index-1] != NULL)&& (index < 12) )
@@ -134,21 +112,19 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 		}
 	}
 	//compute the accept key
-//	printf("ws decode entry3 outputMessage: %x\n",outputMessage);
 	websocketacceptKey(key,encodedSha1);
 	//Fill Output Buffer
 	encodedLength = strlen(encodedSha1);
 	outputLength = encodedLength + strlen(str1) + 2*strlen(s);
-//	printf("ws decode entry4 outputMessage: %x\n",outputMessage);
 	
 	strcpy(outputMessage,str1);
 	strcat(outputMessage,encodedSha1);
 	strcat(outputMessage,s);
 	strcat(outputMessage,s);
 	//Add extra /n/r at the end
-//	printf("ws decode HTTP: %x \"%s\"\n",outputMessage,outputMessage);
 	return outputLength;
 }
+
 /////////////////////////////////////////////////////////////////////
 // a socket with a websocket request. Note it and answer to the client
 bool websocketnewclient(int socket)
@@ -169,7 +145,6 @@ bool websocketnewclient(int socket)
 void websocketremoveclient(int socket)
 {
 	int i ;
-//	printf("ws removeclient:%d\n",socket);
 	for (i = 0;i<NBCLIENT;i++) 
 		if (webserverclients[i].socket == socket) 
 		{
@@ -192,16 +167,12 @@ bool iswebsocket( int socket)
 // send a message to client
 bool sendFrame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length )
 {
-    uint8_t maskKey[4] = { 0x00, 0x00, 0x00, 0x00 };
     uint8_t buffer[WEBSOCKETS_MAX_HEADER_SIZE] = { 0 };
     uint8_t headerSize;
     uint8_t * headerPtr;
     uint8_t * payloadPtr = payload;
-    bool useInternBuffer = false;
-    bool ret = true;
 
     // calculate header Size
-//	printf("websocket len: %d  payload: %s\n",length,payload);
     if(length < 126) {
         headerSize = 2;
     } else if(length < 0xFFFF) {
@@ -257,7 +228,6 @@ bool sendFrame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length 
     // send payload
         write(socket,payloadPtr, length) ;
     }
-//	printf("websocket len: %d  payloadPtr: %s\n",length,payloadPtr);
     return true;
 }
 
@@ -267,12 +237,11 @@ void websocketparsedata(int socket, char* buf, int len)
 {
 	int recbytes = len;
 	wsMessageHeader_t header;
-	uint8_t * payload = buf;
+	uint8_t * payload = (uint8_t *)buf;
 	uint8_t headerLen = 2;
+	header.maskKey = 0;
 	if (!iswebsocket(socket)) return;
-//	printf("ws parsedata entry1  recbytes:%d\n",recbytes);
 	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
-//	printf("ws parsedata entry11  recbytes:%d\n",recbytes);
 	header.fin = ((*payload >> 7) & 0x01);
 	header.opCode = (wsopcode_t) (*payload & 0x0F);
 	payload++; // second bytes
@@ -283,13 +252,11 @@ void websocketparsedata(int socket, char* buf, int len)
 	if(header.payloadLen == 126) {
 		headerLen += 2;
 		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
-//	printf("ws parsedata entry2 recbytes:%d\n",recbytes);
         header.payloadLen = payload[0] << 8 | payload[1];
         payload += 2;
     } else if(header.payloadLen == 127) {
 		headerLen += 8;
 		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);		
-// 	printf("ws parsedata entry3 recbytes:%d\n",recbytes);
        if(payload[0] != 0 || payload[1] != 0 || payload[2] != 0 || payload[3] != 0) {
             // really to big!
             header.payloadLen = 0xFFFFFFFF;
@@ -306,13 +273,11 @@ void websocketparsedata(int socket, char* buf, int len)
     if(header.mask) {
 	    headerLen += 4;	
 		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
-//	printf("ws parsedata entry4 recbytes:%d\n",recbytes);
 		header.maskKey = payload;
         payload += 4;
     }	
 	 headerLen += header.payloadLen;	
 	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
-//	printf("ws parsedata entry5 recbytes:%d\n",recbytes);
 //
 	if(header.payloadLen > 0) {		
 		if(header.mask) {
@@ -325,10 +290,6 @@ void websocketparsedata(int socket, char* buf, int len)
     }
 	payload[header.payloadLen] = 0x00;	   
 	
-/*	
-	if (header.opCode == WSop_text)
-		printf("ws parsedata data  socket:%d, opcode: %d,  payload:%s   len:%d\n",socket,header.opCode,payload,header.payloadLen);
-*/
 // ok payload is unmasked now.	
         switch(header.opCode) {
             case WSop_text:
@@ -357,16 +318,17 @@ void websocketparsedata(int socket, char* buf, int len)
 //write a txt data
 void websocketwrite(int socket, char* buf, int len)
 {
-	sendFrame(socket, WSop_text, buf , len );
-}	
+	sendFrame(socket, WSop_text, (uint8_t *)buf , len );
+}
+
 //broadcast a txt data to all clients
 void websocketbroadcast(char* buf, int len)
 {
 	int i ;
+	ESP_LOGV(TAG,"websocketbroadcast: %s",buf);
 	for (i = 0;i<NBCLIENT;i++)	
 		if (iswebsocket( webserverclients[i].socket))
 		{
-//printf("ws broadcast to %d, freeheap:%d, msg:\"%s\"\n",webserverclients[i].socket,xPortGetFreeHeapSize( ),buf);
 			websocketwrite( webserverclients[i].socket,  buf, len);
 		}
 }	
@@ -374,67 +336,50 @@ void websocketbroadcast(char* buf, int len)
 void websocketlimitedbroadcast(int socket,char* buf, int len)
 {
 	int i ;
+	ESP_LOGV(TAG,"websocketlimitedbroadcast: %s",buf);
 	for (i = 0;i<NBCLIENT;i++)	
 		if (iswebsocket( webserverclients[i].socket))
 		{
-//printf("ws broadcast to %d omit %d,freeheap:%d,  msg:\"%s\"\n",webserverclients[i].socket,socket,xPortGetFreeHeapSize( ),buf);
 			if (webserverclients[i].socket != socket) websocketwrite( webserverclients[i].socket,  buf, len);
 		}
 }	
 
 
-ICACHE_FLASH_ATTR void websocketAccept(int wsocket,char* bufin,int buflen)
+void websocketAccept(int wsocket,char* bufin,int buflen)
 {
 int32_t recbytes = 0;
-//char *buf = NULL;
-char buf[150];
-	struct timeval timeout;      
-    timeout.tv_sec = 1000; // bug *1000 for seconds
-    timeout.tv_usec = 0;	
+	char buf[150];
 	bufin[buflen] = 0;
-//printf("ws write accept request entry soc: %d\n",wsocket);
-	if (setsockopt (wsocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-			printf(strwSOCKET,"setsockopt",errno);
-	if ((!iswebsocket(wsocket ))&&(websocketnewclient(wsocket))) 
-	{
-		recbytes = decodeHttpMessage (bufin, buf);
-		buf[recbytes] = 0;
-//printf("ws write accept request:\n \"%s\" len:%d  socket: %d\n",buf,recbytes,wsocket);
-		write(wsocket, buf, recbytes);  // reply to accept	
-	}		
+		if ((!iswebsocket(wsocket ))&&(websocketnewclient(wsocket))) 
+		{
+			recbytes = decodeHttpMessage (bufin, buf);
+			buf[recbytes+1] = 0;
+			write(wsocket, buf, strlen(buf));  // reply to accept	
+		}
 }
 
-ICACHE_FLASH_ATTR int websocketRead(int conn)
+int websocketRead(int conn)
 {
-	char *buf = NULL;
-	buf = (char *)inwmalloc(MAXDATA);
+	char buf[MAXDATA];
 	int32_t recbytes = 0;
-    if (buf == NULL)
-	{
-		vTaskDelay(100); // wait a while and retry
-		buf = (char *)inwmalloc(MAXDATA);	
-	}	
 	if (buf != NULL)
 	{
 		recbytes = read(conn , buf, MAXDATA);
 		if (recbytes < 0) {
 			if ((errno != EAGAIN )&&(errno != 0 ))
 			{
-				inwfree(buf,"websRead");
-				if (errno != ECONNRESET )
+				if ((errno != 104 /*ECONNRESET*/ )&&(errno != 113 /*EHOSTUNREACH*/ ))
 				{
 					printf (strwSOCKET,"read", errno);
 					wsclientDisconnect(conn, 500,NULL,0);		
-				} // else websocketremoveclient(conn);
+				}
 				return recbytes;
-			} //else printf("ws try again\n");
+			}
 		}
 		if (recbytes > 0)
 		{
-			buf = realloc(buf,recbytes+1);
 			websocketparsedata(conn, buf, recbytes);
 		}
-		inwfree(buf,"websRead");	
 	}
 	return recbytes;
 }

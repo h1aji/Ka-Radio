@@ -101,7 +101,6 @@ div.LEFT {
 	color:#f8f8f8;
 	background-color:#39c;
 	padding:4px 4px;
-
 }
 .CONTENT p {
 	font-size:15px;
@@ -204,7 +203,8 @@ ul#ordered li {float:none;text-align:left;}
 }
 .tabs input[type=range] {
 	min-width:200px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -218,7 +218,8 @@ ul#ordered li {float:none;text-align:left;}
 	font-size:12px;
 	width:140px;
 	height:20px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -232,7 +233,8 @@ ul#ordered li {float:none;text-align:left;}
 	font-size:14px;
 	min-width:70px;
 	height:20px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -246,7 +248,8 @@ ul#ordered li {float:none;text-align:left;}
 	font-size:14px;
 	width:140px;
 	height:20px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -260,7 +263,8 @@ ul#ordered li {float:none;text-align:left;}
 	font-size:14px;
 	min-width:140px;
 	height:30px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -274,7 +278,8 @@ ul#ordered li {float:none;text-align:left;}
 	font-size:14px;
 	min-width:100px;
 	height:25px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -289,13 +294,12 @@ ul#ordered li {float:none;text-align:left;}
 	box-shadow: 3px 3px 15px 0 rgba(0,0,0,0.24),3px 3px 3px 0 rgba(0,0,0,0.24)	
 }
 
-
-
 .tabs [id^="sw"] input[type="button"] {
 	font-size:14px;
 	min-width:50px;
 	height:25px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -309,7 +313,8 @@ ul#ordered li {float:none;text-align:left;}
 	font-size:14px;
 	min-width:100px;
 	height:30px;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -324,7 +329,8 @@ ul#ordered li {float:none;text-align:left;}
 	background-color:#f8f8ff;
 	border:1px solid #111;
 	border:1px solid #ccc;
-	background-color:#f8f8ff background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
+	background-color:#f8f8ff;
+	background:-webkit-linear-gradient(F8F8F8,#e8e8ef);
 	background:-moz-linear-gradient(#f8f8f8,#e8e8ef);
 	background:-ms-linear-gradient(F8F8F8,#e8e8ef);
 	background:-o-linear-gradient(#f8f8f8,#e8e8ef);
@@ -420,6 +426,7 @@ table#stationsTable tr:nth-child(odd)
 {
 	background-color: #f0f0f0;
 }
+
 a.page {
 	font-size:18pt!important;
 	margin-right:10px
@@ -462,4 +469,3 @@ a.page {
 .modal-body {
 	padding: 2px 16px
 }
-

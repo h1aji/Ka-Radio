@@ -1,46 +1,56 @@
-#ifndef __INTERFACE_H__
-#define __INTERFACE_H__
+/******************************************************************************
+ * 
+ * Copyright 2018 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
+#ifndef INTERFACE_H
+#define INTERFACE_H
+#include "esp_log.h"
+#include "telnet.h"
+#include "addon.h"
 
-#undef PSTR
-#undef PROGMEM
-//#define PROGMEM   ICACHE_RODATA_ATTR
-#define PROGMEM  __attribute__((section(".irom.text")))
-#define PSTR(s) (__extension__({ static const char __c[] STORE_ATTR __attribute__((section(".irom.text"))) = {s}; &__c[0];}))
-#define MAXDATAT 256
+#define PSTR(s) (s)
+#define MAXDATAT	 256
 
+#define RELEASE "2.3"
+#define REVISION "0"
 
-#define RELEASE "3.0"
-#define REVISION "1"
-
-
-extern unsigned short adcdiv;
-extern char* getIp() ;
+uint32_t checkUart(uint32_t speed);
+extern unsigned short adcdiv;	
 void switchCommand(void );
 void checkCommand(int size, char* s);
+esp_log_level_t getLogLevel();
+void setLogLevel(esp_log_level_t level);
 void wifiConnectMem();
 char* webInfo();
 char* webList(int id);
+uint16_t getCurrentStation();
+void setCurrentStation( uint16_t vol);
+void clientVol(char *s);
+uint8_t getLedGpio();
+void setLedGpio(uint8_t val);
+uint32_t getLcdOut();
+uint32_t getLcdStop();
+bool getAutoWifi(void);
+void setAutoWifi();
+int8_t get_rssi(void);
+void fmSeekUp();
+void fmSeekDown();
+void fmVol(char* tmp);
+void fmMute();
+void fmUnmute();
+void setDdmm(uint8_t dm);
+uint8_t getDdmm();
+void setRotat(uint8_t dm);
+uint8_t getRotat();
 void setHostname(char* s);
-
-int kasprintf(char *str, const char *format, ...);
 
 #define kprintf(fmt, ...) do {    \
 		telnetWrite(printf(fmt, ##__VA_ARGS__),fmt, ##__VA_ARGS__); \
+		addonParse(fmt, ##__VA_ARGS__);\
 	} while (0)
 
-//		vTaskDelay(0); \
-
-//#define kprintf(fmt, ...) do {    \
-        printf(fmt, ##__VA_ARGS__);   \
-		telnetWrite(2*MAXDATAT,fmt, ##__VA_ARGS__); \
-	} while (0)
-/*		
-#define kprintfl(fmt, ...) do {    \
-        printf(fmt, ##__VA_ARGS__);   \
-		telnetWrite(1024,fmt, ##__VA_ARGS__); \
-	} while (0)
-*/	
-
-
+void lkprintf(const char *format, va_list ap);
+	
 #endif

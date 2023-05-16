@@ -1,9 +1,8 @@
-/*
- * Copyright 2017 jp Cocatrix (http://www.karawin.fr)
- */
-
-#ifndef __NTP_H__
-#define __NTP_H__
+/******************************************************************************
+ * 
+ * Copyright 2018 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
 #include <time.h>
 
@@ -26,5 +25,6 @@ typedef struct {
 // print locale date time in ISO-8601 local time
 bool ntp_get_time(struct tm **dt);
 void ntp_print_time();
-
-#endif
+int8_t  applyTZ(struct tm *time);
+extern void* kmalloc(size_t memorySize);
+extern void* kcalloc(size_t elementCount, size_t elementSize);

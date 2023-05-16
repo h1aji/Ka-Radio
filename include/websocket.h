@@ -1,16 +1,17 @@
-/*
+/******************************************************************************
+ * 
  * Copyright 2017 karawin (http://www.karawin.fr)
- */
+ *
+*******************************************************************************/
 
 #ifndef __WEBSOCKET_H__
 #define __WEBSOCKET_H__
+
 // max size of the WS Message Header
 #define WEBSOCKETS_MAX_HEADER_SIZE  (14)
 
-
 #define NBCLIENT 5
 #define MAXDATA	 528
-
 
 typedef enum {
     WSop_continuation = 0x00, ///< %x0 denotes a continuation frame
@@ -56,6 +57,8 @@ bool iswebsocket( int socket);
 void websocketparsedata(int socket,char* buf, int recbytes);
 //write a txt data
 void websocketwrite(int socket,char* buf, int len);
+//read a txt data
+int websocketRead(int conn);
 //broadcast a txt data to all clients
 void websocketbroadcast(char* buf, int len);
 //broadcast a txt data to all clients but the sender

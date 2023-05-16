@@ -1,8 +1,8 @@
-/* 
+/******************************************************************************
+ * 
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
- * Main task for the websocket and telnet servers.
- */
+*******************************************************************************/
 
 #ifndef __SERVERS_H__
 #define __SERVERS_H__

@@ -9,24 +9,23 @@
 // custom function to apply a timezone to the supplied tm struct
 // hard coded rules
 
-#include "esp_system.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 #include <time.h>
-
 #include "eeprom.h"
 
-ICACHE_FLASH_ATTR int8_t  applyTZ(struct tm *time) {
+int8_t applyTZ(struct tm *time) {
 
 	bool dst = false;
-	struct device_settings *device;
-	device = getDeviceSettings();
-	int8_t tzo = 0;
-	if (device != NULL)	 {
-		tzo = device->tzoffset;
-		free(device);
-	} 
-	
+	int8_t tzo = g_device->tzoffseth;
+	if ((unsigned char)g_device->tzoffsetm == 0xFF) g_device->tzoffsetm = 0; // if not initialized
+	int8_t tzom = g_device->tzoffsetm;
+ 
 	// apply base timezone offset
 //	time->tm_hour += 1; // e.g. central europe
+	time->tm_min += tzom;
 	time->tm_hour += tzo;
 
 	// call mktime to fix up (needed if applying offset has rolled the date back/forward a day)

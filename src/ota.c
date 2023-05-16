@@ -1,62 +1,291 @@
-/*
- * Copyright 2016 jp Cocatrix (http://www.karawin.fr)
- */
+/******************************************************************************
+ * 
+ * Copyright 2017 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define TAG "OTA"
+
+#include <string.h>
+#include <sys/socket.h>
 #include "esp_system.h"
-//#include "upgrade.h"
-#include "math.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
+#include "esp_log.h"
+#include "esp_ota_ops.h"
+#include "esp_event.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
+
 #include "interface.h"
+#include "webclient.h"
+#include "app_main.h"
+#include "websocket.h"
+#include "ota.h"
 
-//#define pheadbuffer "Connection: keep-alive\r\n\
-//Cache-Control: no-cache\r\n\
-//User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36 \r\n\
-//Accept: */*\r\n\
-//Accept-Encoding: gzip,deflate,sdch\r\n\
-//\r\n"
+#define BUFFSIZE 1024
 
-#define pheadbuffer "Connection: keep-alive\r\nCache-Control: no-cache\r\nUser-Agent: Karadio 1.5 \r\nAccept: */*\r\nAccept-Encoding: gzip,deflate,sdch\r\n\r\n"
+const char strupd[] = {"GET /%s.bin HTTP/1.1\r\nHost: karadio.karawin.fr:80\r\n\r\n"};
 
-#define pheadbuffer1 "Connection: close\r\n\
-Accept: */*\r\n\
-Accept-Encoding: gzip,deflate,sdch\r\n\
-Cache-Control: no-cache\r\n\
-\r\n"
+/*an ota data write buffer ready to write to the flash*/
+static char ota_write_data[BUFFSIZE + 1] = { 0 };
+/*an packet receive buffer*/
+static char text[BUFFSIZE + 1] = { 0 };
+/* an image total length*/
+static int binary_file_length = 0;
+static bool taskState = false;
 
-const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR  = {\
-"GET /user%d.4096.%s.4.bin HTTP/1.0\r\nHost: karadio.karawin.fr:80\r\n\
-Connection: keep-alive\r\nCache-Control: no-cache\r\nUser-Agent: Karadio 1.5 \r\n\
-Accept: */*\r\nAccept-Encoding: gzip,deflate,sdch\r\n\r\n"};
-
-extern void wsUpgrade(const char* str,int count,int total);
+static unsigned int  reclen = 0;
+	
 
 /******************************************************************************
- * FunctionName : user_esp_upgrade_rsp
- * Description  : upgrade check call back function
+ * FunctionName : wsUpgrade
+ * Description  : send the OTA feedback to websockets
+ * Parameters   : number to send as string
+ * Returns      : none
+*******************************************************************************/
+void wsUpgrade(const char* str,int count,int total)
+{
+	char answer[50];
+	if (strlen(str)!= 0)
+		sprintf(answer,"{\"upgrade\":\"%s\"}",str);
+	else		
+	{
+		int value = count*100/total;
+		memset(answer,0,50);
+		if (value >= 100)
+			sprintf(answer,"{\"upgrade\":\"Done. Refresh the page.\"}");
+		else
+		if (value == 0)
+			sprintf(answer,"{\"upgrade\":\"Starting.\"}");
+		else
+			sprintf(answer,"{\"upgrade\":\"%d / %d\"}",value,100);
+	}
+	websocketbroadcast(answer, strlen(answer));
+}
+
+
+/*read buffer by byte still delim ,return read bytes counts*/
+static int read_until(char *buffer, char delim, int len)
+{
+//  /*TODO: delim check,buffer check,further: do an buffer length limited*/
+    int i = 0;
+    while (buffer[i] != delim && i < len) {
+        ++i;
+    }
+    return i + 1;
+}
+
+/* resolve a packet from http socket
+ * return true if packet including \r\n\r\n that means http packet header finished,start to receive packet body
+ * otherwise return false
+ * */
+static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t update_handle)
+{
+    /* i means current position */
+    int i = 0, i_read_len = 0;
+    while (text[i] != 0 && i < total_len) {
+        i_read_len = read_until(&text[i], '\n', total_len);
+        // if we resolve \r\n line,we think packet header is finished
+        if (i_read_len == 2) {
+            int i_write_len = total_len - (i + 2);
+            memset(ota_write_data, 0, BUFFSIZE);
+            /*copy first http packet body to write buffer*/
+            memcpy(ota_write_data, &(text[i + 2]), i_write_len);
+
+            esp_err_t err = esp_ota_write( update_handle, (const void *)ota_write_data, i_write_len);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
+                return false;
+            } else {
+                ESP_LOGI(TAG, "esp_ota_write header OK");
+                binary_file_length += i_write_len;
+            }
+            return true;
+        }
+        i += i_read_len;
+    }
+    return false;
+}
+
+
+/******************************************************************************
+ * FunctionName : ota task
+ * Description  : 
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-void user_esp_upgrade_rsp(void *arg)
+static void ota_task(void *pvParameter)
 {
-	struct upgrade_server_info *server = (struct upgrade_server_info *)arg;
-	if(server->upgrade_flag == true){
-//		kprintf(PSTR("FW upgrade success.%c"),0x0d);
-		wsUpgrade("FW OK Refresh the page" , 0,100);
-		system_upgrade_reboot();
-	} else {
-//		kprintf(PSTR("-ERR: FW upgrade failed.%c"),0x0d);
-		wsUpgrade("FW upgrade failed." , 0,100);
+	// the get request
+	char http_request[80] = {0};
+	struct hostent *serv ;
+	int sockfd;
+	struct sockaddr_in dest;	
+	char* name = (char*)pvParameter; // name of the bin file to load
+    unsigned int cnt =0;
+	clientDisconnect("OTA");
+
+	//esp32: found a partition to flash
+    esp_err_t err;
+    /* update handle : set by esp_ota_begin(), must be freed via esp_ota_end() */
+    esp_ota_handle_t update_handle = 0 ;
+    const esp_partition_t *update_partition = NULL;
+
+    ESP_LOGI(TAG, "Starting update ...");
+	kprintf("Starting update ...\n");
+	wsUpgrade( "",0,100);
+    const esp_partition_t *configured = esp_ota_get_boot_partition();
+    const esp_partition_t *running = esp_ota_get_running_partition();
+
+    if (configured != running) {
+        ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08x, but running from offset 0x%08x",
+                 configured->address, running->address);
+        ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
+    }
+    ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
+             running->type, running->subtype, running->address);
+
+	// prepare connection to the server
+	serv =(struct hostent*)gethostbyname("karadio.karawin.fr");
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if(sockfd >= 0) {ESP_LOGI(TAG,"WebClient Socket created"); }
+	else {ESP_LOGE(TAG,"socket create errno: %d",errno);wsUpgrade("Failed: socket errno", 0,100); goto exit;}
+	bzero(&dest, sizeof(dest));	
+    dest.sin_family = AF_INET;
+    dest.sin_port   = htons(80);
+    dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0]))); // remote server ip
+	ESP_LOGI(TAG,"distant ip: %x   ADDR:%s\n", dest.sin_addr.s_addr, inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0])));
+
+	/*---Connect to server---*/
+	if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0)
+		{ESP_LOGI(TAG,"Connected to server");}
+	else
+	{
+		ESP_LOGE(TAG, "Connect to server failed! errno=%d", errno);
+		close(sockfd);
+		wsUpgrade("Connect to server failed!" , 0,100);
+		goto exit;
 	}
-    free(server->url);
-    server->url = NULL;
+
+	 int res = -1;
+    /*send GET request to http server*/
+	sprintf(http_request,strupd,name);
+	ESP_LOGV(TAG,"request sent: %s",http_request);
+    res = send(sockfd, http_request, strlen(http_request), 0);
+    if (res == -1) {
+        ESP_LOGE(TAG, "Send GET request to server failed");
+		wsUpgrade("Send GET request to server failed" , 0,100);
+        goto exit;
+    } else {
+        ESP_LOGI(TAG, "Send GET request to server succeeded");
+    }
+
+	update_partition = esp_ota_get_next_update_partition(NULL);
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%x",
+             update_partition->subtype, update_partition->address);
+    assert(update_partition != NULL);
+    err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_begin failed, error=%d", err);
+		wsUpgrade("esp_ota_begin failed" , 0,100);
+        goto exit;
+    }
+    ESP_LOGI(TAG, "esp_ota_begin succeeded");
+
+    bool resp_body_start = false, flag = true;
+    /*deal with all receive packet*/
+    while (flag) {
+		vTaskDelay(1);
+        memset(text, 0, BUFFSIZE);
+        memset(ota_write_data, 0, BUFFSIZE);
+        int buff_len = recv(sockfd, text, BUFFSIZE, 0);
+        if (buff_len < 0) { /*receive error*/
+            ESP_LOGE(TAG, "Error: receive data error! errno=%d", errno);
+			kprintf("Error: receive data error! errno=%d\n", errno);
+			wsUpgrade("Error: receive data error!" , 0,100);
+            goto exit;
+        } else if (buff_len > 0 && !resp_body_start) 
+		{ /*deal with response header*/
+			/*the header*/
+			char header[BUFFSIZE + 1] = { 0 };
+			strncat(header,text,buff_len);
+            resp_body_start = read_past_http_header(text, buff_len, update_handle);
+			if (resp_body_start)
+			{
+				char* str = NULL;
+				str=strstr(header,"Content-Length:");
+				if (str!=NULL) reclen = atoi(str+15);				
+				ESP_LOGI(TAG, "must receive:%d bytes",reclen);
+				kprintf("must receive:%d bytes\n",reclen);
+			}
+
+        } else if (buff_len > 0 && resp_body_start) { /*deal with response body*/
+            memcpy(ota_write_data, text, buff_len);
+            err = esp_ota_write( update_handle, (const void *)ota_write_data, buff_len);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "Error: esp_ota_write failed! err=0x%x", err);
+				kprintf("Error: esp_ota_write failed! err=0x%x\n", err);
+				wsUpgrade("Error: esp_ota_write failed!" , 0,100);
+                goto exit;
+            }
+			vTaskDelay(1);			
+            binary_file_length += buff_len;
+//            ESP_LOGI(TAG, "Have written image length %d  of  %d", binary_file_length,reclen);
+			cnt = (cnt+1) & 0x1F;
+			if (cnt ==0){
+				kprintf("Written  %d  of  %d\n", binary_file_length,reclen);
+				wsUpgrade( "",binary_file_length,reclen);
+			}
+			if (binary_file_length >= reclen)
+			{
+				flag = false; // all received, exit
+				kprintf("Have written image length %d  of  %d\n", binary_file_length,reclen);
+				wsUpgrade("", binary_file_length,reclen);				
+				ESP_LOGI(TAG, "Connection closed, all packets received");
+				kprintf("\nConnection closed, all packets received\n");
+				close(sockfd);
+			}
+        } else if (buff_len == 0) {  /*packet over*/
+            flag = false;
+            ESP_LOGI(TAG, "Connection closed, all packets not received");
+			kprintf("\nConnection closed, all packets not received\n");
+            close(sockfd);
+        } else {
+            ESP_LOGE(TAG, "Unexpected recv result");
+        }
+/*
+		TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+		TIMERG0.wdt_feed=1;
+		TIMERG0.wdt_wprotect=0;
+*/
+	}
+	kprintf("\n");
+    ESP_LOGI(TAG, "Total Write binary data length : %d", binary_file_length);
+	kprintf("Total Write binary data length : %d\n", binary_file_length);
+
+    if (esp_ota_end(update_handle) != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end failed!");
+		kprintf("esp_ota_end failed!\n");
+		wsUpgrade("esp_ota_end failed!" , 0,100);
+        goto exit;
+    }
+    err = esp_ota_set_boot_partition(update_partition);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
+		kprintf("esp_ota_set_boot_partition failed!\n");
+		wsUpgrade("esp_ota_set_boot_partition failed!" , 0,100);
+        goto exit;
+    }
+    ESP_LOGI(TAG, "Prepare to restart system!");
+	kprintf("Update firmware succeded. Restarting\n");
+	vTaskDelay(10);
+    esp_restart();	
 	
-    free(server);
-    server = NULL;	
+	exit:
+	taskState = false;
+	close(sockfd);
+	(void)vTaskDelete( NULL ); 	
 }
 
 /******************************************************************************
@@ -67,49 +296,16 @@ void user_esp_upgrade_rsp(void *arg)
 *******************************************************************************/
 void update_firmware(char* fname)
 {
-    kprintf(PSTR("update  firmware \r%c"),0x0d);
-    uint8_t current_id = system_upgrade_userbin_check();
-//    kprintf(PSTR("current id %d\n"), current_id);
-	clientDisconnect(PSTR("Update"));
-//	char* client_url = "karadio.karawin.fr";
-
-//#define bin_url  "user%d.4096.%s.4.bin"
-	
-    struct upgrade_server_info *server = NULL;
-    server = (struct upgrade_server_info *)malloc(sizeof(struct upgrade_server_info));
-    memset(server, 0, sizeof(struct upgrade_server_info));
-    server->check_cb = user_esp_upgrade_rsp;   //set upgrade check call back function
-    server->check_times = 360000;
-	server->upgrade_flag = true;
-	
-    if (server->url == NULL) {
-        server->url = (uint8_t *)malloc(512);
-    }
-
-    flash_size_map f_size = system_get_flash_size_map();
-    kprintf(PSTR("flash size  %d\n"),f_size);
-    if (current_id == 0) {
-		 current_id = 2;
-	} else current_id = 1;
-
-	char* fmt = malloc(strlen(strupd)+16);
-	flashRead(fmt,(int)strupd,strlen(strupd));
-	fmt[strlen(strupd)] = 0;
-	sprintf(server->url,fmt ,current_id,fname);
-	free(fmt);
-
-//    sprintf(server->url, "GET /user%d.4096.%s.4.bin HTTP/1.0\r\nHost: %s:80\r\n"pheadbuffer"",current_id,fname, client_url);
-//printf("http_req : %s\n", server->url);
-	
-	struct hostent *serv ;
-	serv =(struct hostent*)gethostbyname("karadio.karawin.fr");
-    server->sockaddrin.sin_family = AF_INET;
-    server->sockaddrin.sin_port   = htons(80);
-    server->sockaddrin.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0]))); // remote server ip
-//printf("distant ip: %x   ADDR:%s\n",server->sockaddrin.sin_addr.s_addr,inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0])));
-
-    if (system_upgrade_start(server) == false) {
-        kprintf(PSTR("upgrade error%c"),0x0d);
-    }
+	if (!taskState)
+	{
+		taskState = true;
+		xTaskHandle pxCreatedTask;
+		xTaskCreatePinnedToCore(ota_task, "ota_task", 8192, fname, PRIO_OTA, &pxCreatedTask,CPU_OTA);
+		ESP_LOGI(TAG, "ota_task: %x",(unsigned int)pxCreatedTask);
+	} else
+	{
+		ESP_LOGI(TAG, "ota_task: already running. Ignore");
+		wsUpgrade("Update already running. Ignored." , 0,100);
+	}
 
 }

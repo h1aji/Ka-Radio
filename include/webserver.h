@@ -1,6 +1,8 @@
-/*
- * Copyright 2016 karawin (http://www.karawin.fr)
- */
+/******************************************************************************
+ * 
+ * Copyright 2018 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
 #pragma once
 
@@ -28,7 +30,17 @@ void sleepCallback(void *pArg);
 void wakeCallback(void *pArg);
 void startSleep(uint32_t delay);
 void stopSleep();
+void startWake(uint32_t delay);
 void stopWake();
 void serverclientTask(void *pvParams);
+void playStationInt(int sid);
+void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length);
+uint16_t getVolume(void);
+void setVolume(char* vol);
+void setVolumei(int16_t vol);
+void setRelVolume(int8_t vol);
+
+uint64_t getSleep();
+uint64_t getWake();
 
 #endif

@@ -1,8 +1,8 @@
 var content = "Content-type",
 	ctype = "application/x-www-form-urlencoded",
 	cjson = "application/json";
-var auto,intervalid, intervalrssi  , timeid, websocket,urlmonitor , e, moniPlaying = false,editPlaying = false, curtab = "tab-content1",stchanged = false,maxStation = 255,themeIn = "0";
-const karadio = "Karadio";
+var auto,intervalid , intervalrssi  , timeid, websocket,urlmonitor , e, moniPlaying = false,editPlaying = false, editIndex= 0 ,curtab = "tab-content1",stchanged = false,maxStation = 255,themeIn = "0";
+const karadio = "Karadio32";
 const working = "Working.. Please Wait";
 
 function openwebsocket(){	
@@ -12,8 +12,8 @@ function openwebsocket(){
 
 	websocket.onmessage = function (event) {
 	try{	
-	    var arr = JSON.parse(event.data);		
 		console.log("onmessage:"+event.data);
+	    var arr = JSON.parse(event.data);		
 		if (arr["meta"] == "") 
 		{ document.getElementById('meta').innerHTML = karadio;setMainHeight(curtab);}
 		if (arr["meta"]) 
@@ -22,6 +22,8 @@ function openwebsocket(){
 			}
 		changeTitle(document.getElementById('meta').innerHTML);
 		if (arr["wsvol"]) onRangeVolChange(arr['wsvol'],false); 
+		if (arr["lsleep"]) labelSleep(arr["lsleep"]); 
+		if (arr["lwake"]) labelWake(arr["lwake"]); 
 		if (arr["wsicy"]) icyResp(arr["wsicy"]); 
 		if (arr["wssound"]) soundResp(arr["wssound"]); 
 		if (arr["monitor"]) playMonitor(arr["monitor"]); 
@@ -33,7 +35,6 @@ function openwebsocket(){
 		if (arr["iport"]) {document.getElementById('instant_port').value = arr["iport"];buildURL();}
 	} catch(e){ console.log("error"+e);}
 }
-
 	websocket.onopen = function (event) {
 		console.log("Open, url:"+"ws://"+window.location.host+"/");
 		if(window.timerID){ /* a setInterval has been fired */
@@ -66,7 +67,7 @@ function changeTitle($arr) {
 function wsaskrssi(){
 	try{
 			websocket.send("wsrssi &");	
-	} catch(e){ console.log("error wsaskrssi"+e);}
+	} catch(e){ console.log("error"+e);}
 }
 
 function wsplayStation($arr){
@@ -157,13 +158,29 @@ function clickdhcp() {
       document.getElementById("gw").removeAttribute("disabled") ;
   }
 }  
+function clickdhcp2() {
+  if (document.getElementById("dhcp2").checked)
+  {
+    document.getElementById("ip2").setAttribute("disabled","") ;
+    document.getElementById("mask2").setAttribute("disabled","") ;
+    document.getElementById("gw2").setAttribute("disabled","") ;
+  } else {
+      document.getElementById("ip2").removeAttribute("disabled") ;
+      document.getElementById("mask2").removeAttribute("disabled") ;
+      document.getElementById("gw2").removeAttribute("disabled") ;
+  }
+}  
+
 
 function valid() {
 	wifi(1);
     alert("System reboot. Please change your browser address to the new one.");
 }
 
-
+function validOutput() {
+	hardware(1);
+    alert("System reboot.");
+}
 
 function scrollTo(to, duration) {
     if (duration < 0) return;
@@ -199,18 +216,15 @@ function dtime() {
 		--eltw.innerHTML;
 	if ((!isNaN(eltw.innerHTML))&&(eltw.innerHTML == 0)) eltw.innerHTML = "0";
 }
-
 // return the timezone (+/-x)
-function timezone() {
-    var offset = new Date().getTimezoneOffset();
+function timezone(offset) {
     var minutes = Math.abs(offset);
     var hours = Math.floor(minutes / 60);
+	minutes = Math.abs(offset%60);
     var prefix = offset < 0 ? "+" : "-";
-	document.getElementById('atzo').innerHTML = prefix+hours;	
-//    return prefix+hours;
+//	document.getElementById('atzo').innerHTML = prefix+hours+":"+minutes;	
+    return prefix+hours+":"+minutes;	
 }
-
-
 
 function labelSleep(label){
 	document.getElementById('sminutes').innerHTML = label;	
@@ -237,8 +251,8 @@ function startSleep(){
 			else valm = 1440;
 		} else valm = h0; // minute mode
 		websocket.send("startSleep=" +valm +"&");
-		labelSleep("Started, Good night!");
-		window.setTimeout(labelSleep, 2000 ,(valm*60)-2);	
+//		labelSleep("Started, Good night!");
+//		window.setTimeout(labelSleep, 2000 ,(valm*60)-2);	
 	} else
 	{
 		labelSleep("Error, try again");
@@ -278,8 +292,8 @@ function startWake(){
 			else valm = 1440;
 		} else valm = h0; // minute mode
 		websocket.send("startWake=" +valm +"&");
-		labelWake("Started");
-		window.setTimeout(labelWake, 2000 ,(valm*60)-2);	
+//		labelWake("Started");
+//		window.setTimeout(labelWake, 2000 ,(valm*60)-2);	
 	} else
 	{
 		labelWake("Error, try again");
@@ -403,7 +417,8 @@ function icyResp(arr) {
 				$url = arr["url1"].replace(/\\/g,"").replace(/ /g,"");
 				if ($url == 'http://www.icecast.org/') 
 					document.getElementById('icon').src = "/logo.png";
-				else document.getElementById('icon').src =  "http://www.google.com/s2/favicons?domain_url="+$url;
+				else
+				document.getElementById('icon').src =  "http://www.google.com/s2/favicons?domain_url="+$url;
 			}	
 			$url = arr["url1"].replace(/\\/g,"");
 			document.getElementById('url1').innerHTML = $url;
@@ -513,9 +528,7 @@ function onRangeVolChange($value,$local) {
 	document.getElementById('vol_span').innerHTML = (value * -0.5) + " dB";
 	document.getElementById('vol_range').value = $value;
 	document.getElementById('vol1_range').value = $value;
-	if ($local &&websocket.readyState == websocket.OPEN) websocket.send("wsvol=" + $value+"&");
-//	else 
-		if ($local)	
+	if ($local)	
 	{
 		xhr = new XMLHttpRequest();
 		xhr.open("POST","soundvol",false);
@@ -538,6 +551,12 @@ function wifi(valid) {
 			chkip(document.getElementById('mask'));
 			document.getElementById('gw').value = arr["gw"];
 			chkip(document.getElementById('gw'));
+			document.getElementById('ip2').value = arr["ip2"];
+			chkip(document.getElementById('ip2'));
+			document.getElementById('mask2').value = arr["msk2"];
+			chkip(document.getElementById('mask2'));
+			document.getElementById('gw2').value = arr["gw2"];
+			chkip(document.getElementById('gw2'));
 			document.getElementById('ua').value = arr["ua"];
 			document.getElementById('host').value = arr["host"];
 			document.getElementById('tzo').value = arr["tzo"];
@@ -545,25 +564,58 @@ function wifi(valid) {
 				document.getElementById("dhcp").setAttribute("checked","");
 			else
 				document.getElementById("dhcp").removeAttribute("checked") ;
+			if (arr["dhcp2"] == "1")
+				document.getElementById("dhcp2").setAttribute("checked","");
+			else
+				document.getElementById("dhcp2").removeAttribute("checked") ;
 			document.getElementById('Mac').innerHTML = arr["mac"];
 			clickdhcp();
+			clickdhcp2();
 		}
 	}
 	xhr.open("POST","wifi",false);
 	xhr.setRequestHeader(content,ctype);
- 
 	xhr.send("valid=" + valid 
 	+"&ssid=" + encodeURIComponent(document.getElementById('ssid').value )
-	+ "&pasw=" + encodeURIComponent( document.getElementById('passwd').value)
+	+ "&pasw=" + encodeURIComponent( document.getElementById('passwd').value) 
 	+"&ssid2=" + encodeURIComponent(document.getElementById('ssid2').value) 
-	+ "&pasw2=" + encodeURIComponent(document.getElementById('passwd2').value)
+	+ "&pasw2=" + encodeURIComponent(document.getElementById('passwd2').value) 
 	+ "&ip=" + document.getElementById('ip').value
 	+"&msk=" + document.getElementById('mask').value
 	+"&gw=" + document.getElementById('gw').value
+	+"&ip2=" + document.getElementById('ip2').value
+	+"&msk2=" + document.getElementById('mask2').value
+	+"&gw2=" + document.getElementById('gw2').value
 	+"&ua=" + encodeURIComponent(document.getElementById('ua').value) 
 	+"&host=" + encodeURIComponent(document.getElementById('host').value) 
-	+"&tzo=" + encodeURIComponent(document.getElementById('tzo').value) 
-	+"&dhcp=" + document.getElementById('dhcp').checked+"&");
+	+"&tzo=" + (document.getElementById('tzo').value) 
+	+"&dhcp=" + document.getElementById('dhcp').checked
+	+"&dhcp2=" + document.getElementById('dhcp2').checked+"&");
+	
+}
+function hardware(valid) {
+	var i,coutput;
+	xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4 && xhr.status == 200) {	
+			var arr = JSON.parse(xhr.responseText);
+			document.getElementById("output"+arr['coutput']).checked = true;
+			if (arr['coutput'] != "4") 
+			{
+				document.getElementById("vs1052Only").style.display = "none";
+			}
+			else {
+				document.getElementById("vs1052Only").style.display = "run-in";
+			}
+		}
+	}
+	xhr.open("POST","hardware",false);
+	xhr.setRequestHeader(content,ctype);
+	for (i=0 ;i<6;i++) if (document.getElementById('output'+i).checked) break;
+	if (i==6) coutput = 0;
+	xhr.send("valid=" + valid 
+	+"&coutput=" + i
+	+"&");
 }
 function instantPlay() {
 	var curl;
@@ -573,7 +625,7 @@ function instantPlay() {
 		xhr.setRequestHeader(content,ctype);
 		curl = document.getElementById('instant_path').value;
 		if (!(curl.substring(0, 1) === "/")) curl = "/" + curl;
-		document.getElementById('instant_url').value = document.getElementById('instant_url').value.replace(/^https?:\/\//,'');
+//		document.getElementById('instant_url').value = document.getElementById('instant_url').value.replace(/^https?:\/\//,'');
 		curl = fixedEncodeURIComponent (curl);
 		xhr.send("url=" + document.getElementById('instant_url').value + "&port=" + document.getElementById('instant_port').value + "&path=" + curl+"&");
 	} catch(e){console.log("error"+e);}
@@ -581,37 +633,98 @@ function instantPlay() {
 
 function buildAddURL()
 {
-	if (document.getElementById('add_port').value == "") 
-		  document.getElementById('add_port').value= "80";
+	
 	if (document.getElementById('add_path').value == "") 
 		  document.getElementById('add_path').value= "/";
-    document.getElementById('add_URL').value = "http://"+document.getElementById('add_url').value+':'+
-		document.getElementById('add_port').value + document.getElementById('add_path').value;
+	var str = document.getElementById('add_url').value;
+	if (str.toLowerCase().startsWith('https', 0))
+	{
+		if (document.getElementById('add_port').value == "") 
+		  document.getElementById('add_port').value= "443";
+		document.getElementById('add_URL').value = document.getElementById('add_url').value+':'+
+			document.getElementById('add_port').value + document.getElementById('add_path').value;
+	}
+	else 
+	{
+		if (document.getElementById('add_port').value == "") 
+		  document.getElementById('add_port').value= "80";
+		document.getElementById('add_URL').value = "http://"+document.getElementById('add_url').value+':'+
+			document.getElementById('add_port').value + document.getElementById('add_path').value;
+	}
 }
 
 function buildURL()
 {
-	if (document.getElementById('instant_port').value == "") 
-		  document.getElementById('instant_port').value= "80";
+
 	if (document.getElementById('instant_path').value == "") 
 		  document.getElementById('instant_path').value= "/";
-    document.getElementById('instant_URL').value = "http://"+document.getElementById('instant_url').value+':'+
-		document.getElementById('instant_port').value + document.getElementById('instant_path').value;
+	var str = document.getElementById('instant_url').value;
+	if (str.toLowerCase().startsWith('https', 0))
+	{
+		if (document.getElementById('instant_port').value == "") 
+		  document.getElementById('instant_port').value= "443";
+		document.getElementById('instant_URL').value = document.getElementById('instant_url').value+':'+
+			document.getElementById('instant_port').value + document.getElementById('instant_path').value;
+	}
+	else 
+	{
+		if (document.getElementById('instant_port').value == "") 
+		  document.getElementById('instant_port').value= "80";
+		document.getElementById('instant_URL').value = "http://"+document.getElementById('instant_url').value+':'+
+			document.getElementById('instant_port').value + document.getElementById('instant_path').value;
+	}
 }
-function parseURL()
+
+function parseEditURL()
+{
+	 var a = document.createElement('a');
+	 a.href = document.getElementById('add_URL').value;
+	 if (a.href.toLowerCase() !=location.hostname)
+	 {
+		if (a.href.startsWith("https"))
+			document.getElementById('add_url').value = "https://"+a.hostname;
+		else
+			document.getElementById('add_url').value = a.hostname;	 
+	 }
+	 else
+	 {
+		if (!a.href.toLowerCase().startsWith("https"))
+			document.getElementById('add_URL').value = "http://"+document.getElementById('add_URL').value;
+		a.href = document.getElementById('add_URL').value;
+		document.getElementById('add_url').value = a.hostname;
+	}
+	if (a.port == "")
+		if (a.href.toLowerCase().startsWith("https"))
+			document.getElementById('add_port').value = "443";
+		else
+			document.getElementById('add_port').value = "80";
+	else document.getElementById('add_port').value = a.port;
+	document.getElementById('add_path').value = a.pathname+a.search+a.hash;	 
+}
+
+function parseInstantURL()
 {
 	 var a = document.createElement('a');	 
 	 a.href = document.getElementById('instant_URL').value;
-	 if (a.hostname !=location.hostname)
-		document.getElementById('instant_url').value = a.hostname;
+	 if (a.href.toLowerCase() !=location.hostname)
+	 {
+		if (a.href.startsWith("https"))
+			document.getElementById('instant_url').value = "https://"+a.hostname;
+		else
+			document.getElementById('instant_url').value = a.hostname;	  
+	 }
 	 else
 	 {
-		document.getElementById('instant_URL').value = "http://"+document.getElementById('instant_URL').value;
+		if (!a.href.toLowerCase().startsWith("https"))
+			document.getElementById('instant_URL').value = "http://"+document.getElementById('instant_URL').value;		 	 
 		a.href = document.getElementById('instant_URL').value;
 		document.getElementById('instant_url').value = a.hostname;
 	 }
 	 if (a.port == "") 
-		  document.getElementById('instant_port').value= "80";
+		if (a.href.toLowerCase().startsWith("https"))
+			document.getElementById('instant_port').value= "443";
+		else
+			document.getElementById('instant_port').value= "80";
 	 else document.getElementById('instant_port').value = a.port;
 	 document.getElementById('instant_path').value = a.pathname+a.search+a.hash;	 
 }
@@ -669,11 +782,12 @@ function atheme() {
 		}
 	}
 	try{		
-		xhr.open("POST","theme",false); // request 
+		xhr.open("POST","theme",false); // request auto state
 		xhr.setRequestHeader(content,ctype);
 		xhr.send("&");		
 	} catch(e){console.log("error"+e);}	
 }
+
 function Select() {
 	if (document.getElementById('aplay').checked)
 		 playStation() ;
@@ -758,11 +872,13 @@ function saveStation() {
 		url = document.getElementById('add_url').value,jfile,jname;
 		name = document.getElementById('add_name').value;
 	if (!(file.substring(0, 1) === "/")) file = "/" + file;
-	console.log("Path: "+file);
     jfile = fixedEncodeURIComponent (file);
-	jname = encodeURIComponent (name);								   
+	jname = encodeURIComponent (name);
+	console.log("Path: "+file);
 	console.log("JSON: "+jfile);
-	url = url.replace(/^https?:\/\//,'');
+	console.log("Name: "+name);
+	console.log("JSON: "+jname);
+//	url = url.replace(/^https?:\/\//,'');
 	try{
 		xhr = new XMLHttpRequest();
 		xhr.open("POST","setStation",false);
@@ -783,7 +899,7 @@ function eraseStation() {
 			document.getElementById('add_url').value = "";
 			document.getElementById('add_name').value = "";
 			document.getElementById('add_path').value = "";
-			document.getElementById('add_port').value = "80";
+			document.getElementById('add_port').value = "";
 			document.getElementById('ovol').value = 0;
 			document.getElementById('add_URL').value = ""
 }
@@ -808,10 +924,16 @@ function editInstantStation() {
 		document.getElementById('add_slot').value = id;
 		
 		document.getElementById('ovol').value = '0';
-		document.getElementById('add_URL').value = "http://"+document.getElementById('instant_url').value+":"+document.getElementById('instant_port').value+document.getElementById('instant_path').value;
+		
+		var str = document.getElementById('instant_URL').value;
+		if (str.toLowerCase().startsWith("https"))
+			document.getElementById('add_URL').value = str;
+		else
+			document.getElementById('add_URL').value = "http://"+document.getElementById('instant_url').value+":"+document.getElementById('instant_port').value+document.getElementById('instant_path').value;
 		parseEditURL();
 	} else alert("No free slot.");
 }
+
 
 function editStation(id) {
 	var arr; 
@@ -821,10 +943,15 @@ function editStation(id) {
 			document.getElementById('add_url').value = arr["URL"];
 			document.getElementById('add_name').value = arr["Name"];
 			document.getElementById('add_path').value = arr["File"];
-			if (arr["Port"] == "0") arr["Port"] = "80";
+			if (arr["Port"] == "0") arr["Port"] = "";
 			document.getElementById('add_port').value = arr["Port"];
 			document.getElementById('ovol').value = arr["ovol"];
-			document.getElementById('add_URL').value = "http://"+document.getElementById('add_url').value+":"+document.getElementById('add_port').value+document.getElementById('add_path').value;
+			
+			var str = document.getElementById('add_url').value;
+			if (str.toLowerCase().startsWith('https', 0))
+				document.getElementById('add_URL').value = document.getElementById('add_url').value+":"+document.getElementById('add_port').value+document.getElementById('add_path').value;
+			else
+				document.getElementById('add_URL').value = "http://"+document.getElementById('add_url').value+":"+document.getElementById('add_port').value+document.getElementById('add_path').value;
 //			setMainHeight("tab-content2");
 	}
 	document.getElementById('add_slot').value = id;
@@ -852,44 +979,6 @@ function editStation(id) {
 		xhr.send("idgp=" + id+"&");
 	}
 }
-
-function parseEditURL()
-{
-	 var a = document.createElement('a');
-	 a.href = document.getElementById('add_URL').value;
-	 if (a.hostname !=location.hostname)
-		document.getElementById('add_url').value = a.hostname;
-	 else
-	 {
-		document.getElementById('add_URL').value = "http://"+document.getElementById('add_URL').value;
-		a.href = document.getElementById('add_URL').value;
-		document.getElementById('add_url').value = a.hostname;
-	}
-	if (a.port == "")
-		 document.getElementById('add_port').value = "80";
-	else document.getElementById('add_port').value = a.port;
-	document.getElementById('add_path').value = a.pathname+a.search+a.hash;	 
-}
-
-function parseInstantURL()
-{
-	 var a = document.createElement('a');	 
-	 a.href = document.getElementById('instant_URL').value;
-	 if (a.href.toLowerCase() !=location.hostname)
-	 {
-			document.getElementById('instant_url').value = a.hostname;	  
-	 }
-	 else
-	 { 	 
-		a.href = document.getElementById('instant_URL').value;
-		document.getElementById('instant_url').value = a.hostname;
-	 }
-	 if (a.port == "") 
-			document.getElementById('instant_port').value= "80";
-	 else document.getElementById('instant_port').value = a.port;
-	 document.getElementById('instant_path').value = a.pathname+a.search+a.hash;	 
-}
-
 
 
 function refreshList() {
@@ -940,7 +1029,7 @@ function checkhistory()
 	 xhr.onload = function() {
 		document.getElementById('History').innerHTML = xhr.responseText;	
     }
-	xhr.open("GET","http://KaraDio.karawin.fr/history1.php", false);
+	xhr.open("GET","http://karadio.karawin.fr/history1.php", false);
 	try{
 		xhr.send(null );
 	}catch(e){;}
@@ -956,7 +1045,7 @@ function checkinfos()
 	 xhr.onload = function() {
 		document.getElementById('Infos').innerHTML = xhr.responseText;	
     }
-	xhr.open("GET","http://KaraDio.karawin.fr/infos.php", false);
+	xhr.open("GET","http://karadio.karawin.fr/infos.php", false);
 	try{
 		xhr.send(null );
 	}catch(e){;}
@@ -973,7 +1062,7 @@ function checkversion()
 		document.getElementById('Version').innerHTML = xhr.responseText;	
 		document.getElementById('newrelease').innerHTML = document.getElementById('firmware_last').innerHTML;
     }
-	xhr.open("GET","http://KaraDio.karawin.fr/version.php", false);
+	xhr.open("GET","http://karadio.karawin.fr/version.php", false);
 	try{
 		xhr.send(null );
 	}catch(e){;}
@@ -1017,7 +1106,7 @@ function downloadStations()
 				xhr.send(tosend);
 				} catch (e){console.log("error "+e+" "+tosend);}
 //			}
-			indmax = 2;
+			indmax = 4;
 			for(line = 3; line < lines.length; line+=indmax){				
 //				console.log(lines[line]);
 				try {
@@ -1035,6 +1124,7 @@ function downloadStations()
 					xhr.send(tosend);
 				}
 				} catch (e){console.log("error "+e+" "+tosend);}
+				
 			}
 			loadStationsList(maxStation);		
 
@@ -1083,11 +1173,24 @@ function stChanged()
 				id=tbody.rows[ind].cells[0].innerText;
 				name=tbody.rows[ind].cells[1].innerText;
 				furl=tbody.rows[ind].cells[2].innerText;
-				parser.href = "http://"+furl;
-				url = parser.hostname;
+				if (furl.startsWith("https"))
+				{
+					parser.href = furl;
+					url = "https://"+parser.hostname;
+				}
+				else
+				{
+					parser.href = "http://"+furl;
+					url = parser.hostname;
+				}
+
 				file = parser.pathname+parser.hash+parser.search;
 				port = parser.port;
-				if (!port ) port = 80;
+				if (!port )
+					if (furl.startsWith("https"))
+						port = 443;
+					else
+						port = 80;
 /*				file=tbody.rows[ind].cells[3].innerText;
 				port= tbody.rows[ind].cells[4].innerText;*/
 				ovol = tbody.rows[ind].cells[3].innerText;
@@ -1282,7 +1385,6 @@ function loadStationsList(max) {
 	select.disabled = false;
 	select.options.selectedIndex= parseInt(localStorage.getItem('selindexstore'));
 }
-
 function setMainHeight(name) {
 	intervalid =window.setTimeout(setMainHeightd,10,name );	
 }
@@ -1302,7 +1404,6 @@ function resizeContent(){
 	}
 }
 window.onresize = resizeContent;
-
 function printList()
 {
    var html="<html>";
@@ -1347,8 +1448,9 @@ document.addEventListener("DOMContentLoaded", function() {
 			if (stchanged) stChanged();
 			curtab = "tab-content3";
 			wifi(0) ;
+			hardware(0);
 			checkversion();
-			timezone();			
+			document.getElementById('atzo').innerHTML = timezone(new Date().getTimezoneOffset()); 	
 			setMainHeight(curtab);	
 	});
 	window.addEventListener("keydown", function (event)
@@ -1361,7 +1463,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		switch (event.key) {
 		case ' ':
 		if (editPlaying) stopStation();
-		else playStation();		
+		else playStation();			
 		break;
 		case "ArrowDown":
 			nextStation();
@@ -1405,8 +1507,10 @@ document.addEventListener("DOMContentLoaded", function() {
 	promptworking("");
 	refresh();
 	wifi(0) ;
+	hardware(0);
 	autostart();
 	atheme();
-	checkversion();
+	checkversion(); 
 	setMainHeight(curtab);
 });
+
