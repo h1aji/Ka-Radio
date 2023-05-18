@@ -12,12 +12,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "driver/spi.h"
-#include "driver/gpio.h"
+#include "esp8266/spi_struct.h"
 #include "esp8266/spi_register.h"
+#include "driver/gpio.h"
 
 #include "audio_player.h"
 #include "buffer.h"
+#include "spiram.h"
 
 #include "app_main.h"
 #include "eeprom.h"
@@ -64,10 +65,9 @@ void spi_clock(uint8_t spi_no, uint16_t prediv, uint8_t cntdiv) {
 	}
 }
 
-uint32_t spi_transaction (uint8_t spi_no, uint8_t cmd_bits, uint16_t cmd_data,
+uint32_t spi_transaction(uint8_t spi_no, uint8_t cmd_bits, uint16_t cmd_data,
 		 uint32_t addr_bits, uint32_t addr_data, uint32_t dout_bits,
-		 uint32_t dout_data, uint32_t din_bits, uint32_t dummy_bits)
-{
+		 uint32_t dout_data, uint32_t din_bits, uint32_t dummy_bits) {
 
   if (spi_no > 1)
     return 0;			//Check for a valid SPI 
@@ -168,14 +168,14 @@ bool VS1053_HW_init() {
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK); //GPIO14 is HSPI CLK pin (Clock)
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2); //GPIO2 is set as CS pin (Chip Select / Slave Select)
 
-	spi_clock(HSPI_HOST, 5, 2);
+	spi_clock(HSPI, 5, 2);
 
-	SET_PERI_REG_MASK(SPI_USER(HSPI_HOST), SPI_WR_BYTE_ORDER);
-	SET_PERI_REG_MASK(SPI_USER(HSPI_HOST), SPI_RD_BYTE_ORDER);
-	SET_PERI_REG_MASK(SPI_USER(HSPI_HOST), SPI_CS_SETUP|SPI_CS_HOLD);
-	CLEAR_PERI_REG_MASK(SPI_USER(HSPI_HOST), SPI_FLASH_MODE);
+	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);
+	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);
+	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CS_SETUP|SPI_CS_HOLD);
+	CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_FLASH_MODE);
 
-	spi_clock(HSPI_HOST, 4, 10); //2MHz
+	spi_clock(HSPI, 4, 10); //2MHz
 
 	return true;
 }
@@ -185,13 +185,13 @@ int getVsVersion() {
 }
 
 void SPIPutChar(uint8_t data) {
-	spi_transaction(HSPI_HOST, 0, 0, 0, 0, 8, (uint32_t) data, 0, 0);
-	while(READ_PERI_REG(SPI_CMD(HSPI_HOST))&SPI_USR);
+	spi_transaction(HSPI, 0, 0, 0, 0, 8, (uint32_t) data, 0, 0);
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
 }
 
 uint8_t SPIGetChar() {
-	while(READ_PERI_REG(SPI_CMD(HSPI_HOST))&SPI_USR);
-	return spi_transaction(HSPI_HOST, 0, 0, 0, 0, 0, 0, 8, 0);
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
+	return spi_transaction(HSPI, 0, 0, 0, 0, 0, 0, 8, 0);
 }
 
 void ControlReset(uint8_t State) {
@@ -221,7 +221,7 @@ void WaitDREQ() {
 
 void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte) {
 	spi_take_semaphore();
-	spi_clock(HSPI_HOST, 4, 10); //2MHz
+	spi_clock(HSPI, 4, 10); //2MHz
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
@@ -231,13 +231,13 @@ void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte
 	SPIPutChar(lowbyte);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_clock(HSPI_HOST, 4, 2); //10MHz
+//	spi_clock(HSPI, 4, 2); //10MHz
 	spi_give_semaphore();
 }
 
 void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value) {
 	spi_take_semaphore();
-	spi_clock(HSPI_HOST, 4, 10); //2MHz
+	spi_clock(HSPI, 4, 10); //2MHz
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
@@ -247,13 +247,13 @@ void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value) {
 	SPIPutChar(value&0xff);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_clock(HSPI_HOST, 4, 2); //10MHz
+//	spi_clock(HSPI, 4, 2); //10MHz
 	spi_give_semaphore();
 }
 
 uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	spi_take_semaphore();
-	spi_clock(HSPI_HOST, 4, 10); //2MHz
+	spi_clock(HSPI, 4, 10); //2MHz
 	uint16_t result;
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
@@ -264,7 +264,7 @@ uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	result |= SPIGetChar();
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_clock(HSPI_HOST, 4, 2); //10MHz
+//	spi_clock(HSPI, 4, 2); //10MHz
 	spi_give_semaphore();
 	return result;
 }
@@ -335,8 +335,7 @@ void VS1053_GPIO1() {
 }
 
 // First VS10xx configuration after reset
-void VS1053_InitVS()
-{
+void VS1053_InitVS() {
    if (vsVersion == 4) // only 1053b  	
 //		VS1053_WriteRegister(SPI_CLOCKF,0x78,0x00); // SC_MULT = x3, SC_ADD= x2
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
@@ -428,7 +427,7 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 	int o = 0;
 
 	while(CheckDREQ() == 0) {vTaskDelay(1);}
-	spi_clock(HSPI_HOST, 4, 2); //10MHz
+	spi_clock(HSPI, 4, 2); //10MHz
 	SDI_ChipSelect(SET);
 
 	while(quantity)
@@ -447,7 +446,7 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 		} 
 	}
 	SDI_ChipSelect(RESET);
-	spi_clock(HSPI_HOST, 4, 10); //2MHz
+	spi_clock(HSPI, 4, 10); //2MHz
 	spi_give_semaphore();
 	return o;
 }
@@ -697,7 +696,7 @@ void vsTask(void *pvParams) {
 		} else vTaskDelay(10);
 		vTaskDelay(2);		
 	}	
-	
+
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
 	spiRamFifoReset();
