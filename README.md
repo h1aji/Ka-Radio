@@ -1,8 +1,8 @@
-# Le-Radio
+# Ka-Radio
 
 Web radio based on ESP8266 and VS1053 \
-This is a fork of https://github.com/karawin/Ka-Radio \
-The goal of this project is to migrate it to SDK 3 
+This is a fork of https://github.com/karawin/Ka-Radio32 \
+The goal of this project is to migrate it to ESP8266-RTOS-SDK 3.4 
 
 ## Wiring
 
@@ -25,3 +25,7 @@ The goal of this project is to migrate it to SDK 3
  - Implement addon.c later
  - interface.c line 1276, 1283
  - Mdns is not working
+
+## Roadmap
+ - Implement control via IR
+ - Add support for I2C LCD 2004
