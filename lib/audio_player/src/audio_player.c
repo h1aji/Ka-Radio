@@ -56,7 +56,7 @@ static int start_decoder_task(player_t *player)
 static int t;
 
 /* Writes bytes into the FIFO queue, starts decoder task if necessary. */
-int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
+int audio_stream_consumer(char *recv_buf, ssize_t bytes_read)
 {
     // don't bother consuming bytes if stopped
     if(player_instance->command == CMD_STOP) {

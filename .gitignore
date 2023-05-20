@@ -1,4 +1,4 @@
-.pio
-.vscode
+.pio/
+.vscode/
 build/
 sdkconfig.old

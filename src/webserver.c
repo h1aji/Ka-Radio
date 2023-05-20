@@ -51,7 +51,7 @@ uint32_t sleepDelay;
 os_timer_t wakeTimer;
 uint32_t wakeDelay;
 int8_t  clientOvol = 0;
-uint8_t clientIvol = 0;
+
 
 
 static void *inmalloc(size_t n)

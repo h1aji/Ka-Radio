@@ -1151,7 +1151,8 @@ void tzoffset(char* s)
 // print the heapsize
 void heapSize()
 {
-	kprintf("%sHEAP: %d, Internal: %d #\n",msgsys,esp_get_free_heap_size(),heap_caps_get_free_size(MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT) );
+	int hps = esp_get_free_heap_size();
+	kprintf(PSTR("%sHEAP: %d #\n"),msgsys,hps);
 }
 
 // set hostname in mDNS

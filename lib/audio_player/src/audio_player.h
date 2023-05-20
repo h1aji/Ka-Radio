@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include "common_component.h"
 
-int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read);
+int audio_stream_consumer(char *recv_buf, ssize_t bytes_read);
 
 typedef enum {
     CMD_NONE, 

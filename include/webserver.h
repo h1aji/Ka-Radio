@@ -25,7 +25,7 @@ extern xSemaphoreHandle semfile;
 
 //void serverTask(void *pvParams);
 extern int8_t clientOvol ;
-extern uint8_t clientIvol ;
+//extern uint8_t clientIvol ;
 void sleepCallback(void *pArg);
 void wakeCallback(void *pArg);
 void startSleep(uint32_t delay);
