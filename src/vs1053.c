@@ -18,18 +18,18 @@
 
 #include "audio_player.h"
 #include "buffer.h"
-#include "spiram.h"
 
 #include "app_main.h"
 #include "eeprom.h"
 #include "interface.h"
-#include "gpio.h"
 #include "vs1053.h"
 
 
 #define TMAX  4096
 #define CHUNK 32
 
+#define SPI 	0
+#define HSPI	1
 
 extern void LoadUserCodes(void);
 
@@ -50,97 +50,6 @@ void spi_give_semaphore() {
 		xSemaphoreGive(sSPI);
 }
 
-void spi_clock(uint8_t spi_no, uint16_t prediv, uint8_t cntdiv) {
-	
-	if(spi_no > 1) return;
-
-	if((prediv==0)|(cntdiv==0)) {
-		WRITE_PERI_REG(SPI_CLOCK(spi_no), SPI_CLK_EQU_SYSCLK);
-	} else {
-		WRITE_PERI_REG(SPI_CLOCK(spi_no), 
-					(((prediv-1)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
-					(((cntdiv-1)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
-					(((cntdiv>>1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-					((0&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
-	}
-}
-
-uint32_t spi_transaction(uint8_t spi_no, uint8_t cmd_bits, uint16_t cmd_data,
-		 uint32_t addr_bits, uint32_t addr_data, uint32_t dout_bits,
-		 uint32_t dout_data, uint32_t din_bits, uint32_t dummy_bits) {
-
-  if (spi_no > 1)
-    return 0;			//Check for a valid SPI 
-
-  while (READ_PERI_REG(SPI_CMD(spi_no))&SPI_USR);	//wait for SPI to be ready       
-
-  CLEAR_PERI_REG_MASK(SPI_USER(spi_no),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
-
-  if (din_bits)
-    {
-      SET_PERI_REG_MASK(SPI_USER(spi_no),SPI_USR_MISO);
-    }
-  if (dummy_bits)
-    {
-      SET_PERI_REG_MASK (SPI_USER (spi_no),SPI_USR_DUMMY);
-    }
-
-  WRITE_PERI_REG (SPI_USER1 (spi_no),((addr_bits-1)&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S|	//Number of bits in Address
-		  ((dout_bits-1)&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S|	//Number of bits to Send
-		  ((din_bits-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|	//Number of bits to receive
-		  ((dummy_bits-1)&SPI_USR_DUMMY_CYCLELEN)<<SPI_USR_DUMMY_CYCLELEN_S);	//Number of Dummy bits to insert
-
-  if (cmd_bits)
-    {
-      SET_PERI_REG_MASK(SPI_USER(spi_no),SPI_USR_COMMAND);	//enable COMMAND function in SPI module
-      uint16_t command = cmd_data<<(16-cmd_bits);	        //align command data to high bits
-      command = ((command >> 8)&0xff)|((command<<8)&0xff00);	//swap byte order
-      WRITE_PERI_REG(SPI_USER2(spi_no),((((cmd_bits-1)&SPI_USR_COMMAND_BITLEN)<<SPI_USR_COMMAND_BITLEN_S)|
-	  										(command&SPI_USR_COMMAND_VALUE)));
-    }
-  if (addr_bits)
-    {
-      SET_PERI_REG_MASK(SPI_USER(spi_no), SPI_USR_ADDR);	//enable ADDRess function in SPI module
-      WRITE_PERI_REG(SPI_ADDR(spi_no), addr_data<<(32-addr_bits));	//align address data to high bits
-    }
-  if (dout_bits)
-    {
-      SET_PERI_REG_MASK(SPI_USER(spi_no),SPI_USR_MOSI);	//enable MOSI function in SPI module
-      if (READ_PERI_REG(SPI_USER(spi_no))&SPI_WR_BYTE_ORDER)
-		{
-	  	WRITE_PERI_REG(SPI_W0(spi_no),dout_data<<(32-dout_bits));
-		}
-      else
-		{
-		uint8_t dout_extra_bits = dout_bits % 8;
-		if (dout_extra_bits)
-			{
-			WRITE_PERI_REG(SPI_W0(spi_no),((0xFFFFFFFF<<(dout_bits-dout_extra_bits)&dout_data)<<(8-dout_extra_bits)|
-											((0xFFFFFFFF>>(32-(dout_bits-dout_extra_bits)))&dout_data)));
-			}
-		else
-			{
-			WRITE_PERI_REG(SPI_W0(spi_no),dout_data);
-			}
-		}
-    }
-  SET_PERI_REG_MASK(SPI_CMD(spi_no),SPI_USR);
-  if (din_bits)
-    {
-      while (READ_PERI_REG(SPI_CMD(spi_no))&SPI_USR);	//wait for SPI transaction to complete
-      if (READ_PERI_REG(SPI_USER(spi_no))&SPI_RD_BYTE_ORDER)
-	{
-	  return READ_PERI_REG(SPI_W0(spi_no))>>(32-din_bits);	//Assuming data in is written to MSB. TBC
-	}
-      else
-	{
-	  return READ_PERI_REG(SPI_W0(spi_no)); //Read in the same way as DOUT is sent. Note existing contents of SPI_W0 remain unless overwritten! 
-	}
-      return 0;	//something went wrong
-    }
-  return 1;		//success
-}
-
 bool VS1053_HW_init() {
 
     ESP_LOGI(TAG, "Init VS1053 pins");
@@ -155,43 +64,95 @@ bool VS1053_HW_init() {
 
     // Set DREQ pin as input
 	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
-	gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
+	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
 
     ESP_LOGI(TAG, "Init VS1053 SPI");
 
 	if(!sSPI) vSemaphoreCreateBinary(sSPI);
 	spi_give_semaphore();
 
-	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9)); //Set bit 9 if 80MHz sysclock required
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO); //GPIO12 is HSPI MISO pin (Master Data In)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); //GPIO13 is HSPI MOSI pin (Master Data Out)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK); //GPIO14 is HSPI CLK pin (Clock)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2); //GPIO2 is set as CS pin (Chip Select / Slave Select)
+ 	//Set bit 9 if 80MHz sysclock required
+	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9));
+	//GPIO12 is HSPI MISO pin (Master Data In)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO);
+	//GPIO13 is HSPI MOSI pin (Master Data Out)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI);
+	//GPIO14 is HSPI CLK pin (Clock)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);
+	//GPIO2 is set as CS pin (Chip Select / Slave Select)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
 
-	spi_clock(HSPI, 5, 2);
+	//SPI TX Byte order High to Low
+  	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);
+  	//SPI RX Byte order High to Low
+  	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);
 
-	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);
-	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);
-	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CS_SETUP|SPI_CS_HOLD);
+	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CS_SETUP|SPI_CS_HOLD|SPI_USR_COMMAND);
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_FLASH_MODE);
 
-	spi_clock(HSPI, 4, 10); //2MHz
-
 	return true;
+}
+
+void VS1053_SPI_SpeedUp() {
+	// 10MHz
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+					((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
+					((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
+					((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); //clear bit 31,set SPI clock div
+}
+
+void VS1053_SPI_SpeedDown() {
+	// 2Mhz
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+					((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
+					((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
+					((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); 
 }
 
 int getVsVersion() {
 	return vsVersion;
 }
 
-void SPIPutChar(uint8_t data) {
-	spi_transaction(HSPI, 0, 0, 0, 0, 8, (uint32_t) data, 0, 0);
-	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
+uint8_t SPIGetChar() {
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready       
+
+	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MOSI);
+  
+	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MISO);
+
+	WRITE_PERI_REG (SPI_USER1 (HSPI),(0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S| //Number of bits to send
+			((8-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|	//Number of bits to receive
+			(23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S);	//Number of bits in address
+
+	SET_PERI_REG_MASK(SPI_CMD(HSPI), SPI_USR);
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
+
+	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_RD_BYTE_ORDER) {
+			return READ_PERI_REG(SPI_W0(HSPI))>>24;	//Assuming data in is written to MSB. TBC
+	} else {
+			return READ_PERI_REG(SPI_W0(HSPI));
+	}
 }
 
-uint8_t SPIGetChar() {
-	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
-	return spi_transaction(HSPI, 0, 0, 0, 0, 0, 0, 8, 0);
+void SPIPutChar(uint8_t data) {
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready  
+
+	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MISO);
+
+    SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI);	//enable MOSI function in SPI module
+
+	WRITE_PERI_REG(SPI_USER1(HSPI),(((8-1)&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|   //len bits of data out
+			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|       //no data in
+			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));     //address is 24 bits A0-A23
+
+	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_WR_BYTE_ORDER) {
+			WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data<<24);
+	} else {
+			WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data);
+	}
+	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
 }
 
 void ControlReset(uint8_t State) {
@@ -221,7 +182,7 @@ void WaitDREQ() {
 
 void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte) {
 	spi_take_semaphore();
-	spi_clock(HSPI, 4, 10); //2MHz
+	VS1053_SPI_SpeedDown();
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
@@ -231,13 +192,13 @@ void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte
 	SPIPutChar(lowbyte);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_clock(HSPI, 4, 2); //10MHz
+//	VS1053_SPI_SpeedUp();
 	spi_give_semaphore();
 }
 
 void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value) {
 	spi_take_semaphore();
-	spi_clock(HSPI, 4, 10); //2MHz
+	VS1053_SPI_SpeedDown();
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
@@ -247,13 +208,13 @@ void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value) {
 	SPIPutChar(value&0xff);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_clock(HSPI, 4, 2); //10MHz
+//	VS1053_SPI_SpeedUp();
 	spi_give_semaphore();
 }
 
 uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	spi_take_semaphore();
-	spi_clock(HSPI, 4, 10); //2MHz
+	VS1053_SPI_SpeedDown();
 	uint16_t result;
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
@@ -264,7 +225,7 @@ uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	result |= SPIGetChar();
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_clock(HSPI, 4, 2); //10MHz
+//	VS1053_SPI_SpeedUp();
 	spi_give_semaphore();
 	return result;
 }
@@ -427,7 +388,7 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 	int o = 0;
 
 	while(CheckDREQ() == 0) {vTaskDelay(1);}
-	spi_clock(HSPI, 4, 2); //10MHz
+	VS1053_SPI_SpeedUp();
 	SDI_ChipSelect(SET);
 
 	while(quantity)
@@ -446,7 +407,7 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 		} 
 	}
 	SDI_ChipSelect(RESET);
-	spi_clock(HSPI, 4, 10); //2MHz
+	VS1053_SPI_SpeedDown();
 	spi_give_semaphore();
 	return o;
 }
