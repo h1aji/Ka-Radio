@@ -52,40 +52,34 @@ void spi_give_semaphore() {
 
 bool VS1053_HW_init() {
 
-    ESP_LOGI(TAG, "Init VS1053 pins");
+	ESP_LOGI(TAG, "Init VS1053 pins");
 
-    // Set CS pin as output and high
+	// Set CS pin as output and high
 	gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
 	gpio_set_level(GPIO_NUM_2, 1);
 
-    // Set DCS pin as output and high
+	// Set DCS pin as output and high
 	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
 	gpio_set_level(GPIO_NUM_16, 1);
 
-    // Set DREQ pin as input
+	// Set DREQ pin as input
 	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
 	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
 
-    ESP_LOGI(TAG, "Init VS1053 SPI");
+	ESP_LOGI(TAG, "Init VS1053 SPI");
 
 	if(!sSPI) vSemaphoreCreateBinary(sSPI);
 	spi_give_semaphore();
 
- 	//Set bit 9 if 80MHz sysclock required
-	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9));
-	//GPIO12 is HSPI MISO pin (Master Data In)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO);
-	//GPIO13 is HSPI MOSI pin (Master Data Out)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI);
-	//GPIO14 is HSPI CLK pin (Clock)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);
-	//GPIO2 is set as CS pin (Chip Select / Slave Select)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
+	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9)); 		//Set bit 9 if 80MHz sysclock required
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO); //GPIO12 is HSPI MISO pin (Master Data In)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); //GPIO13 is HSPI MOSI pin (Master Data Out)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);	//GPIO14 is HSPI CLK pin (Clock)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);	//GPIO2 is set as CS pin (Chip Select / Slave Select)
 
-	//SPI TX Byte order High to Low
-  	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);
-  	//SPI RX Byte order High to Low
-  	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);
+
+  	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);	//SPI TX Byte order High to Low
+  	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);	//SPI RX Byte order High to Low
 
 	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CS_SETUP|SPI_CS_HOLD|SPI_USR_COMMAND);
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_FLASH_MODE);
@@ -96,19 +90,19 @@ bool VS1053_HW_init() {
 void VS1053_SPI_SpeedUp() {
 	// 10MHz
 	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
-					((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
-					((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
-					((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-					((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); //clear bit 31,set SPI clock div
+			((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
+			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
+			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); //clear bit 31,set SPI clock div
 }
 
 void VS1053_SPI_SpeedDown() {
 	// 2Mhz
 	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
-					((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
-					((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
-					((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-					((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); 
+			((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
+			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
+			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); 
 }
 
 int getVsVersion() {
@@ -122,17 +116,17 @@ uint8_t SPIGetChar() {
   
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MISO);
 
-	WRITE_PERI_REG (SPI_USER1 (HSPI),(0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S| //Number of bits to send
-			((8-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|	//Number of bits to receive
-			(23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S);	//Number of bits in address
+	WRITE_PERI_REG(SPI_USER1(HSPI),(0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S| //number of bits to send
+			((8-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|	//number of bits to receive
+			(23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S);	//number of bits in address
 
-	SET_PERI_REG_MASK(SPI_CMD(HSPI), SPI_USR);
+	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
 
 	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_RD_BYTE_ORDER) {
-			return READ_PERI_REG(SPI_W0(HSPI))>>24;	//Assuming data in is written to MSB. TBC
+		return READ_PERI_REG(SPI_W0(HSPI))>>24;	//assuming data in is written to MSB. TBC
 	} else {
-			return READ_PERI_REG(SPI_W0(HSPI));
+		return READ_PERI_REG(SPI_W0(HSPI));
 	}
 }
 
@@ -141,16 +135,16 @@ void SPIPutChar(uint8_t data) {
 
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MISO);
 
-    SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI);	//enable MOSI function in SPI module
+	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI);	//enable MOSI function in SPI module
 
 	WRITE_PERI_REG(SPI_USER1(HSPI),(((8-1)&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|   //len bits of data out
 			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|       //no data in
 			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));     //address is 24 bits A0-A23
 
 	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_WR_BYTE_ORDER) {
-			WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data<<24);
+		WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data<<24);
 	} else {
-			WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data);
+		WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data);
 	}
 	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
 }
@@ -344,8 +338,8 @@ void VS1053_Start() {
 	}
 
 	vsVersion = (VS1053_ReadRegister(SPI_STATUSVS) >> 4) & 0x000F; //Mask out only the four version bits
-//0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053,
-//5 for VS1033, 7 for VS1103, and 6 for VS1063	
+	//0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053,
+	//5 for VS1033, 7 for VS1103, and 6 for VS1063	
 	ESP_LOGI(TAG,"VS10xx detection. Version: %x",vsVersion);
 
 	// plugin patch
