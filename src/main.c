@@ -440,7 +440,7 @@ void start_network(){
 			ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &info));
 			dns_clear_servers(false);
 			IP_SET_TYPE(( ip_addr_t* )&info.gw, IPADDR_TYPE_V4);    // mandatory
-			(( ip_addr_t* )&info.gw)->addr = IPADDR_TYPE_V4;
+			(( ip_addr_t* )&info.gw)->type = IPADDR_TYPE_V4;
 			dns_setserver(0,( ip_addr_t* ) &info.gw);
 			dns_setserver(1,( ip_addr_t* ) &info.gw);				// if static ip	check dns
 		}

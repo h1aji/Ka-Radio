@@ -97,7 +97,7 @@ void VS1053_SPI_SpeedUp() {
 }
 
 void VS1053_SPI_SpeedDown() {
-	// 2Mhz
+	// 2MHz
 	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
 			((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
@@ -238,7 +238,7 @@ void VS1053_ResetChip() {
 }
 
 uint16_t MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift) {
-	return ( (Source & Mask) >> Shift );
+	return ((Source & Mask) >> Shift);
 }
 
 void VS1053_regtest() {
@@ -299,7 +299,7 @@ void VS1053_InitVS() {
 	else	
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB000);
 	
-	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8,SM_RESET);
+	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_RESET);
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode 
 	WaitDREQ();
 	
@@ -367,8 +367,8 @@ void VS1053_Start() {
 	VS1053_DisableAnalog();
 	vTaskDelay(1);
 	ESP_LOGI(TAG,"volume: %d",g_device->vol);
-	setIvol( g_device->vol);
-	VS1053_SetVolume( g_device->vol);	
+	setIvol(g_device->vol);
+	VS1053_SetVolume(g_device->vol);	
 	VS1053_SetTreble(g_device->treble);
 	VS1053_SetBass(g_device->bass);
 	VS1053_SetTrebleFreq(g_device->freqtreble);
@@ -381,7 +381,11 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 	spi_take_semaphore();
 	int o = 0;
 
-	while(CheckDREQ() == 0) {vTaskDelay(1);}
+	while(CheckDREQ() == 0)
+	{
+		vTaskDelay(1);
+	}
+
 	VS1053_SPI_SpeedUp();
 	SDI_ChipSelect(SET);
 
@@ -409,11 +413,11 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 // Get volume and convert it in log one
 uint8_t VS1053_GetVolume() {
 	uint8_t i,j;
-	uint8_t value =  VS1053_ReadRegister(SPI_VOL) & 0x00FF;
+	uint8_t value = VS1053_ReadRegister(SPI_VOL) & 0x00FF;
 	for (i = 0;i< 255; i++)
 	{
 		j = (log10(255/((float)i+1)) * 105.54571334); // magic no?
-		if (value == j )
+		if (value == j)
 		  return i;
 	}	
 	return 127;
@@ -444,9 +448,9 @@ uint8_t value = (log10(255/((float)xMinusHalfdB+1)) * 105.54571334);
  * 		of 1.5dB. 0 value means no enhancement, 8 max (12dB).
  */
 int8_t	VS1053_GetTreble() {
-	int8_t  treble = (VS1053_ReadRegister(SPI_BASS) & 0xF000) >> 12;
-	if ( (treble&0x08)) treble |= 0xF0; // negative value
-	return ( treble);
+	int8_t treble = (VS1053_ReadRegister(SPI_BASS) & 0xF000) >> 12;
+	if ((treble&0x08)) treble |= 0xF0; // negative value
+	return (treble);
 }
 
 /**
@@ -461,7 +465,7 @@ void VS1053_SetTreble(int8_t xOneAndHalfdB) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	
 	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
-		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF );
+		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF);
 }
 
 /**
@@ -473,8 +477,8 @@ void VS1053_SetTreble(int8_t xOneAndHalfdB) {
  */
 void VS1053_SetTrebleFreq(uint8_t xkHz) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if ( xkHz <= 15 )
-		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0xF000,8) | xkHz, bassReg & 0x00FF );
+	if (xkHz <= 15)
+		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xF000,8) | xkHz, bassReg & 0x00FF);
 }
 
 int8_t VS1053_GetTrebleFreq() {
@@ -498,9 +502,9 @@ uint8_t	VS1053_GetBass() {
 void VS1053_SetBass(uint8_t xdB) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if (xdB <= 15)
-		VS1053_WriteRegister(SPI_BASS, (bassReg & 0xFF00) >> 8, (bassReg & 0x000F) | (xdB << 4) );
+		VS1053_WriteRegister(SPI_BASS, (bassReg & 0xFF00) >> 8, (bassReg & 0x000F) | (xdB << 4));
 	else
-		VS1053_WriteRegister(SPI_BASS, (bassReg & 0xFF00) >> 8, (bassReg & 0x000F) | 0xF0 );
+		VS1053_WriteRegister(SPI_BASS, (bassReg & 0xFF00) >> 8, (bassReg & 0x000F) | 0xF0);
 }
 
 /**
@@ -513,11 +517,11 @@ void VS1053_SetBass(uint8_t xdB) {
 void VS1053_SetBassFreq(uint8_t xTenHz) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if (xTenHz >=2 && xTenHz <= 15)
-		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0) | xTenHz );
+		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0) | xTenHz);
 }
 
 uint8_t	VS1053_GetBassFreq() {
-	return ( (VS1053_ReadRegister(SPI_BASS) & 0x000F) );
+	return ((VS1053_ReadRegister(SPI_BASS) & 0x000F));
 }
 
 uint8_t	VS1053_GetSpatial(){
@@ -532,7 +536,7 @@ void VS1053_SetSpatial(uint8_t num) {
 	if (num <= 3)
 	{	
 		num = (((num <<2)&8) | (num&1))<<4;
-		VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
+		VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num);
 	}	
 }
 
@@ -596,7 +600,7 @@ void VS1053_flush_cancel() {
 	// set spimode with SM_CANCEL
 	uint16_t spimode = VS1053_ReadRegister(SPI_MODE)| SM_CANCEL;
   // set CANCEL
-	VS1053_WriteRegister(SPI_MODE,MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
+	VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF));
 	// wait CANCEL
 	VS1053_WriteRegister16(SPI_WRAMADDR, para_endFillByte);
 	endFillByte = (int8_t) (VS1053_ReadRegister(SPI_WRAM) & 0xFF);
@@ -614,8 +618,7 @@ void VS1053_flush_cancel() {
 	}	
 
 	for (y = 0; y < 64; y++) 
-		VS1053_SendMusicBytes( buf, 32); //2080 bytes
-	
+		VS1053_SendMusicBytes(buf, 32); //2080 bytes
 }
 
 void vsTask(void *pvParams) { 
@@ -650,14 +653,13 @@ void vsTask(void *pvParams) {
 			}
 		} else vTaskDelay(10);
 		vTaskDelay(2);		
-	}	
+	}
 
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
 	spiRamFifoReset();
     ESP_LOGD(TAG, "Decoder vs1053 stopped.\n");
-	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
 	ESP_LOGI(TAG,"watermark: %x  %d",uxHighWaterMark,uxHighWaterMark);	
 	vTaskDelete(NULL);
-	
 }
