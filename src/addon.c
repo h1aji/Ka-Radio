@@ -20,7 +20,6 @@
 #include "app_main.h"
 #include "eeprom.h"
 #include "interface.h"
-#include "gpio.h"
 #include "ntp.h"
 #include "webclient.h"
 #include "webserver.h"
@@ -75,9 +74,6 @@ typedef enum {KEY_UP,KEY_LEFT,KEY_OK,KEY_RIGHT,KEY_DOWN,
 static uint32_t customKey[KEY_MAX][2]; 
 static bool isCustomKey = false;
 
-
-battery_state out_state;
-
 //backlight value
 static int blv = 100;
 
@@ -87,11 +83,15 @@ static void evtScreen(typelcmd value);
 
 struct tm* getDt() { return dt;}
 
-gpio_num_t deepSleep_io; /** Enter Deep Sleep if pin is set to level defined in P_LEVELPINSLEEP. */
-bool deepSleepLevel; /** Level to enter Deep Sleep / Wakeup if level is the opposite. */
+void setBlv(int val)
+{
+	blv = val;
+}
 
-void setBlv(int val) {blv = val;}
-int getBlv() {return blv;}
+int getBlv()
+{
+	return blv;
+}
 
 static void ClearBuffer()
 {

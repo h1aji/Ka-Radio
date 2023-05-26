@@ -22,9 +22,8 @@ The goal of this project is to migrate it to ESP8266-RTOS-SDK 3.4
 ## Issues
  - TIMERG0 in ota.c (line 260)
  - SSL functionality not ported
- - Implement addon.c later
- - interface.c line 1276, 1283
 
 ## Roadmap
  - Implement control via IR
  - Add support for I2C LCD 2004
+ - Spiram auto detect

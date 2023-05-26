@@ -6,6 +6,7 @@
 
 #ifndef __TELNET_H__
 #define __TELNET_H__
+
 #include <stdbool.h>
 #include <stddef.h> 
 

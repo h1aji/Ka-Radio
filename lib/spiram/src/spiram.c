@@ -45,7 +45,8 @@ void spiRamInit() {
 	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U,FUNC_HSPI_CLK);   // GPIO14 for CLK
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U,FUNC_HSPI_CS0);     // GPIO15 for CS
 
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), ((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 					((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 					((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
 					((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); 
@@ -65,7 +66,8 @@ void spiRamRead(int addr, char *buff, int len) {
 	int i=0;
 
 	//Set SPI clock to 20 MHz
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), (((0)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					(((0)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 					(((3)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 					(((1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
 					(((3)&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
@@ -99,7 +101,8 @@ void spiRamWrite(int addr, char *buff, int len) {
 	int d;
 
 	//Set SPI clock to 20 MHz
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), (((0)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
+	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+					(((0)&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 					(((3)&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 					(((1)&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
 					(((3)&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));

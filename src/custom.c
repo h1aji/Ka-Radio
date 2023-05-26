@@ -5,7 +5,7 @@
 *******************************************************************************/
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#define TAG "GPIO"
+#define TAG "Custom"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -16,26 +16,14 @@
 
 #include "app_main.h"
 #include "eeprom.h"
-#include "gpio.h"
+#include "custom.h"
 
-static xSemaphoreHandle muxnvs= NULL;
+static xSemaphoreHandle muxnvs = NULL;
 const char hardware[] = {"hardware"};
 const char option_space[] = {"option_space"};
 const char gpio_space[] = {"gpio_space"};
 const char label_space[] = {"label_space"};
 
-// init a gpio as output
-void gpio_output_conf(gpio_num_t gpio)
-{
-	gpio_config_t gpio_conf;
-	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<gpio)) ;
-	gpio_conf.mode = GPIO_MODE_OUTPUT;
-	gpio_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-	gpio_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-	gpio_conf.intr_type = GPIO_INTR_DISABLE;
-	gpio_config(&gpio_conf);
-	gpio_set_level(gpio,1);
-}
 
 // open and read the gpio hardware setting
 //
@@ -311,42 +299,6 @@ ESP_LOGD(TAG,"lcd_blv3");
 		if (lout == 255) lout = 100; // special case
 		*blv = lout;
 	}	
-	close_partition(hardware_handle,hardware);		
-}
-
-void gpio_get_ledgpio(gpio_num_t *enca)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	// init default
-	*enca = g_device->led_gpio;
-
-	if (open_partition(hardware, gpio_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"ledgpio");
-		return;
-	}	
-	
-	err = nvs_get_u8(hardware_handle, "P_LED_GPIO",(uint8_t *) enca);
-	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_ledgpio err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);		
-}
-
-void gpio_set_ledgpio(gpio_num_t enca)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-
-	if (open_partition(hardware, gpio_space,NVS_READWRITE,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"set_ledgpio");
-		return;
-	}	
-	
-	err = nvs_set_u8(hardware_handle, "P_LED_GPIO",enca);
-	if (err != ESP_OK) ESP_LOGD(TAG,"gpio_set_ledgpio err 0x%x",err);
-
 	close_partition(hardware_handle,hardware);		
 }
 

@@ -6,9 +6,9 @@ set(COMPONENT_REQUIRES
 set(COMPONENT_PRIV_REQUIRES )
 
 set(COMPONENT_SRCS 
-        "eeprom.c"
         "addon.c"
-        "gpio.c"
+        "custom.c"
+        "eeprom.c"
         "interface.c"
         "main.c"
         "ntp.c"

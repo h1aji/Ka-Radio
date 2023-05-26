@@ -4,6 +4,9 @@
  *
 *******************************************************************************/
 
+#ifndef __NTP_H__
+#define __NTP_H__
+
 #include <time.h>
 
 typedef struct {
@@ -28,3 +31,5 @@ void ntp_print_time();
 int8_t  applyTZ(struct tm *time);
 extern void* kmalloc(size_t memorySize);
 extern void* kcalloc(size_t elementCount, size_t elementSize);
+
+#endif

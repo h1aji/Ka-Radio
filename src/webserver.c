@@ -918,11 +918,11 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				infree(aip2);infree(amsk2);infree(agw2);
 			}
 
-			if ((g_device->ua!= NULL)&&(strlen(g_device->ua)==0))
+			if ((g_device->ua != NULL)&&(strlen(g_device->ua)==0))
 			{
-				if (aua==NULL) {aua= inmalloc(12); strcpy(aua,"Karadio32/2.2");}
+				if (aua == NULL) {aua = inmalloc(12); strcpy(aua,"Karadio/2.2");}
 			}
-			if (aua!=NULL)
+			if (aua != NULL)
 			{
 				if ((strcmp(g_device->ua,aua) != 0)&&(strcmp(aua,"undefined") != 0))
 				{
@@ -932,7 +932,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				infree(aua);
 			}
 
-			if (host!=NULL)
+			if (host != NULL)
 			{
 				if (strlen(host) >0)
 				{
@@ -946,19 +946,19 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				infree(host);
 			}
 
-			if (tzo==NULL)
+			if (tzo == NULL)
 			{
-				tzo= inmalloc(10);
+				tzo = inmalloc(10);
 				sprintf(tmptzo,"%d",g_device->tzoffseth);
 				strcpy(tzo,tmptzo);
 			}
-			else if (strlen(tzo) ==0)
+			else if (strlen(tzo) == 0)
 			{
 				free (tzo);
 				tzo= inmalloc(10); strcpy(tzo,"0");
 			}
 
-			if (strlen(tzo) >0)
+			if (strlen(tzo) > 0)
 			{
 				if ((strcmp(tzo,"undefined") != 0)&&(val2))
 				{
@@ -978,7 +978,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				saveDeviceSettings(g_device);
 			}
 			uint8_t macaddr[10]; // = inmalloc(10*sizeof(uint8_t));
-			char macstr[20]; // = inmalloc(20*sizeof(char));
+			char macstr[20];     // = inmalloc(20*sizeof(char));
 			char adhcp[4],adhcp2[4];
 			esp_wifi_get_mac(WIFI_IF_STA,macaddr);
 			

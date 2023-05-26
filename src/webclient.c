@@ -19,7 +19,6 @@
 #include "app_main.h"
 #include "buffer.h"
 #include "interface.h"
-#include "gpio.h"
 #include "eeprom.h"
 #include "vs1053.h"
 #include "webclient.h"
@@ -93,9 +92,6 @@ void incfree(void *p,const char* from)
 //	else printf ("Client incfree from %s NULL\n",from);
 	ESP_LOGV(TAG,"Client incfree of %x, from %s           Heap size: %d",(int)p,from,esp_get_free_heap_size());
 }
-
-
-
 
 bool getState()
 {

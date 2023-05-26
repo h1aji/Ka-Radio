@@ -1,5 +1,5 @@
 /******************************************************************************
-  KaRadio 32
+  KaRadio
   A WiFi webradio player
 
   Copyright (C) 2017  KaraWin
@@ -30,15 +30,14 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "freertos/queue.h"
+#include "freertos/portmacro.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
 #include "esp_sleep.h"
-//#include "esp_heap_trace.h"
 #include "nvs_flash.h"
-#include "driver/i2s.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
@@ -52,16 +51,14 @@
 #include "mdns.h"
 
 #include "audio_player.h"
-
 #include "buffer.h"
-#include "spiram.h"
 
 #include "app_main.h"
 
 #include "addon.h"
 #include "eeprom.h"
 
-#include "gpio.h"
+#include "custom.h"
 #include "servers.h"
 #include "webclient.h"
 #include "webserver.h"
@@ -74,11 +71,6 @@
 const int CONNECTED_BIT = 0x00000001;
 //
 const int CONNECTED_AP  = 0x00000010;
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/portmacro.h"
-#include "esp_log.h"
 
 //Priorities of the reader and the decoder thread. bigger number = higher prio
 #define PRIO_READER configMAX_PRIORITIES -3
@@ -108,17 +100,33 @@ static bool bigRam = false;
 static uint32_t ctimeMs = 0;	
 static bool divide = false;
 
-IRAM_ATTR char* getIp() {return (localIp);}
-IRAM_ATTR uint8_t getIvol() {return clientIvol;}
-IRAM_ATTR void setIvol( uint8_t vol) {clientIvol = vol;}; //ctimeVol = 0;}
- 
-bool bigSram() {return bigRam;}
+IRAM_ATTR char* getIp()
+{
+	return (localIp);
+}
+
+IRAM_ATTR uint8_t getIvol()
+{
+	return clientIvol;
+}
+
+IRAM_ATTR void setIvol(uint8_t vol)
+{
+	clientIvol = vol;
+}
+
+bool bigSram() 
+{
+	return bigRam;
+}
+
 void* kmalloc(size_t memorySize)
 {
 	if (bigRam) return heap_caps_malloc(memorySize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
 	else return heap_caps_malloc(memorySize, MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT);
 		
 }
+
 void* kcalloc(size_t elementCount, size_t elementSize)
 {
 	if (bigRam) return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -267,15 +275,15 @@ static void start_wifi()
 	char pass[PASSLEN];
 	
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-//    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+//    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
 	
 	tcpip_adapter_init();
 	tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA); // Don't run a DHCP client	
     /* FreeRTOS event group to signal when we are connected & ready to make a request */
 	wifi_event_group = xEventGroupCreate();	
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, wifi_event_group) );
-	
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, wifi_event_group));
+
 	if (g_device->current_ap == APMODE) 
 	{
 		if (strlen(g_device->ssid1) !=0)
@@ -290,7 +298,7 @@ static void start_wifi()
 	
 	while (1)
 	{
-		ESP_ERROR_CHECK( esp_wifi_stop() );
+		ESP_ERROR_CHECK(esp_wifi_stop());
 		vTaskDelay(10);
 		
 		switch (g_device->current_ap)
@@ -326,7 +334,7 @@ static void start_wifi()
 			ESP_LOGE(TAG, "The default AP is  WifiKaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.");
 
 			vTaskDelay(1);
-			ESP_ERROR_CHECK( esp_wifi_start() );			
+			ESP_ERROR_CHECK(esp_wifi_start());			
 
 		}
 		else
@@ -348,8 +356,9 @@ static void start_wifi()
 				ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 //				ESP_LOGI(TAG, "connecting %s, %d, %s, %d",ssid,strlen((char*)(wifi_config.sta.ssid)),pass,strlen((char*)(wifi_config.sta.password)));
 				ESP_LOGI(TAG, "connecting %s",ssid);
-				ESP_ERROR_CHECK( esp_wifi_start() );	
-			} else
+				ESP_ERROR_CHECK(esp_wifi_start());	
+			}
+			else
 			{
 				g_device->current_ap++;
 				g_device->current_ap %=3;
@@ -369,7 +378,7 @@ static void start_wifi()
 		}
 
 		/* Wait for the callback to set the CONNECTED_BIT in the event group. */
-		if ( (xEventGroupWaitBits(wifi_event_group, CONNECTED_AP,false, true, 1500) & CONNECTED_AP) ==0) 
+		if ((xEventGroupWaitBits(wifi_event_group, CONNECTED_AP,false, true, 1500) & CONNECTED_AP) == 0) 
 		//timeout . Try the next AP
 		{
 			g_device->current_ap++;
@@ -387,7 +396,8 @@ static void start_wifi()
 	}					
 }
 
-void start_network(){
+void start_network()
+{
 //	struct device_settings *g_device;	
 	tcpip_adapter_ip_info_t info;
 	wifi_mode_t mode;	
@@ -434,15 +444,15 @@ void start_network(){
 	else // mode STA
 	{	
 		if (dhcpEn) // check if IP is valid without DHCP
-			tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA); //  run a DHCP client
+			tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA); // run a DHCP client
 		else
 		{
 			ESP_ERROR_CHECK(tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &info));
 			dns_clear_servers(false);
-			IP_SET_TYPE(( ip_addr_t* )&info.gw, IPADDR_TYPE_V4);    // mandatory
-			(( ip_addr_t* )&info.gw)->type = IPADDR_TYPE_V4;
-			dns_setserver(0,( ip_addr_t* ) &info.gw);
-			dns_setserver(1,( ip_addr_t* ) &info.gw);				// if static ip	check dns
+			IP_SET_TYPE((ip_addr_t*)&info.gw, IPADDR_TYPE_V4);  // mandatory
+			((ip_addr_t*)&info.gw)->type = IPADDR_TYPE_V4;
+			dns_setserver(0,(ip_addr_t*) &info.gw);
+			dns_setserver(1,(ip_addr_t*) &info.gw);				// if static ip	check dns
 		}
 
 		// wait for ip						
@@ -469,7 +479,7 @@ void start_network(){
 		}		
 		ip_addr_t *ipdns0 = (ip_addr_t *)dns_getserver(0);
 //		ip_addr_t ipdns1 = dns_getserver(1);
-		printf("\nDNS: %s  \n",ip4addr_ntoa(( struct ip4_addr* ) ipdns0));
+		printf("\nDNS: %s  \n",ip4addr_ntoa((struct ip4_addr*) ipdns0));
 		strcpy(localIp , ip4addr_ntoa(&ip_info.ip));
 		printf("IP: %s\n\n",ip4addr_ntoa(&ip_info.ip));
 		
@@ -492,51 +502,14 @@ void start_network(){
 			}
 		}
 		saveDeviceSettings(g_device);	
-		tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, "karadio32");	
+		tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, "karadio");	
 	}
 	lcd_welcome(localIp,"IP found");
 	vTaskDelay(10);
 }
 
-//blinking led and timer isr
-IRAM_ATTR void timerTask(void* p) {
-//	struct device_settings *device;	
-	uint32_t cCur;
-	queue_event_t evt;
-//	int uxHighWaterMark;
-	
-	cCur = FlashOff*10;
-
-	while(1) {
-		// read and treat the timer queue events
-		//int nb = uxQueueMessagesWaiting(event_queue);
-		//if (nb >29) printf(" %d\n",nb);
-		while (xQueueReceive(event_queue, &evt, 0))
-		{
-			switch (evt.type){
-					case TIMER_1MS:
-						if (divide)
-							ctimeMs++;	// for led	
-						divide = !divide;	
-						ServiceAddon();
-					break;				
-					case TIMER_SLEEP:
-						clientDisconnect("Timer"); // stop the player
-					break;
-					case TIMER_WAKE:
-						clientConnect(); // start the player	
-					break;
-					default:
-					break;
-			}
-		}
-		vTaskDelay(1);	
-	}
-//	printf("t0 end\n");
-	vTaskDelete( NULL ); // stop the task (never reached)
-}
-
-void uartInterfaceTask(void *pvParameters) {
+void uartInterfaceTask(void *pvParameters)
+{
 	char tmp[255];
 	int d;
 	uint8_t c;
@@ -583,7 +556,7 @@ void uartInterfaceTask(void *pvParameters) {
 			//switchCommand() ;  // hardware panel of command
 		}
 		checkCommand(t, tmp);
-		uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+		uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
 		ESP_LOGD("uartInterfaceTask",striWATERMARK,uxHighWaterMark,esp_get_free_heap_size());
 				
 		for(t = 0; t<sizeof(tmp); t++) tmp[t] = 0;
@@ -611,7 +584,7 @@ void autoPlay()
 			vTaskDelay(200);
 		}		
 
-		setCurrentStation( g_device->currentstation);
+		setCurrentStation(g_device->currentstation);
 		if ((g_device->autostart ==1)&&(g_device->currentstation != 0xFFFF))
 		{	
 			kprintf("autostart: playing:%d, currentstation:%d\n",g_device->autostart,g_device->currentstation);
@@ -645,7 +618,7 @@ void app_main()
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK( err );
+    ESP_ERROR_CHECK(err);
 	
 	// Check if we are in large SRAM config
 	if (esp_get_free_heap_size() > 0x80000) bigRam = true;
@@ -692,8 +665,8 @@ void app_main()
 	
 	//time display
 	uint8_t ddmm;
-	//option_get_ddmm(&ddmm);	
-	//setDdmm(ddmm?1:0);
+	option_get_ddmm(&ddmm);	
+	setDdmm(ddmm?1:0);
 	
 	//SPI init for the VS1053 chip
     init_hardware();
@@ -751,13 +724,8 @@ void app_main()
 	lcd_welcome("","STARTING");
 	
 	// volume
-	setIvol( g_device->vol);
-	ESP_LOGI(TAG, "Volume set to %d",g_device->vol);
-		
-
-	// led blinks
-	xTaskCreatePinnedToCore(timerTask, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER); 
-	ESP_LOGI(TAG, "%s task: %x","t0",(unsigned int)pxCreatedTask);		
+	setIvol(g_device->vol);
+	ESP_LOGI(TAG, "Volume set to %d",g_device->vol);	
 	
 	xTaskCreatePinnedToCore(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask,CPU_UART); 
 	ESP_LOGI(TAG, "%s task: %x","uartInterfaceTask",(unsigned int)pxCreatedTask);

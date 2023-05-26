@@ -7,9 +7,6 @@
 #ifndef __have__addon_h__
 #define __have__addon_h__
 
-// Never change this file. See gpio.h to adapt to your pcb.
-// Once ok, set the lcd type with sys.lcd("xxx") command via uart or telnet
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -111,9 +108,5 @@ int getBatPercent();
 
 void* getEncoder(int num);
 struct tm* getDt();
-
-bool deepSleepConf(void);
-bool checkDeepSleepInput(void);
-void deepSleepStart(void);
 
 #endif

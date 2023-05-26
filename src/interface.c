@@ -23,7 +23,7 @@
 
 #include "app_main.h"
 #include "eeprom.h"
-#include "gpio.h"
+#include "custom.h"
 #include "interface.h"
 #include "ntp.h"
 #include "ota.h"
@@ -166,20 +166,22 @@ void lkprintf(const char *format, va_list ap)
   if (logTel) vTelnetWrite(i,format,ap); 
 }
 
-
 uint8_t getDdmm()
 {
 	return ddmm;
 }
+
 void setDdmm(uint8_t dm)
 {
 	if (dm == 0)ddmm= 0;
 	else ddmm = 1;
 }
+
 uint8_t getRotat()
 {
 	return rotat;
 }
+
 void setRotat(uint8_t dm)
 {
 	if (dm == 0) rotat = 0;
@@ -190,10 +192,12 @@ void setVolumePlus()
 {
 	setRelVolume(10);
 }
+
 void setVolumeMinus()
 {
 	setRelVolume(-10);
 }		
+
 void setVolumew(char* vol)
 {
 	setVolume(vol);	
@@ -204,7 +208,8 @@ uint16_t getCurrentStation()
 {
 	return currentStation;
 }
-void setCurrentStation( uint16_t cst)
+
+void setCurrentStation(uint16_t cst)
 {
 	currentStation = cst;
 }
@@ -228,7 +233,6 @@ int8_t get_rssi(void)
     }
 	return -30;
 }
-
 
 void readRssi()
 {
@@ -322,7 +326,7 @@ void wifiConnect(char* cmd)
 		return;
 	}
 	
-	strncpy( g_device->ssid1, (t+2), (t_end-t-2) );
+	strncpy(g_device->ssid1, (t+2), (t_end-t-2));
 	
 	t = t_end+3;
 	t_end = strstr(t, parquoteslash);
@@ -332,7 +336,7 @@ void wifiConnect(char* cmd)
 		return;
 	}
 	
-	strncpy( g_device->pass1, t, (t_end-t)) ;
+	strncpy(g_device->pass1, t, (t_end-t));
 	g_device->current_ap = 1;
 	g_device->dhcpEn1 = 1;
 	saveDeviceSettings(g_device);
@@ -354,10 +358,16 @@ void wifiConnectMem()
 
 static bool autoConWifi = true; // control for wifiReConnect & wifiDisconnect
 static bool autoWifi = false; // auto reconnect wifi if disconnected
+
 bool getAutoWifi(void)
-{ return autoWifi;}
+{
+	return autoWifi;
+}
+
 void setAutoWifi()
-{ autoWifi = (g_device->options32& T_WIFIAUTO)?true:false;}
+{
+	autoWifi = (g_device->options32& T_WIFIAUTO)?true:false;
+}
 
 void wifiAuto(char* cmd)
 {
@@ -552,7 +562,7 @@ void clientList(char *s)
 	} 
 	{	
 		if (!onlyOne) kprintf(strilDLIST);	
-		for ( ;i <j;i++)
+		for (;i<j; i++)
 		{
 			vTaskDelay(1);
 			si = getStation(i);
@@ -663,7 +673,7 @@ char url[200];
 	if (url[0] != 0)
 		parseUrl(url, si->domain, si->file, &(si->port));
 	
-kprintf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
+	kprintf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
 	if (id < 0xff) {
 		if (si->domain[0]==0) {si->port = 0;si->file[0] = 0;}
 		saveStation(si, id); 
@@ -705,6 +715,7 @@ char* webInfo()
 	return resp;
 
 }
+
 char* webList(int id)
 {
 	struct shoutcast_info* si;
@@ -839,6 +850,7 @@ void clientWake(char *s)
     }
 	clientWake((char*)"");
 }
+
 void clientSleep(char *s)
 {
     char *t = strstr(s, parslashquote);
@@ -1058,6 +1070,7 @@ void syslcdout(char* s)
 	syslcdout((char*) "");
 	//wakeLcd();
 }
+
 // Timer in seconds to switch off the lcd on stop state
 void syslcdstop(char* s)
 {
@@ -1081,6 +1094,7 @@ void syslcdstop(char* s)
 	syslcdstop((char*) "");
 	//wakeLcd();
 }
+
 // Backlight value
 void syslcdblv(char* s)
 {
@@ -1115,13 +1129,11 @@ uint32_t getLcdOut()
 	//option_get_lcd_out(&lcd_out,&lcd_stop);
 	return lcd_out;
 }
+
 uint32_t getLcdStop()
 {
 	return lcd_stop;
 }
-
-
-
 
 // display or change the tzo for ntp
 void tzoffset(char* s)
@@ -1187,7 +1199,7 @@ void hostname(char* s)
     }
 
 	if (t_end-t ==0)
-		strcpy(	g_device->hostname, "karadio32");
+		strcpy(g_device->hostname, "karadio");
 	else
 	{	
 		if (t_end-t >= HOSTLEN) t_end = t+HOSTLEN;
@@ -1230,7 +1242,6 @@ esp_log_level_t getLogLevel()
 	 return s_log_default_level;
 }
 
-
 void setLogLevel(esp_log_level_t level)
 {
 	esp_log_level_set("*", level);
@@ -1272,7 +1283,7 @@ void setLogTelnet(char* s)
 
 void sys_conf()
 {
-/*	char* label;
+	char* label;
 	kprintf("##CONFIG#\n");
 	
 	gpio_get_label(&label);
@@ -1290,7 +1301,7 @@ void sys_conf()
 		kprintf("%s\n",label);
 		free (label);
 	} else kprintf("no comment\n");
-*/}
+}
 
 void dbgSSL(char* s)
 {
@@ -1310,12 +1321,11 @@ void dbgSSL(char* s)
 	uint8_t value = atoi(t+2);
 	if (value>3) value = 3;
 	g_device->options &= NT_WOLFSSL; //clear
-	g_device->options |= (value<<S_WOLFSSL)& T_WOLFSSL;
+	g_device->options |= (value<<S_WOLFSSL) & T_WOLFSSL;
 
 	dbgSSL((char*)"");
 	saveDeviceSettings(g_device);	
 }
-
 
 void checkCommand(int size, char* s)
 {
@@ -1386,11 +1396,11 @@ void checkCommand(int size, char* s)
 		else if(strcmp(tmp+4, "heap") == 0) 	heapSize();
 		else if(strcmp(tmp+4, "boot") == 0) 	esp_restart();
 		else if(strcmp(tmp+4, "conf") == 0) 	sys_conf();
-		else if(strcmp(tmp+4, "update") == 0) 	update_firmware((char*)"KaRadio32");
-		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware((char*)"KaRadio32prv");
+		else if(strcmp(tmp+4, "update") == 0) 	update_firmware((char*)"KaRadio");
+		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware((char*)"KaRadio-prv");
 		else if(startsWith (  "patch",tmp+4)) 	syspatch(tmp);
 		else if(strcmp(tmp+4, "date") == 0) 	ntp_print_time();
-		else if(strncmp(tmp+4, "vers",4) == 0) 	kprintf("Release: %s, Revision: %s, KaRadio32\n",RELEASE,REVISION);
+		else if(strncmp(tmp+4, "vers",4) == 0) 	kprintf("Release: %s, Revision: %s, KaRadio\n",RELEASE,REVISION);
 		else if(startsWith(   "tzo",tmp+4)) 	tzoffset(tmp);
 		else if(strcmp(tmp+4, "logn") == 0) 	setLogLevel(ESP_LOG_NONE);
 		else if(strcmp(tmp+4, "loge") == 0) 	setLogLevel(ESP_LOG_ERROR); 
