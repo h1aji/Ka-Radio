@@ -116,9 +116,9 @@ uint8_t SPIGetChar() {
   
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MISO);
 
-	WRITE_PERI_REG(SPI_USER1(HSPI),(0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S| //number of bits to send
-			((8-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|	//number of bits to receive
-			(23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S);	//number of bits in address
+	WRITE_PERI_REG(SPI_USER1(HSPI),(0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S|	//number of bits to send
+			(7&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|			//number of bits to receive
+			(23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S);		//number of bits in address
 
 	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
@@ -137,9 +137,9 @@ void SPIPutChar(uint8_t data) {
 
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI);	//enable MOSI function in SPI module
 
-	WRITE_PERI_REG(SPI_USER1(HSPI),(((8-1)&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|   //len bits of data out
-			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|       //no data in
-			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));     //address is 24 bits A0-A23
+	WRITE_PERI_REG(SPI_USER1(HSPI),((7&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)| //len bits of data out
+			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|		//no data in
+			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));		//address is 24 bits A0-A23
 
 	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_WR_BYTE_ORDER) {
 		WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data<<24);
