@@ -15,7 +15,6 @@
 #include "freertos/semphr.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
-#include "esp_task_wdt.h"
 #include "esp_log.h"
 
 #include "interface.h"

@@ -58,7 +58,7 @@
 #include "addon.h"
 #include "eeprom.h"
 
-#include "custom.h"
+#include "flash.h"
 #include "servers.h"
 #include "webclient.h"
 #include "webserver.h"

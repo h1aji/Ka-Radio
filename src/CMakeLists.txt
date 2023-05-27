@@ -7,7 +7,7 @@ set(COMPONENT_PRIV_REQUIRES )
 
 set(COMPONENT_SRCS 
         "addon.c"
-        "custom.c"
+        "flash.c"
         "eeprom.c"
         "interface.c"
         "main.c"

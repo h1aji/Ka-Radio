@@ -23,7 +23,7 @@
 
 #include "app_main.h"
 #include "eeprom.h"
-#include "custom.h"
+#include "flash.h"
 #include "interface.h"
 #include "ntp.h"
 #include "ota.h"

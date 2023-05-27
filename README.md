@@ -2,7 +2,9 @@
 
 Web radio based on ESP8266 and VS1053 \
 This is a fork of https://github.com/karawin/Ka-Radio32 \
-The goal of this project is to migrate it to ESP8266-RTOS-SDK 3.4 
+The goal of this project is to migrate it to ESP8266-RTOS-SDK 3.4 \
+
+Please note that wiring is slightly different from original project
 
 ## Wiring
 
@@ -25,5 +27,5 @@ The goal of this project is to migrate it to ESP8266-RTOS-SDK 3.4
 
 ## Roadmap
  - Implement control via IR
- - Add support for I2C LCD 2004
+ - Add support for I2C LCD2004 or SSD1306
  - Spiram auto detect

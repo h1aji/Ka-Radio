@@ -5,7 +5,7 @@
 *******************************************************************************/
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#define TAG "Custom"
+#define TAG "Flash"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -16,7 +16,7 @@
 
 #include "app_main.h"
 #include "eeprom.h"
-#include "custom.h"
+#include "flash.h"
 
 static xSemaphoreHandle muxnvs = NULL;
 const char hardware[] = {"hardware"};
