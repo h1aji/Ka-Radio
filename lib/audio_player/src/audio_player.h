@@ -9,9 +9,15 @@
 #define INCLUDE_AUDIO_PLAYER_H_
 
 #include <sys/types.h>
-#include "common_component.h"
 
 int audio_stream_consumer(char *recv_buf, ssize_t bytes_read);
+
+typedef enum {
+    UNINITIALIZED,
+    INITIALIZED,
+    RUNNING,
+    STOPPED
+} component_status_t;
 
 typedef enum {
     CMD_NONE, 
