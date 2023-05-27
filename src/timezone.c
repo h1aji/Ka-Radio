@@ -16,7 +16,8 @@
 #include <time.h>
 #include "eeprom.h"
 
-int8_t applyTZ(struct tm *time) {
+int8_t applyTZ(struct tm *time)
+{
 
 	bool dst = false;
 	int8_t tzo = g_device->tzoffseth;

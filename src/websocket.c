@@ -29,7 +29,8 @@ client_t webserverclients[NBCLIENT];
 //set of socket descriptors
 fd_set readfds;
 
-void base64_encode_local(uint8_t * data, size_t length, char* output) {
+void base64_encode_local(uint8_t * data, size_t length, char* output)
+{
 //    size_t size = ((length * 1.6f) + 1);
     if(output) {
         base64_encodestate _state;
@@ -44,7 +45,8 @@ void base64_encode_local(uint8_t * data, size_t length, char* output) {
  * @param clientKey char*
  * @param Output char*
  */
-void websocketacceptKey(char* clientKey,char* Output) {
+void websocketacceptKey(char* clientKey,char* Output)
+{
     uint8_t sha1HashBin[20] = { 0 };
     strcat(clientKey ,"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 	
@@ -56,7 +58,8 @@ void websocketacceptKey(char* clientKey,char* Output) {
     base64_encode_local(sha1HashBin, 20,Output);
 }
 
-void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen) {
+void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen)
+{
 	if(reason) {
          sendFrame(socket, WSop_close, (uint8_t *) reason, reasonLen);
     } else {

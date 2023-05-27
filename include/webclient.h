@@ -7,9 +7,6 @@
 #ifndef __WEBCLIENT_H__
 #define __WEBCLIENT_H__
 
-#include "esp_system.h"
-#include "esp_log.h"
-
 #define METADATA  9
 #define METAINT   8
 #define BITRATE   5

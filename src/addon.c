@@ -15,7 +15,6 @@
 #include "esp_sleep.h"
 #include "nvs_flash.h"
 
-
 #include "addon.h"
 #include "app_main.h"
 #include "eeprom.h"

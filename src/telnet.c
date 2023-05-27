@@ -36,12 +36,14 @@ static uint16_t irec;
 static uint8_t iiac;
 xSemaphoreHandle sTELNET = NULL;
 
-static uint8_t telnet_take_semaphore() {
+static uint8_t telnet_take_semaphore()
+{
 	if(sTELNET) if(xSemaphoreTake(sTELNET, portMAX_DELAY)) return 1;
 	return 0;
 }
 
-static void telnet_give_semaphore() {
+static void telnet_give_semaphore()
+{
 	if(sTELNET) xSemaphoreGive(sTELNET);
 }
 
@@ -113,6 +115,7 @@ bool telnetAccept(int tsocket)
 	} else close(tsocket);
 	return false;
 }
+
 void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap)
 {
 	char *buf = NULL;

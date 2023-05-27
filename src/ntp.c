@@ -9,7 +9,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
-//#include <zlib.h>
 #include "lwip/sockets.h"
 #include "lwip/api.h"
 #include "lwip/netdb.h"
@@ -19,7 +18,6 @@
 
 // list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
 // time.nist.gov 
-
 
 // A task if needed
 /*
@@ -34,7 +32,8 @@ void ntpTask(void *pvParams) {
 */
 
 // get ntp time and return an allocated tm struct (UTC)
-bool ntp_get_time(struct tm **dt) {
+bool ntp_get_time(struct tm **dt)
+{
 	struct timeval timeout; 
     timeout.tv_usec = 0;
 	timeout.tv_sec = 5; 
@@ -107,23 +106,23 @@ bool ntp_get_time(struct tm **dt) {
 }
 
 // print  date time in ISO-8601 local time format
-void ntp_print_time() {
+void ntp_print_time()
+{
 	struct tm* dt;
 	int8_t tz;	
 	char msg[30];
 	
-	if (ntp_get_time(&dt) )
+	if (ntp_get_time(&dt))
 	{
-		tz =applyTZ(dt);
+		tz = applyTZ(dt);
 //	os_printf("##Time: isdst: %d %02d:%02d:%02d\n",dt->tm_isdst, dt->tm_hour, dt->tm_min, dt->tm_sec);		
 //	os_printf("##Date: %02d-%02d-%04d\n", dt->tm_mday, dt->tm_mon+1, dt->tm_year+1900);	
 		strftime(msg, 48, "%Y-%m-%dT%H:%M:%S", dt);
 //	ISO-8601 local time   https://www.w3.org/TR/NOTE-datetime
 //  YYYY-MM-DDThh:mm:ssTZD (eg 1997-07-16T19:20:30+01:00)
-		if (tz >=0)
+		if (tz >= 0)
 			kprintf("##SYS.DATE#: %s+%02d:00\n",msg,tz);
 		else
 			kprintf("##SYS.DATE#: %s%03d:00\n",msg,tz);
 	}
-		
 }

@@ -9,8 +9,6 @@
 #ifndef VS1053_H_
 #define VS1053_H_
 
-#include "esp_system.h"
-#include "interface.h"
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define SET 0

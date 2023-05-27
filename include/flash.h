@@ -5,15 +5,10 @@
 *******************************************************************************/
 
 #pragma once
-#ifndef __CUSTOM_H__
-#define __CUSTOM_H__
+#ifndef __FLASH_H__
+#define __FLASH_H__
 
 #include "nvs_flash.h"
-#include "driver/spi.h"
-#include "driver/adc.h"
-#include "driver/gpio.h"
-
-#include "app_main.h"
 
 // get the hardware partition infos
 esp_err_t open_partition(const char *partition_label, const char *namespace,nvs_open_mode open_mode,nvs_handle *handle);

@@ -34,7 +34,8 @@ const char strsocket[] = {"Socket"};
 const char strbind[] = {"Bind"};
 const char strlisten[] = {"Listen"};
 
-void serversTask(void* pvParams) {
+void serversTask(void* pvParams)
+{
 	//telnet, client and websocket
 	struct sockaddr_in tenetserver_addr, tenetclient_addr;
 	int telnetServer_sock, telnetClient_sock;
