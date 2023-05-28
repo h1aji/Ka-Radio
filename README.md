@@ -26,6 +26,6 @@ Please note that wiring is slightly different from original project
  - SSL functionality not ported
 
 ## Roadmap
- - Implement control via IR
- - Add support for I2C LCD2004 or SSD1306
+ - Implement control via IR (GPIO0)
+ - Add support for I2C LCD2004 or SSD1306 (GPIO4 and GPIO5)
  - Spiram auto detect
