@@ -17,7 +17,7 @@
 #include "lwip/sockets.h"
 
 #include "addon.h"
-#include "app_main.h"
+#include "main.h"
 #include "eeprom.h"
 #include "interface.h"
 #include "ota.h"

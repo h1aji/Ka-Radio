@@ -21,7 +21,7 @@
 
 #include "buffer.h"
 
-#include "app_main.h"
+#include "main.h"
 #include "eeprom.h"
 #include "flash.h"
 #include "interface.h"

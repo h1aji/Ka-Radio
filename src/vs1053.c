@@ -19,7 +19,7 @@
 #include "audio_player.h"
 #include "buffer.h"
 
-#include "app_main.h"
+#include "main.h"
 #include "eeprom.h"
 #include "interface.h"
 #include "vs1053.h"

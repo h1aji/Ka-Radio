@@ -16,7 +16,7 @@
 
 #include "audio_player.h"
 
-#include "app_main.h"
+#include "main.h"
 #include "buffer.h"
 #include "interface.h"
 #include "eeprom.h"

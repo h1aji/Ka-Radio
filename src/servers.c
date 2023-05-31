@@ -17,7 +17,7 @@
 #include "websocket.h"
 #include "webserver.h"
 #include "interface.h"
-#include "app_main.h"
+#include "main.h"
 #include "eeprom.h"
 
 #define stack  	5400 //4400

@@ -15,8 +15,8 @@
 #include "esp_log.h"
 
 #include "audio_player.h"
-#include "app_main.h"
 #include "buffer.h"
+#include "main.h"
 #include "vs1053.h"
 #include "webclient.h"
 

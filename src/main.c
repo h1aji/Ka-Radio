@@ -53,7 +53,7 @@
 #include "audio_player.h"
 #include "buffer.h"
 
-#include "app_main.h"
+#include "main.h"
 
 #include "addon.h"
 #include "eeprom.h"

@@ -14,7 +14,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "app_main.h"
+#include "main.h"
 #include "eeprom.h"
 #include "flash.h"
 

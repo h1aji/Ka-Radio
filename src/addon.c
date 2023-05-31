@@ -16,7 +16,7 @@
 #include "nvs_flash.h"
 
 #include "addon.h"
-#include "app_main.h"
+#include "main.h"
 #include "eeprom.h"
 #include "interface.h"
 #include "ntp.h"
