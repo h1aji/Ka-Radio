@@ -3,18 +3,16 @@
  *
  * FileName: spiram.c
  *
- * Description: Driver for a 23LC1024 or similar chip connected to the SPI port.
- * The chip is connected to the same pins as the main flash chip except for the
- * /CS pin: that needs to be connected to IO0. The chip is driven in 1-bit SPI
- * mode: theoretically, we can move data faster by using double- or quad-SPI
- * mode but that is not implemented here. The chip also is used like a generic
- * SPI device, nothing memory-mapped like the main flash. Also: these routines
- * are not thread-safe; use mutexes around them if you access the SPI RAM from
- * different threads.
+ * Description: 
+ * Driver for a 23LC1024 or similar chip connected to the HSPI port.
+ * The chip is driven in 1-bit SPI mode: theoretically, we can move data faster 
+ * by using double- or quad-SPI mode but that is not implemented here. 
+ * The chip also is used like a generic SPI device, nothing memory-mapped 
+ * like the main flash. Also: these routines are not thread-safe; 
+ * use mutexes around them if you access the SPI RAM from different threads.
  *
  * Modification history:
  *     2015/06/01, v1.0 File created.
- *     2015/06/12, modifications for SPI in QSPI mode
 *******************************************************************************/
 #include <stdio.h>
 #include <string.h>

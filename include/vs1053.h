@@ -9,9 +9,9 @@
 #ifndef VS1053_H_
 #define VS1053_H_
 
-
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-#define SET 0
+
+#define SET   0
 #define RESET 1
 
 #define RXNE    0x01

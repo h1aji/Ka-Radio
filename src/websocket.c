@@ -21,9 +21,9 @@
 #include "webserver.h"
 #include "websocket.h"
 
-const char strwMALLOC[] ICACHE_RODATA_ATTR = {"inwmalloc fails for %d\n"};
+const char strwMALLOC[]  ICACHE_RODATA_ATTR = {"inwmalloc fails for %d\n"};
 const char strwMALLOC1[] ICACHE_RODATA_ATTR = {"Websocket %s malloc fails\n"};
-const char strwSOCKET[] ICACHE_RODATA_ATTR = {"Websocket socket fails %s errno: %d\n"};
+const char strwSOCKET[]  ICACHE_RODATA_ATTR = {"Websocket socket fails %s errno: %d\n"};
 
 client_t webserverclients[NBCLIENT];
 //set of socket descriptors
@@ -49,12 +49,13 @@ void websocketacceptKey(char* clientKey,char* Output)
 {
     uint8_t sha1HashBin[20] = { 0 };
     strcat(clientKey ,"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-	
+
     SHA1_CTX ctx;
-	
+
     SHA1Init(&ctx);
     SHA1Update(&ctx, (const unsigned char*)clientKey, strlen(clientKey));
     SHA1Final(&sha1HashBin[0], &ctx);
+
     base64_encode_local(sha1HashBin, 20,Output);
 }
 

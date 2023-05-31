@@ -35,7 +35,6 @@ typedef struct {
         uint8_t * maskKey;
 } wsMessageHeader_t;
 
-
 typedef struct {
 	int socket;	
 } client_t;

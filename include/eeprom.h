@@ -19,9 +19,7 @@
 #define NT_LEDPOL	0xF7
 #define T_LOGTEL	0x10
 #define NT_LOGTEL	0xEF
-#define T_WOLFSSL	0x60
-#define NT_WOLFSSL	0x9F
-#define S_WOLFSSL	0x5 //Shift right 
+
 //define for bit array options32
 #define T_DDMM		1
 #define NT_DDMM		0xFE

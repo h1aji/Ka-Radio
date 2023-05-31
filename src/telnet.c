@@ -11,43 +11,44 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdlib.h>
-#include "lwip/opt.h"
 #include "esp_system.h"
+#include "lwip/opt.h"
 #include "lwip/sockets.h"
 
 #include "cencode.h"
 #include "telnet.h"
 #include "interface.h"
 
-
+#define strtSOCKET "Telnet Socket fails %s errno: %d"
+const char strtWELCOME[] = {"Karadio telnet\n> "};
 //const char strtMALLOC1[] = {"Telnet %s kmalloc fails\n"};
-#define strtSOCKET	"Telnet Socket fails %s errno: %d"
-const char strtWELCOME[]  ={"Karadio telnet\n> "};
 
 
 int telnetclients[NBCLIENTT];
-//set of socket descriptors
+// set of socket descriptors
 // reception buffer
 static char brec[256];
 static char iac[3];
 static bool inIac = false; // if in negociation
-static char *obrec;  //precedent received command
+static char *obrec;        //precedent received command
 static uint16_t irec;
 static uint8_t iiac;
 xSemaphoreHandle sTELNET = NULL;
 
 static uint8_t telnet_take_semaphore()
 {
-	if(sTELNET) if(xSemaphoreTake(sTELNET, portMAX_DELAY)) return 1;
-	return 0;
+  if (sTELNET)
+    if (xSemaphoreTake(sTELNET, portMAX_DELAY))
+      return 1;
+  return 0;
 }
 
 static void telnet_give_semaphore()
 {
-	if(sTELNET) xSemaphoreGive(sTELNET);
+  if (sTELNET)
+    xSemaphoreGive(sTELNET);
 }
 
-///////////////////////
 // init some data
 void telnetinit(void)
 {
@@ -64,7 +65,6 @@ void telnetinit(void)
 	obrec = kmalloc(2);
 }
 
-/////////////////////////////////////////////////////////////////////
 // a socket with a websocket request. Note it and answer to the client
 bool telnetnewclient(int socket)
 {
@@ -79,7 +79,7 @@ bool telnetnewclient(int socket)
 	}	
 	return false; // no more room
 }
-/////////////////////////////////////////////////////////////////////
+
 // remove the client in the list of clients
 void telnetremoveclient(int socket)
 {
@@ -94,16 +94,15 @@ void telnetremoveclient(int socket)
 			return;
 		}
 }
-////////////////////////
+
 // is socket a telnet one?
-bool istelnet( int socket)
+bool istelnet(int socket)
 {
 	int i ;
 	for (i = 0;i<NBCLIENTT;i++) 
 		if ((telnetclients[i]!= -1)&&(telnetclients[i] == socket)) return true;
 	return false;
 }
-
 
 bool telnetAccept(int tsocket)
 {

@@ -46,7 +46,6 @@ Commands:\n\
 //////////////////\n\
   Debug commands   \n\
 //////////////////\n\
-dbg.ssl(\"x\"): Display or Tune the log level of the wolfssl component. 0: error to 3 full log.\n\
 dbg.fifo: Display the audio buffer level.\n\n\
 //////////////////\n\
  Wifi related commands\n\
@@ -1303,30 +1302,6 @@ void sys_conf()
 	} else kprintf("no comment\n");
 }
 
-void dbgSSL(char* s)
-{
-	extern bool logTel;
-    char *t = strstr(s, parslashquote);
-	if(t == NULL)
-	{
-		kprintf("##dbg.ssl is %d#\n",(g_device->options&T_WOLFSSL)>>S_WOLFSSL);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }	
-	uint8_t value = atoi(t+2);
-	if (value>3) value = 3;
-	g_device->options &= NT_WOLFSSL; //clear
-	g_device->options |= (value<<S_WOLFSSL) & T_WOLFSSL;
-
-	dbgSSL((char*)"");
-	saveDeviceSettings(g_device);	
-}
-
 void checkCommand(int size, char* s)
 {
 	char *tmp = (char*)kmalloc((size+1)*sizeof(char));
@@ -1349,7 +1324,6 @@ void checkCommand(int size, char* s)
 		if     (strcmp(tmp+4, "fifo") == 0) 	kprintf( "Buffer fill %u%%, %d bytes, OverRun: %ld, UnderRun: %ld\n",
 												(spiRamFifoFill() * 100) / spiRamFifoLen(), spiRamFifoFill(),spiRamGetOverrunCt(),spiRamGetUnderrunCt());
 		else if(strcmp(tmp+4, "clear") == 0) 	spiRamFifoReset();
-		else if(startsWith (  "ssl",tmp+4)) 	dbgSSL(tmp);
 		else printInfo(tmp);
 	} else
 	if(startsWith ("wifi.", tmp))

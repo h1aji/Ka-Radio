@@ -34,7 +34,7 @@
 extern void LoadUserCodes(void);
 
 int vsVersion = -1; // the version of the chip
-//	SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
+// SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
 
 static SemaphoreHandle_t sSPI = NULL;
 
@@ -54,17 +54,17 @@ bool VS1053_HW_init() {
 
 	ESP_LOGI(TAG, "Init VS1053 pins");
 
-	// Set CS pin as output and high
-	gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
-	gpio_set_level(GPIO_NUM_2, 1);
+	// Set DREQ pin as input
+	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
+	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
 
 	// Set DCS pin as output and high
 	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
 	gpio_set_level(GPIO_NUM_16, 1);
 
-	// Set DREQ pin as input
-	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
-	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
+	// Set CS pin as output and high
+	gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
+	gpio_set_level(GPIO_NUM_2, 1);
 
 	ESP_LOGI(TAG, "Init VS1053 SPI");
 
@@ -76,7 +76,6 @@ bool VS1053_HW_init() {
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); //GPIO13 is HSPI MOSI pin (Master Data Out)
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);	//GPIO14 is HSPI CLK pin (Clock)
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);	//GPIO2 is set as CS pin (Chip Select / Slave Select)
-
 
   	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);	//SPI TX Byte order High to Low
   	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);	//SPI RX Byte order High to Low
@@ -282,23 +281,23 @@ void VS1053_HighPower() {
 // patch if GPIO1 is not wired to GND
 void VS1053_GPIO1() {
 // these 4 lines makes board to run on mp3 mode, no soldering required anymore
-		VS1053_WriteRegister16(SPI_WRAMADDR, 0xc017); //address of GPIO_DDR is 0xC017
-		VS1053_WriteRegister16(SPI_WRAM, 0x0003); //GPIO_DDR=3
-		VS1053_WriteRegister16(SPI_WRAMADDR, 0xc019); //address of GPIO_ODATA is 0xC019
-		VS1053_WriteRegister16(SPI_WRAM, 0x0000); //GPIO_ODATA=0	
-		ESP_LOGI(TAG,"SPI_AUDATA 1 = %x",VS1053_ReadRegister(SPI_AUDATA));
+	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc017); //address of GPIO_DDR is 0xC017
+	VS1053_WriteRegister16(SPI_WRAM, 0x0003); //GPIO_DDR=3
+	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc019); //address of GPIO_ODATA is 0xC019
+	VS1053_WriteRegister16(SPI_WRAM, 0x0000); //GPIO_ODATA=0
+	ESP_LOGI(TAG,"SPI_AUDATA 1 = %x",VS1053_ReadRegister(SPI_AUDATA));
 }
 
 // First VS10xx configuration after reset
 void VS1053_InitVS() {
-   if (vsVersion == 4) // only 1053b  	
+	if (vsVersion == 4) // only 1053b  	
 //		VS1053_WriteRegister(SPI_CLOCKF,0x78,0x00); // SC_MULT = x3, SC_ADD= x2
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
 //		VS1053_WriteRegister16(SPI_CLOCKF,0x8800); // SC_MULT = x3.5, SC_ADD= x1
 //		VS1053_WriteRegister16(SPI_CLOCKF,0x9000); // SC_MULT = x3.5, SC_ADD= x1.5
-	else	
+	else
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB000);
-	
+
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_RESET);
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode 
 	WaitDREQ();
@@ -324,13 +323,14 @@ void VS1053_Start() {
 	if (CheckDREQ() == 0)
 	{
 		vsVersion = 0; 
-		ESP_LOGE(TAG,"NO VS1053 detected");
+		ESP_LOGE(TAG,"No VS1053 detected");
 		return;
 	} 
 
 // patch to mp3 mode id needed
 //	if (VS1053_ReadRegister(SPI_AUDATA) == 0xac45) // midi mode?
 		VS1053_GPIO1();	// patch if GPIO1 is not wired to gnd
+
 	if (VS1053_ReadRegister(SPI_AUDATA) == 0xac45) // try again
 	{
 		VS1053_ResetChip();
