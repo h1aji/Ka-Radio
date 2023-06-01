@@ -951,7 +951,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 	break;
 	case C_PLAYLIST1:
 		clientDisconnect("C_PLIST1");
-		clientParsePlaylist(pdata) ;//more?
+		clientParsePlaylist(pdata) ; //more?
 		cstatus = C_PLAYLIST;
 	break;
 	case C_HEADER0:

@@ -122,7 +122,7 @@ void spiRamFifoWrite(char *buff, int buffLen) {
 
 		xSemaphoreTake(mux, portMAX_DELAY);
 		if ((SPIRAMSIZE - fifoFill) < n) {
-            // printf("FIFO full.\n");
+			// printf("FIFO full.\n");
 			// Drat, not enough free room in FIFO. Wait till there's some read and try again.
 			fifoOvfCnt++;
 			xSemaphoreGive(mux);
