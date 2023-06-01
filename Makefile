@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := Le-Radio
+PROJECT_NAME := Ka-Radio
 
 include $(IDF_PATH)/make/project.mk
 
