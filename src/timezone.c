@@ -1,13 +1,8 @@
-//////////////////////////////////////////////////
-// Simple timezone example for ESP8266.
-// Copyright 2015 Richard A Burton
-// richardaburton@gmail.com
-// See license.txt for license terms.
-//////////////////////////////////////////////////
-// Modified for KaraDio
-
-// custom function to apply a timezone to the supplied tm struct
-// hard coded rules
+/******************************************************************************
+ * 
+ * Copyright 2017 karawin (http://www.karawin.fr)
+ *
+*******************************************************************************/
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -18,12 +13,11 @@
 
 int8_t applyTZ(struct tm *time)
 {
-
 	bool dst = false;
 	int8_t tzo = g_device->tzoffseth;
 	if ((unsigned char)g_device->tzoffsetm == 0xFF) g_device->tzoffsetm = 0; // if not initialized
 	int8_t tzom = g_device->tzoffsetm;
- 
+
 	// apply base timezone offset
 //	time->tm_hour += 1; // e.g. central europe
 	time->tm_min += tzom;
@@ -34,7 +28,7 @@ int8_t applyTZ(struct tm *time)
 	mktime(time);
 
 	// work out if we should apply dst, modify according to your local rules
-    if (time->tm_mon < 2 || time->tm_mon > 9) {
+	if (time->tm_mon < 2 || time->tm_mon > 9) {
 		// these months are completely out of DST
 	} else if (time->tm_mon > 2 && time->tm_mon < 9) {
 		// these months are completely in DST

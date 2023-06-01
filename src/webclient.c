@@ -143,15 +143,15 @@ struct icyHeader* clientGetHeader()
 	return &header;
 }
 
-//------------------------------------------------------------------------------//
-void Unicode_decoding(char *string){ //
-union { //
-	struct { //
-		unsigned char t_LOW; //
-		unsigned char t_HIG; //
-		}; //
-	uint16_t T_t; //
-}T_t; //
+void Unicode_decoding(char *string) {
+union {
+	struct {
+		unsigned char t_LOW;
+		unsigned char t_HIG;
+		};
+	uint16_t T_t;
+} T_t;
+
 uint16_t ss = 0;
 uint16_t sss = 0;
 size_t len = 0;
@@ -161,59 +161,55 @@ char * string_rec ;
 if (strstr(string,"&#") != NULL)
 {
 string_rec  = kcalloc(strlen(string)+1, sizeof(uint8_t));
-  while (strstr(string,"&#") != NULL){
-    len = strcspn(string, "&#");
-    if(len == 0){l=1;}
-    else{    
-        for(uint16_t s=sss;s<len;s++){
-           string_rec[ss++] = string[s];
-           sss++;
-        } 
-    }
-    string[len++] = ' ';
-    string[len++] = ' ';
-
-    uint8_t p_s[4];
-    for(uint8_t a=0;a<4;a++){
-       p_s[a] = string[len++];
-    }
-    
-    T_t.T_t = atol((const char *)p_s);    
-    T_t.t_HIG = T_t.t_HIG << 2;
-    T_t.t_HIG = (T_t.t_HIG & 0x3F) ^ (  T_t.t_LOW & 0xC0 );
-    T_t.t_LOW = (T_t.t_LOW & 0x3F) ^ 0x80;
-    T_t.t_HIG = (T_t.t_HIG & 0x1F) ^ 0xC0;
-    
-    string_rec[ss++] = T_t.t_HIG;
-    string_rec[ss++] = T_t.t_LOW;
-    sss = sss + 7;
-//    if(len>=  sizeof(string)){break;}
-    if(len>=  strlen(string)) { 
-		break;
+	while (strstr(string,"&#") != NULL) {
+	len = strcspn(string, "&#");
+	if(len == 0) {l=1;}
+	else
+	{
+		for(uint16_t s=sss;s<len;s++){
+			string_rec[ss++] = string[s];
+			sss++;
 		}
-  }
+	}
+	string[len++] = ' ';
+	string[len++] = ' ';
 
-//  if(len < sizeof(string)){
-  if(len < strlen(string)){
-    l = 1;
-  }
+	uint8_t p_s[4];
+	for(uint8_t a=0;a<4;a++){
+		p_s[a] = string[len++];
+	}
 
-  if(l){
-//    len =  sizeof(string);
-    len =  strlen(string);
-    for(uint16_t s=sss;s<len;s++) {
-        string_rec[ss++] = string[s];
-        sss++;
-    }
-  }
-  strcpy(string,string_rec);
-  free(string_rec);
+	T_t.T_t = atol((const char *)p_s);
+	T_t.t_HIG = T_t.t_HIG << 2;
+	T_t.t_HIG = (T_t.t_HIG & 0x3F) ^ (  T_t.t_LOW & 0xC0 );
+	T_t.t_LOW = (T_t.t_LOW & 0x3F) ^ 0x80;
+	T_t.t_HIG = (T_t.t_HIG & 0x1F) ^ 0xC0;
+
+	string_rec[ss++] = T_t.t_HIG;
+	string_rec[ss++] = T_t.t_LOW;
+	sss = sss + 7;
+//	if(len>=  sizeof(string)){break;}
+	if(len >= strlen(string)) {break;}
+	}
+
+	//if(len < sizeof(string)){
+	if(len < strlen(string)) {l = 1;}
+
+	if(l){
+	//len = sizeof(string);
+	len =  strlen(string);
+	for(uint16_t s=sss;s<len;s++)
+	{
+		string_rec[ss++] = string[s];
+		sss++;
+	}
+	}
+	strcpy(string,string_rec);
+	free(string_rec);
 }
 }
-//------------------------------------------------------------------------------
 
-
-// extract the url from a playlist m3u pls etc....
+// extract the url from a playlist m3u pls etc.
 bool clientParsePlaylist(char* s)
 {
   char* str;
@@ -230,28 +226,27 @@ bool clientParsePlaylist(char* s)
   if (str != NULL) //skip to next line
   {
 	ns = str;
-    while ((strlen(ns) > 0) && (ns[0]!=0x0A)) ns++;
+	while ((strlen(ns) > 0) && (ns[0]!=0x0A)) ns++;
 //	ESP_LOGV(TAG,"EXTM3U: %s",ns);
 	if (strlen(ns)>0) 
 		s = ns+1; // skip \n
-  }
+	}
 // skip if icy lines
-  if (strstr(s,"icy-") != NULL)
-  {
+	if (strstr(s,"icy-") != NULL)
+	{
 	clientSetPath((char*)"/;");
 	return true;
-  }	
-  
-  str = strstr(s,"<location>");  //for xspf
-  if (str != NULL) s= str+10;
-  str = strstr(s,"<REF href = ");  //for asx
-  if (str != NULL) s=str+11;
+	}
+	str = strstr(s,"<location>");  //for xspf
+	if (str != NULL) s= str+10;
+	str = strstr(s,"<REF href = ");  //for asx
+	if (str != NULL) s=str+11;
 
-  str = strstr(s,"http://");
-  if (str ==NULL) str = strstr(s,"HTTP://");
-  if (str != NULL)   {s= str+7; j = 7; strcpy (url,"http://"); }
-  else
-  {
+	str = strstr(s,"http://");
+	if (str ==NULL) str = strstr(s,"HTTP://");
+	if (str != NULL)   {s= str+7; j = 7; strcpy (url,"http://"); }
+	else
+	{
 	str = strstr(s,"https://");
 	if (str == NULL) str = strstr(s,"HTTPS://");
 	if (str != NULL) {s= str+8; j = 8; strcpy (url,"https://");strcpy(port,"443");}
@@ -259,10 +254,10 @@ bool clientParsePlaylist(char* s)
 		j = 7;
 		strcpy (url,"http://");
 	} // no http found
-  } 
-  
-  if (str != NULL)
-  {
+	}
+
+	if (str != NULL)
+	{
 	str = s;
 	ESP_LOGD(TAG,"parse str %s",str);
 	while ((str[i] != '/')&&(str[i] != ':')&&(str[i] != 0x0a)&&(str[i] != 0x0d)&&(j<77)) {url[j] = str[i]; i++ ;j++;}
@@ -288,16 +283,17 @@ bool clientParsePlaylist(char* s)
 //	ESP_LOGV(TAG,"parse str path %s",path);
 
 	if (strncmp(url,"localhost",9)!=0) clientSetURL(url);
+
 	clientSetPath(path);
 	clientSetPort(atoi(port));
 	ESP_LOGV(TAG,"clientParsePlaylist: url: %s, path: %s, port: %s",url,path,port);
 	return true;
-  }
-  else
-  {
-   cstatus = C_DATA;
-   return false;
-  }
+	}
+	else
+	{
+		cstatus = C_DATA;
+		return false;
+	}
 }
 
 //---------------------------------------
@@ -305,7 +301,7 @@ bool clientParsePlaylist(char* s)
 static char* stringify(char* str,int len) {
 #define MORE	20
 //		if ((strchr(str,'"') == NULL)&&(strchr(str,'/') == NULL)) return str;
-        if (len == 0) return str;
+		if (len == 0) return str;
 		char* new = incmalloc(len+MORE);
 		int nlen = len+MORE;
 		if (new != NULL)
@@ -360,7 +356,6 @@ bool clientPrintMeta()
 		kprintf("##CLI.META#: %s\n",header.members.mArr[METADATA]);
 	else
 		kprintf("##CLI.META#:%c", 0x0D);
-
 	return true;
 }
 
@@ -532,6 +527,7 @@ void wsStationNext()
 	playStationInt(getCurrentStation());
 	incfree(si,"wsstation");
 }
+
 // websocket: previous station
 void wsStationPrev()
 {
@@ -584,8 +580,8 @@ void wsMonitor()
 // websocket cannot send other char than utf8
 static char* pseudoUtf8(char* str, int* len) //,int len)
 {
-	#define MOREU	20
- //       if (len == 0) return str;
+#define MOREU 20
+	//if (len == 0) return str;
 	*len = strlen(str);
 	char* new = incmalloc(strlen(str)+MOREU);
 	if (new != NULL)
@@ -598,8 +594,8 @@ static char* pseudoUtf8(char* str, int* len) //,int len)
 			if ((str[i] > 192) && (str[i+1] < 0x80)){ // 128 = 0x80
 				new[j++] = 195; // 192 = 0xC0   195 = 0xC3
 				new[j++] =(str)[i]-64 ; // 64 = 0x40
-			} 
-			else new[j++] =(str)[i] ;				
+			}
+			else new[j++] = (str)[i];
 		}
 		incfree(str,"str");
 		new = realloc(new,j+1); // adjust
@@ -625,8 +621,8 @@ static void wsHeaders()
 	not2 = header.members.single.notice2;
 	if (not2 ==NULL) not2=header.members.single.audioinfo;
 	if ((header.members.single.notice2 != NULL)&&(strlen(header.members.single.notice2)==0)) not2=header.members.single.audioinfo;
-	
-	int json_length ;
+
+	int json_length;
 	json_length =104+ //93
 		strlen(currentSt)+
 		((header.members.single.description ==NULL)?0:strlen(header.members.single.description)) +
@@ -814,7 +810,7 @@ void clientSetURL(char* url)
 	if (url[0] == 0xff) return; // wrong url
 	if (strlen(url) > URLMAX)
 		strncat(clientURL,url,URLMAX-9);
-	else 
+	else
 		strcat(clientURL, url);
 	kprintf("##CLI.URLSET#: %s\n",clientURL);
 }
@@ -824,7 +820,7 @@ void clientSetPath(char* path)
 	if (path[0] == 0xff) return; // wrong path
 	if (strlen(path) > PATHMAX)
 		strncpy(clientPath,path,PATHMAX-1);
-	else 
+	else
 		strcpy(clientPath, path);
 	kprintf("##CLI.PATHSET#: %s\n",clientPath);
 }
@@ -949,13 +945,13 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 	switch (cstatus)
 	{
 	case C_PLAYLIST:
-         if (!clientParsePlaylist(pdata)) //need more
-		  cstatus = C_PLAYLIST1;
-		else {clientDisconnect("C_PLIST");  }
-    break;
+		if (!clientParsePlaylist(pdata)) //need more
+			cstatus = C_PLAYLIST1;
+		else {clientDisconnect("C_PLIST");}
+	break;
 	case C_PLAYLIST1:
-       clientDisconnect("C_PLIST1");
-        clientParsePlaylist(pdata) ;//more?
+		clientDisconnect("C_PLIST1");
+		clientParsePlaylist(pdata) ;//more?
 		cstatus = C_PLAYLIST;
 	break;
 	case C_HEADER0:
@@ -1028,7 +1024,6 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							ESP_LOGD(TAG,"chunked: %d,  strlen: %d  \"%s\"",chunked,strlen(t1)+1,t1);
 							t1 +=strlen(t1)+1; //+1 for char 0,
 						}
-
 						int newlen = len - (t1-pdata) ;
 						cchunk = chunked;
 						ESP_LOGD(TAG,"newlen: %d   len: %d   chunked:%d  pdata:%x",newlen,len,chunked,(int)pdata);
@@ -1086,7 +1081,6 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 					else		// a part of end of chunk 	and beginnining of a new one
 					{
 						inpdata = pdata;
-
 						while (lc != 0)
 						{
 							while (lc < cchunk+9)
@@ -1097,8 +1091,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 									clientDisconnect("chunk1");
 									break;
 								}
-								if (bread > 0)
-									clen = bread;
+								if (bread > 0) clen = bread;
 								else clen = 0;
 								lc+=clen;len+=clen;
 								//ESP_LOGV(TAG,"more:%d, lc:%d\n",clen,lc);
@@ -1118,7 +1111,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							lc = lc -cchunk  -clen; // rest after
 //	printf("leni:%d, inpdata:%x, chunked:%d  cchunk:%d, lc:%d, clen:%d, str: %s\n",len,inpdata,chunked,cchunk, lc,clen,inpdata+cchunk );
 						// compact data without chunklen and crlf
-							if (cchunk >1){
+							if (cchunk >1) {
 								memcpy (inpdata+cchunk-2,pdata+len-lc, lc);
 //	printf("lenm:%d, inpdata:%x, chunked:%d  cchunk:%d, lc:%d\n",len,inpdata,chunked,cchunk, lc);
 								len -= (clen +2);
@@ -1126,14 +1119,13 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 								//if (len <0) ESP_LOGD(TAG,"Len2: %d",len);
 //	printf("memcpy1 at %x from %x, lc:%d\n",inpdata+cchunk-2,pdata+len-lc,lc);
 							}
-							else{
+							else {
 								memcpy (inpdata,inpdata+cchunk+clen, lc);
 //	printf("lenm:%d, inpdata:%x, chunked:%d  cchunk:%d, lc:%d\n",len,inpdata,chunked,cchunk, lc);
 								len -= (clen + cchunk);
 								//if (len <0) ESP_LOGD(TAG,"Len3: %d",len);
 //	printf("memcpy2 at %x from %x, lc:%d, len:%d\n",inpdata,inpdata+cchunk+clen,lc,len);
 							}
-
 							if (chunked > lc)
 							{
 								cchunk = chunked - lc ;
@@ -1203,11 +1195,9 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 				jj++;
 				l = inpdata[metad]*16;	//new meta length
 				rest = clen - metad  -l -1;
-
 //if (l ==0){
 //	printf("mt len:%d, clen:%d, metad:%d,&l:%x, l:%d, rest:%d\n",len,clen,metad,inpdata+metad, l,rest );
 //if (l > 80) dump(inpdata,len);
-
 				if (l !=0)
 				{
 ESP_LOGD(TAG,"clientReceiveCallback: pdata: %x, pdataend: %x, len: %d",(int)pdata,(int)pdata+len,len);
@@ -1300,11 +1290,12 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 }
 
 uint8_t bufrec[RECEIVE+20];
-	
-void clientTask(void *pvParams) {
+
+void clientTask(void *pvParams)
+{
 	portBASE_TYPE uxHighWaterMark;
 	struct timeval timeout;
-    timeout.tv_usec = 0;
+	timeout.tv_usec = 0;
 	timeout.tv_sec = 6;
 	int sockfd;
 	int bytes_read;
@@ -1314,11 +1305,11 @@ void clientTask(void *pvParams) {
 	//int ret;
 
 	vTaskDelay(200);
-	spiRamFifoInit();	
+	spiRamFifoInit();
 
 	if (strlen(g_device->ua) == 0) strcpy(g_device->ua,"Karadio/2.0");
 	strcpy(userAgent, g_device->ua);
-					
+
 //	portBASE_TYPE uxHighWaterMark;
 //	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 //	printf("watermark webclient:%d  heap:%d\n",uxHighWaterMark,esp_get_free_heap_size());
@@ -1356,14 +1347,12 @@ void clientTask(void *pvParams) {
 				if (t0 == NULL)  t0 = strstr(clientPath, ".asx");
 				if (t0 != NULL)  // a playlist asked
 				{
-				  cstatus = C_PLAYLIST;
-
-				  sprintf((char*)bufrec, "GET %s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),g_device->ua); //ask for the playlist
-			    }
+					cstatus = C_PLAYLIST;
+					sprintf((char*)bufrec, "GET %s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),g_device->ua); //ask for the playlist
+				}
 				else
 				{
 					if (strcmp(cleanURL(),"stream.pcradio.biz") == 0) strcpy(userAgent,"pcradio");
-						
 					sprintf((char*)bufrec, "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),userAgent);
 				}
 //printf("st:%d, url: %s\nClient Sent:\n%s\n",cstatus,cleanURL(),bufrec);
@@ -1378,7 +1367,6 @@ void clientTask(void *pvParams) {
 				ESP_LOGD(TAG,"\nSent: %s\n",bufrec);
 				if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
 					ESP_LOGE(TAG,"Socket: %d  setsockopt: %d  errno:%d ",sockfd, SO_RCVTIMEO,errno);
-
 /// Wi-Fi QoS
 				const int ip_precedence_vi = 4;
 				const int ip_precedence_offset = 5;
@@ -1386,11 +1374,11 @@ void clientTask(void *pvParams) {
 				if (setsockopt(sockfd, IPPROTO_IP, IP_TOS, &priority, sizeof(priority))< 0)
 					ESP_LOGE(TAG,"Socket: %d  setsockopt: %d  errno:%d ",sockfd, IP_TOS,errno);
 //////
-				cnterror = 0;			
+				cnterror = 0;
 				wsMonitor();
 				do
 				{
-					bytes_read = recvfrom(sockfd, bufrec,RECEIVE, 0, NULL, NULL);						
+					bytes_read = recvfrom(sockfd, bufrec,RECEIVE, 0, NULL, NULL);
 					if ( bytes_read < 0 )
 					{
 						ESP_LOGE(TAG,"Socket: %d, read: %d, errno:%d ",sockfd, bytes_read,errno);
@@ -1448,13 +1436,14 @@ void clientTask(void *pvParams) {
 					}
 				}
 					//
-				else if ((!playing)&&(once == 0)) {  // nothing received
+				else if ((!playing)&&(once == 0)) {
+						// nothing received
 						clientDisconnect(nodata);
 						clientSaveOneHeader(nodata,7,METANAME);
 						wsHeaders();
 						vTaskDelay(1);
-				}
-				else{  //playing & once=1 and no more received stream
+				} else {
+					//playing & once=1 and no more received stream
 					while (spiRamFifoFill()) vTaskDelay(200);
 					vTaskDelay(100);
 					clientDisconnect("once");

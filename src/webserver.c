@@ -52,8 +52,6 @@ os_timer_t wakeTimer;
 uint32_t wakeDelay;
 int8_t  clientOvol = 0;
 
-
-
 static void *inmalloc(size_t n)
 {
 	void* ret;
@@ -63,6 +61,7 @@ static void *inmalloc(size_t n)
 //	if (n <4) printf("Server: incmalloc size:%d\n",n);
 	return ret;
 }
+
 static void infree(void *p)
 {
 	if (p != NULL)
@@ -70,7 +69,6 @@ static void infree(void *p)
 		ESP_LOGV(TAG,"server free of %x,  Heap size: %d",(int)p,esp_get_free_heap_size());
 	}
 }
-
 
 static struct servFile* findFile(char* name)
 {
@@ -82,7 +80,6 @@ static struct servFile* findFile(char* name)
 		if(f == NULL) return NULL;
 	}
 }
-
 
 static void respOk(int conn,const char* message)
 {
@@ -165,8 +162,8 @@ static void serveFile(char* name, int conn)
 //	ESP_LOGV(TAG,"serveFile socket:%d, end",conn);
 }
 
-
-static bool getSParameter(char* result,uint32_t len,const char* sep,const char* param, char* data, uint16_t data_length) {
+static bool getSParameter(char* result,uint32_t len,const char* sep,const char* param, char* data, uint16_t data_length)
+{
 	if ((data == NULL) || (param == NULL))return false;
 	char* p = strstr(data, param);
 	if(p != NULL) {
@@ -186,7 +183,8 @@ static bool getSParameter(char* result,uint32_t len,const char* sep,const char* 
 	} else return false;
 }
 
-static char* getParameter(const char* sep,const char* param, char* data, uint16_t data_length) {
+static char* getParameter(const char* sep,const char* param, char* data, uint16_t data_length)
+{
 	if ((data == NULL) || (param == NULL))return NULL;
 	char* p = strstr(data, param);
 	if(p != NULL) {
@@ -207,13 +205,18 @@ static char* getParameter(const char* sep,const char* param, char* data, uint16_
 	} else return NULL;
 }
 
-static char* getParameterFromResponse(const char* param, char* data, uint16_t data_length) {
+static char* getParameterFromResponse(const char* param, char* data, uint16_t data_length)
+{
 	return getParameter("&",param,data, data_length) ;
 }
-static bool getSParameterFromResponse(char* result,uint32_t size, const char* param, char* data, uint16_t data_length) {
+
+static bool getSParameterFromResponse(char* result,uint32_t size, const char* param, char* data, uint16_t data_length)
+{
 	return getSParameter(result,size,"&",param,data, data_length) ;
 }
-static char* getParameterFromComment(const char* param, char* data, uint16_t data_length) {
+
+static char* getParameterFromComment(const char* param, char* data, uint16_t data_length)
+{
 	return getParameter("\"",param,data, data_length) ;
 }
 
@@ -226,14 +229,17 @@ static void clientSetOvol(int8_t ovol)
 }
 
 // set the volume with vol,  add offset
-void setVolumei(int16_t vol) {
+void setVolumei(int16_t vol)
+{
 	vol += clientOvol;
 	if (vol > 254) vol = 254;
 	if (vol <0) vol = 1;
 	VS1053_SetVolume(vol);
 	if (vol <3) vol--;
 }
-void setVolume(char* vol) {
+
+void setVolume(char* vol)
+{
 	int16_t uvol = atoi(vol);
 	setIvol(uvol);
 	uvol += clientOvol;
@@ -245,8 +251,10 @@ void setVolume(char* vol) {
 		kprintf("##CLI.VOL#: %d\n",getIvol());
 	}
 }
+
 // set the current volume with its offset
-static void setOffsetVolume(void) {
+static void setOffsetVolume(void)
+{
 	int16_t uvol = getIvol();
 	uvol += clientOvol;
 	if (uvol > 254) uvol = 254;
@@ -256,14 +264,13 @@ static void setOffsetVolume(void) {
 	setVolumei(uvol);
 }
 
-
-
 uint16_t getVolume() {
 	return (getIvol());
 }
 
 // Set the volume with increment vol
-void setRelVolume(int8_t vol) {
+void setRelVolume(int8_t vol)
+{
 	char Vol[5];
 	int16_t rvol;
 	rvol = getIvol()+vol;
@@ -274,16 +281,17 @@ void setRelVolume(int8_t vol) {
 	wsVol(Vol);
 }
 
-
 // send the rssi
-static void rssi(int socket) {
+static void rssi(int socket)
+{
 	char answer[20];
 	sprintf(answer,"{\"wsrssi\":\"%d\"}",get_rssi());
 	websocketwrite(socket,answer, strlen(answer));
 }
 
 // flip flop the theme indicator
-static void theme() {
+static void theme()
+{
 	if ((g_device->options&T_THEME)!=0) g_device->options&=NT_THEME; else g_device->options |= T_THEME;
 	saveDeviceSettings(g_device);
 	ESP_LOGV(TAG,"theme:%d",g_device->options&T_THEME);
@@ -292,37 +300,41 @@ static void theme() {
 //return the current timer value in sec
 uint64_t getSleep()
 {
-        uint64_t ret=0;
-        uint64_t tot=0;
-        ESP_LOGD(TAG,"getSleep: ret: %lld, tot: %lld, return %lld",ret,tot,tot-ret);
-        return ((tot)-ret)/5000000;
+	uint64_t ret=0;
+	uint64_t tot=0;
+	ESP_LOGD(TAG,"getSleep: ret: %lld, tot: %lld, return %lld",ret,tot,tot-ret);
+	return ((tot)-ret)/5000000;
 }
 
 uint64_t getWake()
 {
-        uint64_t ret=0;
-        uint64_t tot=0;
-        ESP_LOGD(TAG,"getWake: ret: %lld, tot: %lld  return %lld",ret,(tot),tot-ret);
-        return ((tot)-ret)/5000000;
+	uint64_t ret=0;
+	uint64_t tot=0;
+	ESP_LOGD(TAG,"getWake: ret: %lld, tot: %lld  return %lld",ret,(tot),tot-ret);
+	return ((tot)-ret)/5000000;
 }
 
-void sleepCallback(void *pArg) {
+void sleepCallback(void *pArg)
+{
 	if (--sleepDelay == 0)
 	{
 		os_timer_disarm(&sleepTimer);
 		clientSilentDisconnect(); // stop the player
-	}		
+	}
 }
-void wakeCallback(void *pArg) {
+
+void wakeCallback(void *pArg)
+{
 	if (--wakeDelay == 0)
 	{
 		os_timer_disarm(&wakeTimer);
 		clientSilentDisconnect();
 		clientSilentConnect(); // start the player
-	}		
+	}
 }
 
-void startSleep(uint32_t delay) {
+void startSleep(uint32_t delay)
+{
 //	printf("Delay:%d\n",delay);
 	if (delay == 0) return;
 	sleepDelay = delay*60; // minutes to seconds
@@ -330,12 +342,14 @@ void startSleep(uint32_t delay) {
 	os_timer_arm(&sleepTimer, 1000, true); // 1 second and rearm	
 }
 
-void stopSleep() {
+void stopSleep()
+{
 //	printf("stopDelayDelay\n");
 	os_timer_disarm(&sleepTimer);
 }
 
-void startWake(uint32_t delay) {
+void startWake(uint32_t delay)
+{
 //	printf("Wake Delay:%d\n",delay);
 	if (delay == 0) return;
 	wakeDelay = delay*60; // minutes to seconds
@@ -343,7 +357,8 @@ void startWake(uint32_t delay) {
 	os_timer_arm(&wakeTimer, 1000, true); // 1 second and rearm	
 }
 
-void stopWake() {
+void stopWake()
+{
 //	printf("stopDelayWake\n");
 	os_timer_disarm(&wakeTimer);
 }
@@ -385,8 +400,8 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 	else if (strstr((char*)payload,"wsrssi")!= NULL){rssi(socket);}
 }
 
-
-void playStationInt(int sid) {
+void playStationInt(int sid)
+{
 	struct shoutcast_info* si;
 	char answer[24];
 	si = getStation(sid);
@@ -423,7 +438,8 @@ void playStationInt(int sid) {
 	}
 }
 
-void playStation(char* id) {
+void playStation(char* id)
+{
 	int uid = atoi(id) ;
 	ESP_LOGV(TAG,"playstation: %d",uid);
 	if (uid < 255)
@@ -431,26 +447,27 @@ void playStation(char* id) {
 	playStationInt(getCurrentStation());
 }
 
-// https://circuits4you.com/2019/03/21/esp8266-url-encode-decode-example/
-unsigned char h2int(char c) {
-    if (c >= '0' && c <='9'){
-        return((unsigned char)c - '0');
-    }
-    if (c >= 'a' && c <='f'){
-        return((unsigned char)c - 'a' + 10);
-    }
-    if (c >= 'A' && c <='F'){
-        return((unsigned char)c - 'A' + 10);
-    }
-    return(0);
+unsigned char h2int(char c)
+{
+	if (c >= '0' && c <='9'){
+		return((unsigned char)c - '0');
+	}
+	if (c >= 'a' && c <='f'){
+		return((unsigned char)c - 'a' + 10);
+	}
+	if (c >= 'A' && c <='F'){
+		return((unsigned char)c - 'A' + 10);
+	}
+	return(0);
 }
 
 // decode URI like Javascript
-static void pathParse(char* str) {
-    char c;
-    char code0;
-    char code1;
-    int j=0;
+static void pathParse(char* str)
+{
+	char c;
+	char code0;
+	char code1;
+	int j=0;
 	if (str == NULL) return;
 	for (int i=0; i< strlen(str);i++) {
 		if(str[i] == '+') {
@@ -470,7 +487,8 @@ static void pathParse(char* str) {
 	str[j] = 0;
 }
 
-static void handlePOST(char* name, char* data, int data_size, int conn) {
+static void handlePOST(char* name, char* data, int data_size, int conn)
+{
 	ESP_LOGD(TAG,"HandlePost %s\n",name);
 //	int i;
 	bool tst;
@@ -978,7 +996,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				saveDeviceSettings(g_device);
 			}
 			uint8_t macaddr[10]; // = inmalloc(10*sizeof(uint8_t));
-			char macstr[20];     // = inmalloc(20*sizeof(char));
+			char macstr[20];	 // = inmalloc(20*sizeof(char));
 			char adhcp[4],adhcp2[4];
 			esp_wifi_get_mac(WIFI_IF_STA,macaddr);
 			
@@ -1039,7 +1057,8 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 	respOk(conn,NULL);
 }
 
-static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
+static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen)
+{
 	char* c;
 	char* d;
 	ESP_LOGD(TAG,"Heap size: %d",esp_get_free_heap_size());
@@ -1177,15 +1196,16 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 #define RECLEN	768
 #define DRECLEN (RECLEN*2)
 // Server child task to handle a request from a browser.
-void serverclientTask(void *pvParams) {
+void serverclientTask(void *pvParams)
+{
 	struct timeval timeout;
-    timeout.tv_sec = 6;
-    timeout.tv_usec = 0;
+	timeout.tv_sec = 6;
+	timeout.tv_usec = 0;
 	int recbytes ,recb;
 	char  buf[DRECLEN];
 	portBASE_TYPE uxHighWaterMark;
 	int  client_sock =  (int)pvParams;
- //   char *buf = (char *)inmalloc(reclen);
+//	char *buf = (char *)inmalloc(reclen);
 	bool result = true;
 
 	if (buf != NULL)

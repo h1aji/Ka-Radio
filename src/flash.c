@@ -62,14 +62,14 @@ void gpio_get_label(char** label)
 	{
 		ESP_LOGD(TAG,"get label");
 		return;
-	}	
+	}
 	nvs_get_str(hardware_handle, "L_LABEL", NULL, &required_size);
 	if (required_size >1)
 	{
 		*label = kmalloc(required_size);
 		nvs_get_str(hardware_handle, "L_LABEL", *label, &required_size);	
 		ESP_LOGV(TAG,"Label: \"%s\"\n Required size: %d",*label,required_size);
-	}	
+	}
 	close_partition(hardware_handle,hardware);
 }
 
@@ -82,14 +82,14 @@ void gpio_get_comment(char** label)
 	{
 		ESP_LOGD(TAG,"get comment");
 		return;
-	}	
+	}
 	nvs_get_str(hardware_handle, "L_COMMENT", NULL, &required_size);
 	if (required_size >1)
 	{
 		*label = kmalloc(required_size);
 		nvs_get_str(hardware_handle, "L_COMMENT", *label, &required_size);	
 		ESP_LOGV(TAG,"Label: \"%s\"\n Required size: %d",*label,required_size);
-	}	
+	}
 	close_partition(hardware_handle,hardware);
 }
 
@@ -105,8 +105,8 @@ void option_get_lcd_info(uint8_t *enca, uint8_t* rt)
 	{
 		ESP_LOGD(TAG,"lcd_info");
 		return;
-	}			
-	
+	}
+
 	err = nvs_get_u8(hardware_handle, "O_LCD_TYPE",(uint8_t *) &typ);
 	err |= nvs_get_u8(hardware_handle, "O_LCD_ROTA",(uint8_t *) &rot);
 	if (typ != 255) *enca = typ;
@@ -114,7 +114,7 @@ void option_get_lcd_info(uint8_t *enca, uint8_t* rt)
 	if (*rt) *rt = 1;
 	if (err != ESP_OK)
 		ESP_LOGD(TAG,"oget_lcd_info err 0x%x",err);
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_set_lcd_info(uint8_t enca, uint8_t rt)
@@ -126,13 +126,12 @@ void option_set_lcd_info(uint8_t enca, uint8_t rt)
 	{
 		ESP_LOGD(TAG,"set lcd_info");
 		return;
-	}	
-	
+	}
+
 	err = nvs_set_u8(hardware_handle, "O_LCD_TYPE",enca);
 	err |= nvs_set_u8(hardware_handle, "O_LCD_ROTA",rt?1:0);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_info err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_get_ddmm(uint8_t *enca)
@@ -141,14 +140,14 @@ void option_get_ddmm(uint8_t *enca)
 	nvs_handle hardware_handle;
 	uint8_t dmm;
 	// init default
-	*enca = ((g_device->options32)&T_DDMM)?1:0;;	
-	
+	*enca = ((g_device->options32)&T_DDMM)?1:0;;
+
 	if (open_partition(hardware, option_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
 	{
 		ESP_LOGD(TAG,"ddmm");
 		return;
-	}	
-	
+	}
+
 	err = nvs_get_u8(hardware_handle, "O_DDMM_FLAG",(uint8_t *) &dmm);
 
 	if (err != ESP_OK) ESP_LOGD(TAG,"oget_ddmm err 0x%x",err);
@@ -156,8 +155,7 @@ void option_get_ddmm(uint8_t *enca)
 		if (dmm != 255) *enca = dmm;
 		if (*enca) *enca = 1;		
 	}
-	
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_set_ddmm(uint8_t enca)
@@ -169,11 +167,10 @@ void option_set_ddmm(uint8_t enca)
 	{
 		ESP_LOGD(TAG,"set_ddmm");
 		return;
-	}	
-	
+	}
+
 	err = nvs_set_u8(hardware_handle, "O_DDMM_FLAG",enca?1:0);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_ddmm err 0x%x",err);
-
 	close_partition(hardware_handle,hardware);		
 }
 
@@ -186,11 +183,10 @@ void option_set_lcd_out(uint32_t enca)
 	{
 		ESP_LOGD(TAG,"set_lcd_out");
 		return;
-	}	
-	
+	}
+
 	err = nvs_set_u32(hardware_handle, "O_LCD_OUT",enca);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_out err 0x%x",err);
-
 	close_partition(hardware_handle,hardware);		
 }
 
@@ -203,11 +199,10 @@ void option_set_lcd_stop(uint32_t enca)
 	{
 		ESP_LOGD(TAG,"set_lcd_stop");
 		return;
-	}	
-	
+	}
+
 	err = nvs_set_u32(hardware_handle, "O_LCD_STOP",enca);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_stop err 0x%x",err);
-
 	close_partition(hardware_handle,hardware);
 }
 
@@ -219,7 +214,7 @@ void option_set_lcd_blv(int blv)
 	{
 		ESP_LOGD(TAG,"set_lcd_blv");
 		return;
-	}	
+	}
 	err = nvs_set_i32(hardware_handle, "O_LCD_BLV",blv);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_blv err 0x%x",err);
 	close_partition(hardware_handle,hardware);		
@@ -232,7 +227,7 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 	uint32_t lout;
 
 	// init default lcd_out
-//		*enca = g_device->lcd_out;	
+	//	*enca = g_device->lcd_out;	
 	*enca = 0;
 	// init default lcd_stop
 	*encb = 0;
@@ -241,8 +236,8 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 	{
 		ESP_LOGD(TAG,"lcd_out");
 		return;
-	}	
-	
+	}
+
 	err = nvs_get_u32(hardware_handle, "O_LCD_OUT",(uint32_t *) &lout);
 	if (err == ESP_ERR_NVS_NOT_FOUND) 
 		err = nvs_set_u32(hardware_handle, "O_LCD_OUT",*enca);
@@ -254,8 +249,8 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 	{
 		if (lout == 255) lout = 0; // special case
 		*enca = lout;
-	}	
-		
+	}
+
 	err = nvs_get_u32(hardware_handle, "O_LCD_STOP",(uint32_t *) &lout);
 	if (err == ESP_ERR_NVS_NOT_FOUND) 
 		err = nvs_set_u32(hardware_handle, "O_LCD_STOP",*encb);
@@ -281,11 +276,11 @@ void option_get_lcd_blv(int *blv)
 	{
 		ESP_LOGD(TAG,"lcd_blv");
 		return;
-	}	
-	
+	}
+
 	err = nvs_get_i32(hardware_handle, "O_LCD_BLV",(int32_t *) &lout);
 	if (err == ESP_ERR_NVS_NOT_FOUND) 
-	{ 
+	{
 		err = nvs_set_i32(hardware_handle, "O_LCD_BLV",*blv);
 //		option_set_lcd_blv(*blv); err = 0;
 	}
@@ -295,11 +290,11 @@ void option_get_lcd_blv(int *blv)
 	}
 	else
 	{
-ESP_LOGD(TAG,"lcd_blv3");
+		ESP_LOGD(TAG,"lcd_blv3");
 		if (lout == 255) lout = 100; // special case
 		*blv = lout;
-	}	
-	close_partition(hardware_handle,hardware);		
+	}
+	close_partition(hardware_handle,hardware);
 }
 
 // get the active level of buttons

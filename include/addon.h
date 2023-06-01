@@ -67,16 +67,16 @@ typedef struct
 } battery_state;
 
 typedef struct {
-    int channel;             /*!< event type */
-    uint16_t addr;           /*!< nec addr */
-    uint16_t cmd;            /*!< nec cmdr */
+	int channel;	/*!< event type */
+	uint16_t addr;	/*!< nec addr */
+	uint16_t cmd;	/*!< nec cmdr */
 	bool repeat_flag;
 } event_ir_t;
 
 typedef  enum typelcmd {lstop,lplay,lmeta,licy0,licy4,lnameset,lvol,lovol,estation,eclrs,edraw,etoggle,escreen,erefresh} typelcmd;
 typedef struct {
-    typelcmd lcmd;           /*!< For what ?*/
-    char*  lline;            /*!< string of command */
+	typelcmd lcmd;	/*!< For what ?*/
+	char*  lline;	/*!< string of command */
 } event_lcd_t;
 
 #define MTNODISPLAY	0

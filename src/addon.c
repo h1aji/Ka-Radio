@@ -28,7 +28,7 @@ static void evtClearScreen();
 #define DTIDLE  60
 
 #define isColor (lcd_type&LCD_COLOR)
-const char *stopped = "STOPPED";	
+const char *stopped = "STOPPED";
 
 char irStr[4];
 xQueueHandle event_ir = NULL;
@@ -120,24 +120,24 @@ IRAM_ATTR void ServiceAddon(void)
 	if (timer1s >=1000)
 	{
 		// Time compute
-        timestamp++;  // time update  
+		timestamp++;  // time update  
 		if (timerLcdOut >0) timerLcdOut--; // 
 		timein++;
 		if ((timestamp % (10*DTIDLE))==0){ itAskTime=true;} // synchronise with ntp every x*DTIDLE
 		 
-		if (((timein % DTIDLE)==0)&&(!state)  ) {           
+		if (((timein % DTIDLE)==0)&&(!state))
+		{
 			{itAskStime=true;timein = 0;} // start the time display when paused
-        } 
+		}
 		if (timerLcdOut == 1) itLcdOut = 1; // ask to go to sleep
 		if (!syncTime) itAskTime=true; // first synchro if not done
-		
+
 		timer1s = 0;
-		// Other slow timers        
-        timerScreen++;       
+		// Other slow timers
+		timerScreen++;
 	}
 }
 
-////////////////////////////////////////
 // futurNum
 void setFuturNum(int16_t new)
 {
@@ -148,16 +148,14 @@ int16_t getFuturNum()
 	return futurNum;
 }
 
-////////////////////////////////////////
 // scroll each line
 void scroll()
 {	
 }
 
 
-////////////////////////////
+
 // Change the current screen
-////////////////////////////
 void Screen(typeScreen st){
 //printf("Screen: st: %d, stateScreen: %d, mTscreen: %d, default: %d\n",st,stateScreen,mTscreen,defaultStateScreen);
   if (stateScreen != st)
@@ -167,7 +165,7 @@ void Screen(typeScreen st){
   }
   else
   {
-    if (mTscreen == MTNODISPLAY) mTscreen = MTREFRESH;
+	if (mTscreen == MTNODISPLAY) mTscreen = MTREFRESH;
   }
 
 //  printf("Screenout: st: %d, stateScreen: %d, mTscreen: %d, default: %d, timerScreen: %d \n",st,stateScreen,mTscreen,defaultStateScreen,timerScreen);
@@ -181,46 +179,35 @@ void Screen(typeScreen st){
 }
 
 
-////////////////////////////////////////
+
 // draw all lines
 void drawFrame()
-{	
+{
 }
 
-
-//////////////////////////
 void drawTTitle(char* ttitle)
 { 
 }
 
-////////////////////
 // draw the number entered from IR
 void drawNumber()
 {
-
 }
 
-
-////////////////////
 // draw the station screen
 void drawStation()
 {
 }
 
-////////////////////
 // draw the volume screen
 void drawVolume()
 {
-
 }
 
 void drawTime()
 {
-
 }
 
-
-////////////////////
 // Display a screen on the lcd
 void drawScreen()
 {
@@ -228,33 +215,36 @@ void drawScreen()
 
 void stopStation()
 {
-//    irStr[0] = 0;
+//	irStr[0] = 0;
 	clientDisconnect("addon stop");
 }
 void startStation()
 {
- //   irStr[0] = 0;
-    playStationInt(futurNum); ; 
+//	irStr[0] = 0;
+	playStationInt(futurNum); ; 
 }
+
 void startStop()
-{   
+{
 	ESP_LOGD(TAG,"START/STOP State: %d",state);
-    state?stopStation():startStation();
-}  
+	state?stopStation():startStation();
+}
+
 void stationOk()
 {
 	ESP_LOGD(TAG,"STATION OK");
-       if (strlen(irStr) >0)
-	   {	   
-		  futurNum = atoi(irStr);
-          playStationInt(futurNum);
-	   }  
-        else
-        {
-            startStop();
-        }  
-        irStr[0] = 0;  
+		if (strlen(irStr) >0)
+		{
+			futurNum = atoi(irStr);
+			playStationInt(futurNum);
+		}
+		else
+		{
+			startStop();
+		}
+		irStr[0] = 0;
 }
+
 void changeStation(int16_t value)
 {
 	currentValue = value;
@@ -265,22 +255,21 @@ void changeStation(int16_t value)
 	if (futurNum <0) futurNum = 254;
 	ESP_LOGD(TAG,"futurnum: %d",futurNum);
 	//else if (value != 0) mTscreen = MTREFRESH;
-}				
+}
+
 // IR 
 // a number of station in progress...
 void nbStation(char nb)
 {
-  if (strlen(irStr)>=3) irStr[0] = 0;
-  uint8_t id = strlen(irStr);
-  irStr[id] = nb;
-  irStr[id+1] = 0;
-  evtScreen(snumber);
+	if (strlen(irStr)>=3) irStr[0] = 0;
+	uint8_t id = strlen(irStr);
+	irStr[id] = nb;
+	irStr[id+1] = 0;
+	evtScreen(snumber);
 }
- 
-// 
+
 static void evtClearScreen()
 {
-//	isColor?ucg_ClearScreen(&ucg):u8g2_ClearDisplay(&u8g2);
 	event_lcd_t evt;
 	evt.lcmd = eclrs;	
 	evt.lline = NULL;
@@ -327,23 +316,23 @@ bool irCustom(uint32_t evtir, bool repeat)
 		{
 			case KEY_UP: evtStation(+1);  break;
 			case KEY_LEFT: setRelVolume(-5);  break;
-			case KEY_OK: if (!repeat ) stationOk();   break;
-			case KEY_RIGHT: setRelVolume(+5);   break;
+			case KEY_OK: if (!repeat ) stationOk();  break;
+			case KEY_RIGHT: setRelVolume(+5);  break;
 			case KEY_DOWN: evtStation(-1);  break;
-			case KEY_0: if (!repeat ) nbStation('0');   break;  
-			case KEY_1: if (!repeat ) nbStation('1');  break;   
-			case KEY_2: if (!repeat ) nbStation('2');  break;   
-			case KEY_3: if (!repeat ) nbStation('3');  break;   
-			case KEY_4: if (!repeat ) nbStation('4');  break;   
-			case KEY_5: if (!repeat ) nbStation('5');  break;   
-			case KEY_6: if (!repeat ) nbStation('6');  break;   
-			case KEY_7: if (!repeat ) nbStation('7');  break;   
-			case KEY_8: if (!repeat ) nbStation('8');  break;   
+			case KEY_0: if (!repeat ) nbStation('0');  break;
+			case KEY_1: if (!repeat ) nbStation('1');  break;
+			case KEY_2: if (!repeat ) nbStation('2');  break;
+			case KEY_3: if (!repeat ) nbStation('3');  break;
+			case KEY_4: if (!repeat ) nbStation('4');  break;
+			case KEY_5: if (!repeat ) nbStation('5');  break;
+			case KEY_6: if (!repeat ) nbStation('6');  break;
+			case KEY_7: if (!repeat ) nbStation('7');  break;
+			case KEY_8: if (!repeat ) nbStation('8');  break;
 			case KEY_9: if (!repeat ) nbStation('9');  break;
 			case KEY_STAR: if (!repeat ) playStationInt(futurNum);  break;
 			case KEY_DIESE: if (!repeat )  stopStation();  break;
 			case KEY_INFO: if (!repeat ) toggletime();  break;
-			default: ;			
+			default: ;
 		}
 		ESP_LOGV(TAG,"irCustom success, evtir %x, i: %d",evtir,i);
 		return true;
@@ -355,8 +344,8 @@ bool irCustom(uint32_t evtir, bool repeat)
  // Compute the ir code
  //----------------------
  
- void irLoop()
- {
+void irLoop()
+{
 // IR
 event_ir_t evt;
 	while (xQueueReceive(event_ir, &evt, 0))
@@ -384,13 +373,13 @@ event_ir_t evt;
 		break;
 		case 0xDF204A:
 		case 0xFF0040:
-		case 0xF7081E: /*(" OK");*/ if (!evt.repeat_flag ) stationOk();     
+		case 0xF7081E: /*(" OK");*/ if (!evt.repeat_flag ) stationOk();
 		break;
 		case 0xDF204B:
 		case 0xDF2003:
 		case 0xFF0043:
 		case 0xF70841:
-		case 0xF70814: /*(" RIGHT");*/ setRelVolume(+5);     
+		case 0xF70814: /*(" RIGHT");*/ setRelVolume(+5);
 		break; 
 		case 0xDF204D:
 		case 0xDF2009:
@@ -435,22 +424,22 @@ event_ir_t evt;
 		break;
 		case 0xDF2045:
 		case 0xFF0042:
-		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) playStationInt(futurNum);   
+		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) playStationInt(futurNum);
 		break;
 		case 0xDF201B:
 		case 0xFF0052:
-		case 0xF70800: /*(" 0");*/ if (!evt.repeat_flag ) nbStation('0');   
+		case 0xF70800: /*(" 0");*/ if (!evt.repeat_flag ) nbStation('0');
 		break;
 		case 0xDF205B:
 		case 0xFF004A:
-		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  stopStation();    
+		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  stopStation();
 		break;
-		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag ) toggletime();	
+		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag ) toggletime();
 		break;
 		default:;
 		/*SERIALX.println(F(" other button   "));*/
 		}// End Case
-		}		
+		}
 	}
 }
 
@@ -486,18 +475,13 @@ IRAM_ATTR void multiService()  // every 1ms
 		divide = 0;
 	}
 }
-//--------------------
-// LCD display task
-//--------------------
 
+// LCD display task
 void task_lcd(void *pvParams)
 {
-	
 }
-
-//------------------- 
+ 
 // Main task of addon
-//------------------- 
 extern void rmt_nec_rx_task();
 
 void task_addon(void *pvParams)
@@ -507,8 +491,6 @@ void task_addon(void *pvParams)
 // force a new dt ntp fetch
 void addonDt() { itAskTime = true; }
 
-
-////////////////////////////////////////
 // parse the karadio received line and do the job
 void addonParse(const char *fmt, ...)
 {
@@ -520,77 +502,77 @@ void addonParse(const char *fmt, ...)
 	if (line == NULL) return;
 	line[0] = 0;
 	strcpy(line,"ok\n");
-	
+
 	va_list ap;
-	va_start(ap, fmt);	
-	rlen = vsprintf(line,fmt, ap);		
+	va_start(ap, fmt);
+	rlen = vsprintf(line,fmt, ap);
 	va_end(ap);
 	line = realloc(line,rlen+1);
 	if (line == NULL) return;	
 	ESP_LOGV(TAG,"LINE: %s",line);
 	evt.lcmd = -1;
-  char* ici;
+	char* ici;
  
  ////// Meta title  ##CLI.META#: 
-   if ((ici=strstr(line,"META#: ")) != NULL)
-   {     
+	if ((ici=strstr(line,"META#: ")) != NULL)
+	{
 		evt.lcmd = lmeta;
 		evt.lline = kmalloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
    } else 
  ////// ICY4 Description  ##CLI.ICY4#:
-    if ((ici=strstr(line,"ICY4#: ")) != NULL)
-    {
+	if ((ici=strstr(line,"ICY4#: ")) != NULL)
+	{
 		evt.lcmd = licy4;
 		evt.lline = kmalloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
-    } else 
+	} else 
  ////// ICY0 station name   ##CLI.ICY0#:
-   if ((ici=strstr(line,"ICY0#: ")) != NULL)
-   {
+	if ((ici=strstr(line,"ICY0#: ")) != NULL)
+	{
 		evt.lcmd = licy0;
 		evt.lline = kmalloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
-   } else
- ////// STOPPED  ##CLI.STOPPED#  
-   if (((ici=strstr(line,"STOPPED")) != NULL)&&(strstr(line,"C_HDER") == NULL)&&(strstr(line,"C_PLIST") == NULL))
-   {
+	} else
+ ////// STOPPED   ##CLI.STOPPED#
+	if (((ici=strstr(line,"STOPPED")) != NULL)&&(strstr(line,"C_HDER") == NULL)&&(strstr(line,"C_PLIST") == NULL))
+	{
 		state = false;	  
  		evt.lcmd = lstop;
 		evt.lline = NULL;
-   }    
-   else  
- //////Nameset    ##CLI.NAMESET#:
-   if ((ici=strstr(line,"MESET#: ")) != NULL)  
-   {   
-	  	evt.lcmd = lnameset;
+	}
+	else
+ //////Nameset   ##CLI.NAMESET#:
+	if ((ici=strstr(line,"MESET#: ")) != NULL)
+	{
+		evt.lcmd = lnameset;
 		evt.lline = kmalloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
-   } else
- //////Playing    ##CLI.PLAYING#
-   if ((ici=strstr(line,"YING#")) != NULL)  
-   {
+	} else
+ //////Playing   ##CLI.PLAYING#
+	if ((ici=strstr(line,"YING#")) != NULL)
+	{
 		state = true;
 		itAskStime = false;
  		evt.lcmd = lplay;
 		evt.lline = NULL;
-   } else
-   //////Volume   ##CLI.VOL#:
-   if ((ici=strstr(line,"VOL#:")) != NULL)  
-   {
-	   if (*(ici+6) != 'x') // ignore help display.
-	   {
-		volume = atoi(ici+6);
- 		evt.lcmd = lvol;
-		evt.lline = NULL;//atoi(ici+6);
-	   }
-   } else
-  //////Volume offset    ##CLI.OVOLSET#:
-   if ((ici=strstr(line,"OVOLSET#:")) != NULL)  
-   {
-	    evt.lcmd = lovol;
+	} else
+	//////Volume   ##CLI.VOL#:
+	if ((ici=strstr(line,"VOL#:")) != NULL)
+	{
+		if (*(ici+6) != 'x') // ignore help display.
+		{
+			volume = atoi(ici+6);
+ 			evt.lcmd = lvol;
+			evt.lline = NULL;//atoi(ici+6);
+		}
+	} else
+	// Volume offset   ##CLI.OVOLSET#:
+	if ((ici=strstr(line,"OVOLSET#:")) != NULL)
+	{
+		evt.lcmd = lovol;
 		evt.lline = NULL;
-   }
-   if (evt.lcmd != -1 && lcd_type !=LCD_NONE) xQueueSend(event_lcd,&evt, 0);
-   free (line);
+	}
+	if (evt.lcmd != -1 && lcd_type !=LCD_NONE) xQueueSend(event_lcd,&evt, 0);
+	free (line);
 }

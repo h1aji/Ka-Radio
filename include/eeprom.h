@@ -48,14 +48,14 @@ struct device_settings {
 	uint8_t ipAddr1[4];
 	uint8_t mask1[4];
 	uint8_t gate1[4];
-	uint8_t dhcpEn2;		
-	uint8_t ipAddr2[4];		
-	uint8_t mask2[4];		
-	uint8_t gate2[4];			
-	char ssid1[SSIDLEN]; 
-	char ssid2[SSIDLEN]; 
-	char pass1[PASSLEN];	
-	char pass2[PASSLEN];	
+	uint8_t dhcpEn2;
+	uint8_t ipAddr2[4];
+	uint8_t mask2[4];
+	uint8_t gate2[4];
+	char ssid1[SSIDLEN];
+	char ssid2[SSIDLEN];
+	char pass1[PASSLEN];
+	char pass2[PASSLEN];
 	uint8_t current_ap; // 0 = AP mode, else STA mode: 1 = ssid1, 2 = ssid2
 	uint8_t vol;
 	int8_t treble;

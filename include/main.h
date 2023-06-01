@@ -10,17 +10,17 @@
 #ifndef MAIN_INCLUDE_APP_MAIN_H_
 #define MAIN_INCLUDE_APP_MAIN_H_
 
-#define TIMER_DIVIDER 16 	//5000000Hz 5MHz
-#define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz 
+#define TIMER_DIVIDER 16	//5000000Hz 5MHz
+#define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz
 #define TIMER_DIVIDER1mS 8 //10000000Hz 10MHz
 
-#define TIMERVALUE(x) (x*5000000ULL )
-#define TIMERVALUE1MS(x) (x*10) 
-#define TIMERVALUE1mS(x) (x*10000 )
+#define TIMERVALUE(x) (x*5000000ULL)
+#define TIMERVALUE1MS(x) (x*10)
+#define TIMERVALUE1mS(x) (x*10000)
 
 // event for timers and encoder
-#define TIMER_SLEEP   0   
-#define TIMER_WAKE    1 
+#define TIMER_SLEEP   0
+#define TIMER_WAKE	1
 #define TIMER_1MS	2
 #define TIMER_1mS	3
 
@@ -53,13 +53,13 @@
 #define TEMPO_SAVE_VOL	10000
 
 typedef enum {
-    I2S, DAC_BUILT_IN, PDM, VS1053
+	VS1053
 } output_mode_t;
 
 typedef struct {
-    int type;               /*!< event type */
-    int i1;                 /*!< TIMER_xxx timer group */
-    int i2;                 /*!< TIMER_xxx timer number */
+	int type;			/*!< event type */
+	int i1;				/*!< TIMER_xxx timer group */
+	int i2;				/*!< TIMER_xxx timer number */
 } queue_event_t;
 
 uint8_t getIvol();

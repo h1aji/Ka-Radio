@@ -8,31 +8,31 @@
 #define __WEBSOCKET_H__
 
 // max size of the WS Message Header
-#define WEBSOCKETS_MAX_HEADER_SIZE  (14)
+#define WEBSOCKETS_MAX_HEADER_SIZE (14)
 
 #define NBCLIENT 5
-#define MAXDATA	 528
+#define MAXDATA  528
 
 typedef enum {
-    WSop_continuation = 0x00, ///< %x0 denotes a continuation frame
-    WSop_text = 0x01,         ///< %x1 denotes a text frame
-    WSop_binary = 0x02,       ///< %x2 denotes a binary frame
+	WSop_continuation = 0x00, ///< %x0 denotes a continuation frame
+	WSop_text = 0x01,         ///< %x1 denotes a text frame
+	WSop_binary = 0x02,       ///< %x2 denotes a binary frame
                               ///< %x3-7 are reserved for further non-control frames
-    WSop_close = 0x08,        ///< %x8 denotes a connection close
-    WSop_ping = 0x09,         ///< %x9 denotes a ping
-    WSop_pong = 0x0A          ///< %xA denotes a pong
+	WSop_close = 0x08,        ///< %x8 denotes a connection close
+	WSop_ping = 0x09,         ///< %x9 denotes a ping
+	WSop_pong = 0x0A          ///< %xA denotes a pong
                               ///< %xB-F are reserved for further control frames
 } wsopcode_t;
 
 typedef struct {
-        bool fin;
-//        bool rsv1;
-//        bool rsv2;
-//        bool rsv3;
+		bool fin;
+//		bool rsv1;
+//		bool rsv2;
+//		bool rsv3;
 		wsopcode_t opCode;
-        bool mask;
+		bool mask;
 		size_t payloadLen;
-        uint8_t * maskKey;
+		uint8_t * maskKey;
 } wsMessageHeader_t;
 
 typedef struct {

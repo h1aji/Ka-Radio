@@ -29,24 +29,24 @@ int telnetclients[NBCLIENTT];
 // reception buffer
 static char brec[256];
 static char iac[3];
-static bool inIac = false; // if in negociation
-static char *obrec;        //precedent received command
+static bool inIac = false;	// if in negociation
+static char *obrec;			// precedent received command
 static uint16_t irec;
 static uint8_t iiac;
 xSemaphoreHandle sTELNET = NULL;
 
 static uint8_t telnet_take_semaphore()
 {
-  if (sTELNET)
-    if (xSemaphoreTake(sTELNET, portMAX_DELAY))
-      return 1;
-  return 0;
+	if (sTELNET)
+		if (xSemaphoreTake(sTELNET, portMAX_DELAY))
+		return 1;
+	return 0;
 }
 
 static void telnet_give_semaphore()
 {
-  if (sTELNET)
-    xSemaphoreGive(sTELNET);
+	if (sTELNET)
+		xSemaphoreGive(sTELNET);
 }
 
 // init some data
@@ -160,9 +160,8 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...)
 		{
 			write( telnetclients[i],  buf, strlen(buf));
 		}	
-	telnet_give_semaphore();		
+	telnet_give_semaphore();
 	free (buf);
-
 }
 
 void telnetNego(int tsocket)
@@ -201,7 +200,7 @@ int telnetRead(int tsocket)
 	int i;	
 	buf = (char *)kmalloc(MAXDATAT);	
 	recbytes = 0;
-    if (buf == NULL)
+	if (buf == NULL)
 	{
 		vTaskDelay(100); // wait a while and retry
 		buf = (char *)kmalloc(MAXDATAT);	
@@ -209,7 +208,6 @@ int telnetRead(int tsocket)
 	if (buf != NULL)
 	{
 		recbytes = read(tsocket , buf, MAXDATAT);
-
 		if (recbytes <= 0) {
 			if ((errno != EAGAIN )&& (errno != ENOTCONN) &&(errno != 0 ))
 			{
@@ -220,7 +218,7 @@ int telnetRead(int tsocket)
 			} 
 			free(buf);
 			return 0; // free the socket
-		}	
+		}
 
 		buf = realloc(buf,recbytes+2);
 //		printf("%sHEAPdi1: %d #\nrecbytes: %d\n","##SYS.",esp_get_free_heap_size(),recbytes);	
@@ -274,7 +272,7 @@ int telnetRead(int tsocket)
 				}
 			}	
 			free(buf);	
-		}		
+		}
 	}
 	return recbytes;
 }

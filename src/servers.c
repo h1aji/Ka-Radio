@@ -67,29 +67,29 @@ void serversTask(void* pvParams)
 // telnet socket init
 /////////////////////
 		bzero(&tenetserver_addr, sizeof(struct sockaddr_in));
-        tenetserver_addr.sin_family = AF_INET;
-        tenetserver_addr.sin_addr.s_addr = INADDR_ANY;
-        tenetserver_addr.sin_port = htons(23);
-		
-        if (-1 == (telnetServer_sock = socket(AF_INET, SOCK_STREAM, 0))) {
+		tenetserver_addr.sin_family = AF_INET;
+		tenetserver_addr.sin_addr.s_addr = INADDR_ANY;
+		tenetserver_addr.sin_port = htons(23);
+
+		if (-1 == (telnetServer_sock = socket(AF_INET, SOCK_STREAM, 0))) {
 			ESP_LOGE(TAG,strsTELNET,strsocket, errno);
 			vTaskDelay(5);	
-            break;
-        }
+			break;
+		}
 		ESP_LOGD(TAG,"telnetServer_sock socket: %d, errno: %d", telnetServer_sock, errno);
-        if (-1 == bind(telnetServer_sock, (struct sockaddr *)(&tenetserver_addr), sizeof(struct sockaddr))) {
+		if (-1 == bind(telnetServer_sock, (struct sockaddr *)(&tenetserver_addr), sizeof(struct sockaddr))) {
 			ESP_LOGE(TAG,strsTELNET,strbind, errno);
 			close(telnetServer_sock);
 			vTaskDelay(10);	
-            break;
-        }
-        if (-1 == listen(telnetServer_sock, 5)) {
+			break;
+		}
+		if (-1 == listen(telnetServer_sock, 5)) {
 			ESP_LOGE(TAG,strsTELNET,strlisten,errno);
 			close(telnetServer_sock);
 			vTaskDelay(10);	
-            break;
-        }
-        telnetSin_size = sizeof(tenetclient_addr);	
+			break;
+		}
+		telnetSin_size = sizeof(tenetclient_addr);	
 ////////////////////////		
 // telnet socket init end
 ////////////////////////
@@ -113,7 +113,7 @@ void serversTask(void* pvParams)
 			ESP_LOGE(TAG,strsWSOCK, strbind,errno);
 			close(server_sock);
 			vTaskDelay(10);	
-            break;
+			break;
 		}
 		if (-1 == listen(server_sock, 5)) {
 			ESP_LOGE(TAG,strsWSOCK,strlisten,errno);
@@ -125,7 +125,7 @@ void serversTask(void* pvParams)
 /////////////////////////////		
 // webserver socket init end
 ////////////////////////////
-		
+
 		while (1)  //main loop
 		{
 			
@@ -172,8 +172,6 @@ void serversTask(void* pvParams)
 				}				
 			}	
 
-
-		
 //printf("lwip_socket_offset: %d\n",lwip_socket_offset);	
 //printf("ws call select. Max sd: %d\n",max_sd);
 
@@ -225,8 +223,7 @@ void serversTask(void* pvParams)
 					}
 				}					
 			}
-			
-			
+
 //If something happened on the master telnet socket , then its an incoming connection
 			if (FD_ISSET(telnetServer_sock, &readfds)) 
 			{
@@ -252,7 +249,6 @@ void serversTask(void* pvParams)
 			for (i = 0; i < NBCLIENTT; i++) 
 			{
 				sd = telnetclients[i];
-             
 				if ((sd!=-1) &&(FD_ISSET( sd , &readfds))) 
 				{
 					FD_CLR(sd , &readfds);  
@@ -266,29 +262,25 @@ void serversTask(void* pvParams)
 					}
 				}
 			} 
-			
-			
+
 // websocket sockets				
 			for (i = 0; i < NBCLIENT; i++) 
 			{
 				sd = webserverclients[i].socket;
-             
 				if ((sd!=-1) &&(FD_ISSET( sd , &readfds))) 
 				{
 					FD_CLR(sd , &readfds);  
 //					ESP_LOGV(TAG,"webserverclients.");
 					ret = websocketRead(sd);
-//					ESP_LOGV(TAG,"Call websocketRead i: %d, socket: %d, ret: %d" ,i, sd,ret);  
-					if (ret <= 0) 
+//					ESP_LOGV(TAG,"Call websocketRead i: %d, socket: %d, ret: %d" ,i, sd,ret);
+					if (ret <= 0)
 					{
-						websocketremoveclient(sd);						
-						ESP_LOGV(TAG,"Clear i: %d, socket: %d, errno: %d\n" ,i, sd,errno); 
+						websocketremoveclient(sd);
+						ESP_LOGV(TAG,"Clear i: %d, socket: %d, errno: %d\n" ,i, sd,errno);
 					}
 				}
-			}    				
-						
+			}				
 		}			
-					
 	} 
 	vTaskDelete( NULL );	// never called
 }

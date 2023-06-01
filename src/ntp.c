@@ -22,28 +22,27 @@
 // A task if needed
 /*
 void ntpTask(void *pvParams) {
-
 	while (1)
 	{
 		vTaskDelay(60000);
 		ntp_get_time();
-	}	
+	}
 }
 */
 
 // get ntp time and return an allocated tm struct (UTC)
 bool ntp_get_time(struct tm **dt)
 {
-	struct timeval timeout; 
-    timeout.tv_usec = 0;
+	struct timeval timeout;
+	timeout.tv_usec = 0;
 	timeout.tv_sec = 5; 
 	int sockfd = 0;
 	ntp_t* ntp;
 	char *msg;
 	int rv;
 	char service[] = {"123"}; //ntp port
-	char node[] = {"pool.ntp.org"}; // this one is universel
-    struct addrinfo hints, *servinfo = NULL, *p = NULL;
+	char node[] = {"pool.ntp.org"}; // this one is common
+	struct addrinfo hints, *servinfo = NULL, *p = NULL;
 //	struct tm *dt;
 	time_t timestamp;
 //	int8_t tz;
@@ -52,7 +51,7 @@ bool ntp_get_time(struct tm **dt)
 	if (msg == NULL){
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on kcalloc");
 		return false;
-	} 
+	}
 	// build the message to send
 	ntp = (ntp_t*)msg;
 	ntp->options = 0x1B; //3 first flags set in binary: 00 001 011  LI=0 VN=3 MODE=CLIENT
@@ -81,18 +80,17 @@ bool ntp_get_time(struct tm **dt)
 	if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on %s %d","setsockopt",0);	free (msg);freeaddrinfo(servinfo);	close(sockfd);
 		return false;
-	} 	
+	}
 //send the request	
 	if ((rv = sendto(sockfd, msg, sizeof(ntp_t), 0,p->ai_addr, p->ai_addrlen)) == -1) {
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on %s %d","sendto",rv); free (msg);freeaddrinfo(servinfo);	close(sockfd);
-		return false;					
+		return false;
 	}
 	freeaddrinfo(servinfo);	
  	if ((rv = recvfrom(sockfd, msg, sizeof(ntp_t) , 0,NULL, NULL)) <=0) {
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on %s %d","recvfrom",rv);free(msg);close(sockfd);
-		return false;	
-	}	
-			
+		return false;
+	}
 	//extract time
 	ntp = (ntp_t*)msg;	
 	timestamp = ntp->trans_time[0] << 24 | ntp->trans_time[1] << 16 |ntp->trans_time[2] << 8 | ntp->trans_time[3];
@@ -109,7 +107,7 @@ bool ntp_get_time(struct tm **dt)
 void ntp_print_time()
 {
 	struct tm* dt;
-	int8_t tz;	
+	int8_t tz;
 	char msg[30];
 	
 	if (ntp_get_time(&dt))
