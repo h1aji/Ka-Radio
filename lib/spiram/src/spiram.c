@@ -73,10 +73,10 @@ void spiRamRead(int addr, char *buff, int len) {
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_CS_SETUP|SPI_CS_HOLD|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_MISO);
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MOSI);
-	WRITE_PERI_REG(SPI_USER1(HSPI),((0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|  //no data out
-			((((8*len)-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|       //len bits of data in
-			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));               //address is 24 bits A0-A23
-	WRITE_PERI_REG(SPI_ADDR(HSPI),addr<<8);                                           //write address
+	WRITE_PERI_REG(SPI_USER1(HSPI),((0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|	//no data out
+			((((8*len)-1)&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|					//len bits of data in
+			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));							//address is 24 bits A0-A23
+	WRITE_PERI_REG(SPI_ADDR(HSPI),addr<<8);												//write address
 	WRITE_PERI_REG(SPI_USER2(HSPI),(((7&SPI_USR_COMMAND_BITLEN)<<SPI_USR_COMMAND_BITLEN_S) | 0x03)); //set read mode
 
 	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
@@ -108,10 +108,10 @@ void spiRamWrite(int addr, char *buff, int len) {
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_CS_SETUP|SPI_CS_HOLD|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_MOSI);
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MISO);
-	WRITE_PERI_REG(SPI_USER1(HSPI),((((8*len)-1)&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)| //len bits of data out
-			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|                          //no data in
-			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));                        //address is 24 bits A0-A23
-	WRITE_PERI_REG(SPI_ADDR(HSPI),addr<<8);                                                    //write address
+	WRITE_PERI_REG(SPI_USER1(HSPI),((((8*len)-1)&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|	//len bits of data out
+			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|									//no data in
+			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));									//address is 24 bits A0-A23
+	WRITE_PERI_REG(SPI_ADDR(HSPI),addr<<8);														//write address
 	WRITE_PERI_REG(SPI_USER2(HSPI),(((7&SPI_USR_COMMAND_BITLEN)<<SPI_USR_COMMAND_BITLEN_S) | 0x02)); //set write mode
 
 	//Assume unaligned src: Copy byte-wise.

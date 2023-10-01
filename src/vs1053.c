@@ -63,22 +63,22 @@ bool VS1053_HW_init() {
 	gpio_set_level(GPIO_NUM_16, 1);
 
 	// Set CS pin as output and high
-	gpio_set_direction(GPIO_NUM_2, GPIO_MODE_OUTPUT);
-	gpio_set_level(GPIO_NUM_2, 1);
+	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
+	gpio_set_level(GPIO_NUM_0, 1);
 
 	ESP_LOGI(TAG, "Init VS1053 SPI");
 
 	if(!sSPI) vSemaphoreCreateBinary(sSPI);
 	spi_give_semaphore();
 
-	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9)); 		//Set bit 9 if 80MHz sysclock required
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO); //GPIO12 is HSPI MISO pin (Master Data In)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI); //GPIO13 is HSPI MOSI pin (Master Data Out)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);	//GPIO14 is HSPI CLK pin (Clock)
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);	//GPIO2 is set as CS pin (Chip Select / Slave Select)
+	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9)); 				//Set bit 9 if 80MHz sysclock required
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO);	//GPIO12 is HSPI MISO pin (Master Data In)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI);	//GPIO13 is HSPI MOSI pin (Master Data Out)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);		//GPIO14 is HSPI CLK pin (Clock)
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_SPICS2);		//GPIO0  is set as CS pin (Chip Select / Slave Select)
 
-	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);	//SPI TX Byte order High to Low
-	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);	//SPI RX Byte order High to Low
+	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_WR_BYTE_ORDER);		//SPI TX Byte order High to Low
+	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_RD_BYTE_ORDER);		//SPI RX Byte order High to Low
 
 	SET_PERI_REG_MASK(SPI_USER(HSPI), SPI_CS_SETUP|SPI_CS_HOLD|SPI_USR_COMMAND);
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI), SPI_FLASH_MODE);
@@ -101,7 +101,7 @@ void VS1053_SPI_SpeedDown() {
 			((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); 
+			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
 }
 
 int getVsVersion() {
@@ -326,7 +326,7 @@ void VS1053_Start() {
 		vsVersion = 0; 
 		ESP_LOGE(TAG,"No VS1053 detected");
 		return;
-	} 
+	}
 
 // patch to mp3 mode id needed
 //	if (VS1053_ReadRegister(SPI_AUDATA) == 0xac45) // midi mode?
@@ -361,7 +361,7 @@ void VS1053_Start() {
 			}
 		}
 	}
-	
+
 	VS1053_InitVS();
 	// disable analog output
 	VS1053_WriteRegister16(SPI_VOL,0xFFFF);
@@ -419,8 +419,8 @@ uint8_t VS1053_GetVolume() {
 	{
 		j = (log10(255/((float)i+1)) * 105.54571334); // magic no?
 		if (value == j)
-		  return i;
-	}	
+			return i;
+	}
 	return 127;
 }
 
@@ -436,10 +436,8 @@ uint8_t VS1053_GetVolumeLinear() {
  * convert the log one to rough one and set it invs1053
  */
 void VS1053_SetVolume(uint8_t xMinusHalfdB) {
-uint8_t value = (log10(255/((float)xMinusHalfdB+1)) * 105.54571334);	
-//printf("setvol: %d\n",value);
+	uint8_t value = (log10(255/((float)xMinusHalfdB+1))*105.54571334);
 	if (value == 255) value = 254;
-//printf("xMinusHalfdB=%d  value=%d\n",xMinusHalfdB,value);
 	VS1053_WriteRegister(SPI_VOL,value,value);
 }
 
@@ -464,7 +462,6 @@ int8_t	VS1053_GetTreble() {
  */
 void VS1053_SetTreble(int8_t xOneAndHalfdB) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	
 	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8)|(xOneAndHalfdB << 4), bassReg & 0x00FF);
 }
@@ -639,9 +636,10 @@ void vsTask(void *pvParams) {
 
 		unsigned fsize = spiRamFifoFill();
 		size = min(VSTASKBUF, fsize);
-/*		if (size > 	VSTASKBUF)
+/*
+		if (size > 	VSTASKBUF)
 		{
-			ESP_LOGE(TAG, "Decoder vs1053 size: %d, fsize: %d, VSTASKBUF: %d .\n",size,fsize,VSTASKBUF );	
+			ESP_LOGE(TAG, "Decoder vs1053 size: %d, fsize: %d, VSTASKBUF: %d .\n",size,fsize,VSTASKBUF );
 			size = 	VSTASKBUF;
 		}
 */

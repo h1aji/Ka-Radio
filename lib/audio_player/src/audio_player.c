@@ -1,8 +1,8 @@
 /*
- * audio_player.c
+ *  audio_player.c
  *
  *  Created on: 12.03.2017
- *      Author: michaelboeckling
+ *  Author: michaelboeckling
  */
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
@@ -25,12 +25,12 @@ static component_status_t player_status = UNINITIALIZED;
 
 static int start_decoder_task(player_t *player)
 {
-    TaskFunction_t task_func;
-    char * task_name;
-    uint16_t stack_depth;
+	TaskFunction_t task_func;
+	char * task_name;
+	uint16_t stack_depth;
 	int priority = PRIO_MAD;
 
-    ESP_LOGD(TAG, "RAM left %d", esp_get_free_heap_size());
+	ESP_LOGD(TAG, "RAM left %d", esp_get_free_heap_size());
 
 	task_func = vsTask;
 	task_name = (char*)"vsTask";
@@ -38,19 +38,16 @@ static int start_decoder_task(player_t *player)
 	priority = PRIO_VS1053;
 
 	if (((task_func != NULL)) && (xTaskCreatePinnedToCore(task_func, task_name, stack_depth, player,
-			priority, NULL, CPU_MAD) != pdPASS)) 
-	{
-									
+			priority, NULL, CPU_MAD) != pdPASS)) {
 		ESP_LOGE(TAG, "ERROR creating decoder task! Out of memory?");
 		spiRamFifoReset();
 		return -1;
 	} else {
 		player->decoder_status = RUNNING;
 	}
-	
-	ESP_LOGD(TAG, "decoder task created: %s", task_name);
 
-    return 0;
+	ESP_LOGD(TAG, "decoder task created: %s", task_name);
+	return 0;
 }
 
 static int t;
@@ -58,15 +55,13 @@ static int t;
 /* Writes bytes into the FIFO queue, starts decoder task if necessary. */
 int audio_stream_consumer(char *recv_buf, ssize_t bytes_read)
 {
-    // don't bother consuming bytes if stopped
-    if(player_instance->command == CMD_STOP) {
+	// don't bother consuming bytes if stopped
+	if(player_instance->command == CMD_STOP) {
 		clientSilentDisconnect();
-        return -2;
-    }
-	if (bytes_read >0) 
-		spiRamFifoWrite(recv_buf, bytes_read);
-	if (player_instance->decoder_status != RUNNING ) 
-	{
+		return -2;
+	}
+	if (bytes_read >0) spiRamFifoWrite(recv_buf, bytes_read);
+	if (player_instance->decoder_status != RUNNING) {
 //		t = 0;
 		int bytes_in_buf = spiRamFifoFill();
 		uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
@@ -84,43 +79,40 @@ int audio_stream_consumer(char *recv_buf, ssize_t bytes_read)
 			}
 		}
 	}
-
 	if (t == 0) {
 		int bytes_in_buf = spiRamFifoFill();
 		uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
-		
 		ESP_LOGI(TAG, "Buffer fill %u%%, %d // %d bytes", fill_level, bytes_in_buf,spiRamFifoLen());
 	}
 	t = (t+1) & 255;
-	
-    return 0;
+	return 0;
 }
 
 void audio_player_init(player_t *player)
 {
-    player_instance = player;
-    player_status = INITIALIZED;
+	player_instance = player;
+	player_status = INITIALIZED;
 }
 
 void audio_player_start()
 {
-		player_instance->media_stream->eof = false;
-		player_instance->command = CMD_START;
-		player_instance->decoder_command = CMD_NONE;	
-		player_status = RUNNING;
+	player_instance->media_stream->eof = false;
+	player_instance->command = CMD_START;
+	player_instance->decoder_command = CMD_NONE;	
+	player_status = RUNNING;
 }
 
 void audio_player_stop()
-{ 
-//		spiRamFifoReset();
-		player_instance->decoder_command = CMD_STOP;
-		player_instance->command = CMD_STOP;
-		player_instance->media_stream->eof = true;
-		player_instance->command = CMD_NONE;
-		player_status = STOPPED;
+{
+//	spiRamFifoReset();
+	player_instance->decoder_command = CMD_STOP;
+	player_instance->command = CMD_STOP;
+	player_instance->media_stream->eof = true;
+	player_instance->command = CMD_NONE;
+	player_status = STOPPED;
 }
 
 component_status_t get_player_status()
 {
-    return player_status;
+	return player_status;
 }

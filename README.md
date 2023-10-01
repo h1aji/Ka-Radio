@@ -13,8 +13,8 @@ Please note that the wiring is slightly different from the original project
 |16   |D0    |XDCS |        |    |
 |05   |D1    |     |        |SCL |
 |04   |D2    |     |        |SDA |
-|00   |D3    |     |        |    |
-|02   |D4    |XCS  |        |    |
+|00   |D3    |XCS  |        |    |
+|02   |D4    |     |        |    |
 |14   |D5    |SCK  |SCK     |    |
 |12   |D6    |MISO |SO/SIO1 |    |
 |13   |D7    |MOSI |SI/SIO0 |    |
@@ -31,6 +31,6 @@ Please note that the reset circuit for VS1053 is made of 2 signal diodes 1N4148 
  - SSL functionality not ported
 
 ## Roadmap
- - Implement control via IR (GPIO0)
+ - Implement control via IR (GPIO2)
  - Add support for I2C LCD2004 or SSD1306 (GPIO4 and GPIO5)
  - Spiram auto detect

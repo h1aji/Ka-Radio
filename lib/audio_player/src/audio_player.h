@@ -1,8 +1,8 @@
 /*
- * audio_player.h
+ *  audio_player.h
  *
  *  Created on: 12.03.2017
- *      Author: michaelboeckling
+ *  Author: michaelboeckling
  */
 
 #ifndef INCLUDE_AUDIO_PLAYER_H_
