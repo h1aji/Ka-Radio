@@ -149,12 +149,12 @@ void SPIPutChar(uint8_t data) {
 }
 
 void ControlReset(uint8_t State) {
-	gpio_set_level(GPIO_NUM_2, State);
+	gpio_set_level(GPIO_NUM_0, State);
 	gpio_set_level(GPIO_NUM_16, State);
 }
 
 void SCI_ChipSelect(uint8_t State) {
-	gpio_set_level(GPIO_NUM_2, State);
+	gpio_set_level(GPIO_NUM_0, State);
 }
 
 void SDI_ChipSelect(uint8_t State) {

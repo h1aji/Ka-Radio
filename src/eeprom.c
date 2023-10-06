@@ -36,10 +36,10 @@ void partitions_init(void)
 {
 	DEVICE = esp_partition_find_first(64,0,NULL);
 	if (DEVICE == NULL) ESP_LOGE(TAG, "DEVICE Partition not found");
-	DEVICE1 = esp_partition_find_first(66,0,NULL);
-	if (DEVICE1 == NULL) ESP_LOGE(TAG, "DEVICE1 Partition not found");
 	STATIONS = esp_partition_find_first(65,0,NULL);
 	if (STATIONS == NULL) ESP_LOGE(TAG, "STATIONS Partition not found");
+	DEVICE1 = esp_partition_find_first(66,0,NULL);
+	if (DEVICE1 == NULL) ESP_LOGE(TAG, "DEVICE1 Partition not found");
 	muxDevice=xSemaphoreCreateMutex();
 	g_device = getDeviceSettings();  // allocate one time for all
 }
@@ -242,9 +242,7 @@ struct device_settings* getDeviceSettingsSilent() {
 
 struct device_settings* getDeviceSettings() {
 	struct device_settings* buffer ;
-	if ((buffer = getDeviceSettingsSilent())==NULL)
-		ESP_LOGE(TAG,"getDeviceSetting fails");
+	if ((buffer = getDeviceSettingsSilent())==NULL) ESP_LOGE(TAG,"getDeviceSetting fails");
 //		printf(streGETDEVICE,0);
 	return buffer;
-	
 }

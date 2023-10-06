@@ -28,7 +28,7 @@
 #define FIFO_LOWMARK (32*1024)
 
 //Comment if external SPI RAM chip is used
-//#define FAKE_SPI_BUFF
+#define FAKE_SPI_BUFF
 
 #ifdef FAKE_SPI_BUFF
 //Re-define a bunch of things so we use the internal buffer
