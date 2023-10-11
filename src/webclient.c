@@ -14,8 +14,6 @@
 #include "esp_wifi.h"
 #include "freertos/semphr.h"
 
-#include "audio_player.h"
-
 #include "main.h"
 #include "buffer.h"
 #include "interface.h"
@@ -24,7 +22,6 @@
 #include "webclient.h"
 #include "webserver.h"
 
-extern player_t* player_config;
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 //2000 1440 1460 1436
 //#define RECEIVE 1440 2144
@@ -36,6 +33,7 @@ enum clientStatus cstatus;
 xSemaphoreHandle sConnect, sConnected, sDisconnect, sHeader;
 
 static uint8_t once = 0;
+static uint8_t volume = 0;
 static uint8_t playing = 0;
 
 static const char* icyHeaders[] = { 
@@ -747,7 +745,6 @@ bool clientParseHeader(char* s)
 			cstatus = C_HEADER;		
 		}
 		ESP_LOGD(TAG, "contentType: %d", contentType);
-		player_config->media_stream->content_type = contentType;
 	}
 
 	for(header_num=0; header_num<ICY_HEADERS_COUNT; header_num++)
@@ -873,8 +870,6 @@ void clientSilentConnect()
 void clientSilentDisconnect()
 {
 	xSemaphoreGive(sDisconnect);
-	if (get_player_status()!=STOPPED)
-		audio_player_stop();
 	for (int i = 0;i<100;i++)
 	{
 		if(!clientIsConnected())break;
@@ -887,19 +882,17 @@ void clientDisconnect(const char* from)
 {
 	kprintf(CLISTOP,from);
 	xSemaphoreGive(sDisconnect);
-	if (get_player_status()!=STOPPED)
-		audio_player_stop();
 	for (int i = 0;i<100;i++)
 	{
 		if(!clientIsConnected())break;
 		vTaskDelay(1);
 	}
-	if ((from[0]!='C') || (from[1]!='_'))	
+	if ((from[0]!='C') || (from[1]!='_'))
 //	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 	vTaskDelay(1);
 	// save the volume if needed on stop state
 	if (g_device->vol != getIvol())
-	{ 			
+	{
 		g_device->vol = getIvol();
 		saveDeviceSettingsVolume(g_device);
 	}
@@ -999,8 +992,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							  (int) t1, cstatus, icyfound, metad, (header.members.single.metaint));
 						cstatus = C_DATA;	// a stream found
 						setVolumei(1);
-						player_config->media_stream->eof = false;
-						audio_player_start();
+
 						t2 = strstr(pdata, "Transfer-Encoding: chunked"); // chunked stream?
 						chunked = 0;
 						t1+= 4;
@@ -1015,7 +1007,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 								if (ilen <0) {
 									clientDisconnect("chunk2");
 									break;
-								}							
+								}
 							}
 							chunked = (uint32_t) strtol(t1, NULL, 16) +2;
 							if (strchr((t1),0x0A) != NULL)
@@ -1200,7 +1192,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 //if (l > 80) dump(inpdata,len);
 				if (l !=0)
 				{
-ESP_LOGD(TAG,"clientReceiveCallback: pdata: %x, pdataend: %x, len: %d",(int)pdata,(int)pdata+len,len);
+					ESP_LOGD(TAG,"clientReceiveCallback: pdata: %x, pdataend: %x, len: %d",(int)pdata,(int)pdata+len,len);
 /*ESP_LOGD (TAG,
 	  "mt len:%d, clen:%d, metad:%d ,&l:%x, l:%d, inpdata:%x, rest:%d, str: %s",
 	  len, clen, metad, (int) inpdata + metad, l, (int) inpdata, rest,
@@ -1208,8 +1200,7 @@ ESP_LOGD(TAG,"clientReceiveCallback: pdata: %x, pdataend: %x, len: %d",(int)pdat
 					if (rest <0)
 					{
 						*(inpdata+clen) = 0; //truncated
-ESP_LOGD(TAG,"mtlen len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,clen,metad, l,(int)inpdata,rest );
-
+						ESP_LOGD(TAG,"mtlen len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,clen,metad, l,(int)inpdata,rest );
 						if (metadata != NULL) incfree(metadata,"meta");
 						metadata = incmalloc(l+1);
 						strcpy(metadata,inpdata+metad+1);
@@ -1219,15 +1210,9 @@ ESP_LOGD(TAG,"mtlen len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,c
 				if (metad >0)
 				{
 //					if (spiRamFifoFree() < metad) ESP_LOGV(TAG,"metaout2 wait metad: %d, bufferfree: %d",metad,spiRamFifoFree());
-//					while(spiRamFifoFree()<metad)	 // wait some room
-//						vTaskDelay(20);
-					if (audio_stream_consumer((char*)inpdata, metad)== -1)
-					{
-						playing=1;
-						clientSaveOneHeader("Cannot decode",13,METANAME);
-						wsHeaders();
-						vTaskDelay(100);
-					}
+					while(spiRamFifoFree()<metad)	// wait some room
+					vTaskDelay(20);
+					spiRamFifoWrite(inpdata, metad);
 				}
 				metad  = header.members.single.metaint;
 				inpdata = inpdata+clen-rest;
@@ -1235,7 +1220,7 @@ if (rest <0) ESP_LOGD(TAG,"mt1 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  res
 				clen = rest;
 				if (rest <0)
 				{
-ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,clen,metad, l,(int)inpdata,rest );
+					ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,clen,metad, l,(int)inpdata,rest );
 					clen = 0;
 					break;
 				}
@@ -1246,15 +1231,9 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 				if (rest >0)
 				{
 //					if (spiRamFifoFree() < rest) ESP_LOGV(TAG,"metaout3 wait rest: %d, bufferfree: %d",rest,spiRamFifoFree());
-//					while(spiRamFifoFree()<rest)	 // wait some room
-//						vTaskDelay(20);//
-					if (audio_stream_consumer((char*)inpdata, rest)== -1)
-					{
-						playing=1;
-						clientSaveOneHeader("Cannot decode",13,METANAME);
-						wsHeaders();
-						vTaskDelay(100);
-					}
+					while(spiRamFifoFree()<rest)	// wait some room
+					vTaskDelay(20);
+					spiRamFifoWrite(inpdata, rest);
 				}
 				rest = 0;
 			}
@@ -1267,15 +1246,9 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 			if (len >0)
 			{
 //				if (spiRamFifoFree() < len) ESP_LOGV(TAG,"metaout1 wait len: %d, bufferfree: %d",len,spiRamFifoFree());
-//				while(spiRamFifoFree()<len)	 // wait some room
-//						vTaskDelay(20);
-				if (audio_stream_consumer((char*)(pdata+rest), len)== -1)
-				{
-					playing=1;
-					clientSaveOneHeader("Cannot decode",13,METANAME);
-					wsHeaders();
-					vTaskDelay(100);
-				}
+				while(spiRamFifoFree()<len)	 // wait some room
+				vTaskDelay(20);
+				spiRamFifoWrite(pdata+rest, len);
 			}
 		}
 // ---------------
@@ -1450,13 +1423,14 @@ void clientTask(void *pvParams)
 				}
 			}
 			if (playing)  // stop clean
-			{
-				if (get_player_status() != STOPPED)
-					audio_player_stop();
-				player_config->media_stream->eof = true;
+			{		
+				volume = VS1053_GetVolume();
+				VS1053_SetVolume(0);
 				VS1053_flush_cancel();
 				playing = 0;
-				VS1053_LowPower();
+				vTaskDelay(40);	// stop without click
+				//VS1053_LowPower();
+				VS1053_SetVolume(volume);
 				strcpy(userAgent,g_device->ua);
 			}
 			spiRamFifoReset();

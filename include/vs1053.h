@@ -119,6 +119,4 @@ void VS1053_SPI_SpeedUp();
 void VS1053_SPI_SpeedDown();
 //void VS1053_PluginLoad();
 
-void vsTask(void *pvParams) ;
-
 #endif /* VS1053_H_ */

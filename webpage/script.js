@@ -2,7 +2,7 @@ var content = "Content-type",
 	ctype = "application/x-www-form-urlencoded",
 	cjson = "application/json";
 var auto,intervalid , intervalrssi  , timeid, websocket,urlmonitor , e, moniPlaying = false,editPlaying = false, editIndex= 0 ,curtab = "tab-content1",stchanged = false,maxStation = 255,themeIn = "0";
-const karadio = "Karadio32";
+const karadio = "KaRadio";
 const working = "Working.. Please Wait";
 
 function openwebsocket(){	

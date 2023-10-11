@@ -50,7 +50,6 @@
 #include "lwip/dns.h"
 #include "mdns.h"
 
-#include "audio_player.h"
 #include "buffer.h"
 
 #include "main.h"
@@ -66,17 +65,17 @@
 #include "vs1053.h"
 
 
-/* The event group allows multiple bits for each event*/
-//   are we connected  to the AP with an IP? */
+//The event group allows multiple bits for each event
+//are we connected to the AP with an IP?
 const int CONNECTED_BIT = 0x00000001;
 //
 const int CONNECTED_AP  = 0x00000010;
 
-//Priorities of the reader and the decoder thread. bigger number = higher prio
+//Priorities of the reader and the decoder thread. bigger number = higher priority
 #define PRIO_READER configMAX_PRIORITIES -3
 #define PRIO_MQTT configMAX_PRIORITIES - 3
 #define PRIO_CONNECT configMAX_PRIORITIES -1
-#define striWATERMARK  "watermark: %d  heap: %d"
+#define striWATERMARK "watermark: %d  heap: %d"
 
 void start_network();
 void autoPlay();
@@ -89,13 +88,12 @@ xQueueHandle event_queue;
 static uint16_t FlashOn = 5,FlashOff = 5;
 
 bool logTel; // true = log also on telnet
-player_t *player_config;
 uint8_t clientIvol = 0;
+
 //ip
 static char localIp[20];
-// 4MB sram?
-static bool bigRam = false;
-// timeout to save volume in flash
+
+//timeout to save volume in flash
 //static uint32_t ctimeVol = 0;
 static uint32_t ctimeMs = 0;
 static bool divide = false;
@@ -115,21 +113,14 @@ IRAM_ATTR void setIvol(uint8_t vol)
 	clientIvol = vol;
 }
 
-bool bigSram()
-{
-	return bigRam;
-}
-
 void* kmalloc(size_t memorySize)
 {
-	if (bigRam) return heap_caps_malloc(memorySize, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
-	else return heap_caps_malloc(memorySize, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+	return heap_caps_malloc(memorySize, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
 }
 
 void* kcalloc(size_t elementCount, size_t elementSize)
 {
-	if (bigRam) return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_SPIRAM|MALLOC_CAP_8BIT);
-	else return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+	return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
 }
 
 void tsocket(const char* lab, uint32_t cnt)
@@ -616,8 +607,6 @@ void app_main()
 	}
 	ESP_ERROR_CHECK(err);
 
-	// Check if we are in large SRAM config
-	if (esp_get_free_heap_size() > 0x80000) bigRam = true;
 	//init hardware
 	partitions_init();
 	ESP_LOGI(TAG, "Partition init done...");
@@ -751,22 +740,12 @@ void app_main()
 	ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));
 	ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));
 
-	// init player config
-	player_config = (player_t*)kcalloc(1, sizeof(player_t));
-	player_config->command = CMD_NONE;
-	player_config->decoder_status = UNINITIALIZED;
-	player_config->decoder_command = CMD_NONE;
-	player_config->buffer_pref = BUF_PREF_SAFE;
-	player_config->media_stream = kcalloc(1, sizeof(media_stream_t));
-
-	audio_player_init(player_config);
-
 	// LCD Display infos
 	lcd_welcome(localIp,"STARTED");
 	vTaskDelay(10);
-	ESP_LOGI(TAG, "RAM left %d, Internal %u", esp_get_free_heap_size(),heap_caps_get_free_size(MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT));
+	ESP_LOGI(TAG, "RAM left %d, Internal %u", esp_get_free_heap_size(),heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT));
 
-	//start tasks of KaRadio32
+	//start tasks of KaRadio
 	vTaskDelay(1);
 	xTaskCreatePinnedToCore(clientTask, "clientTask", 3800, NULL, PRIO_CLIENT, &pxCreatedTask,CPU_CLIENT);
 	ESP_LOGI(TAG, "%s task: %x","clientTask",(unsigned int)pxCreatedTask);

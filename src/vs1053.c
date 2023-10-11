@@ -16,7 +16,6 @@
 #include "esp8266/spi_register.h"
 #include "driver/gpio.h"
 
-#include "audio_player.h"
 #include "buffer.h"
 
 #include "main.h"
@@ -130,7 +129,7 @@ uint8_t SPIGetChar() {
 }
 
 void SPIPutChar(uint8_t data) {
-	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready  
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready
 
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MISO);
 
@@ -300,7 +299,7 @@ void VS1053_InitVS() {
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB000);
 
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_RESET);
-	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode 
+	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode
 	WaitDREQ();
 	
 	VS1053_regtest();
@@ -310,7 +309,7 @@ void VS1053_InitVS() {
 	{
 		VS1053_WriteRegister16(SPI_WRAMADDR, 0xc017);
 		VS1053_WriteRegister16(SPI_WRAM, 0x00F0);
-		VS1053_I2SRate(g_device->i2sspeed);	
+		VS1053_I2SRate(g_device->i2sspeed);
 	}
 }
 
@@ -318,12 +317,12 @@ void VS1053_Start() {
 	ControlReset(SET);
 	vTaskDelay(10);
 	ControlReset(RESET);
-	vTaskDelay(100);	
+	vTaskDelay(100);
 	if (CheckDREQ() == 0) vTaskDelay(50);	// wait a bit more
 	//Check DREQ
 	if (CheckDREQ() == 0)
 	{
-		vsVersion = 0; 
+		vsVersion = 0;
 		ESP_LOGE(TAG,"No VS1053 detected");
 		return;
 	}
@@ -618,48 +617,4 @@ void VS1053_flush_cancel() {
 
 	for (y = 0; y < 64; y++) 
 		VS1053_SendMusicBytes(buf, 32); //2080 bytes
-}
-
-void vsTask(void *pvParams) {
-#define VSTASKBUF 1024
-	portBASE_TYPE uxHighWaterMark;
-	uint8_t  b[VSTASKBUF];
-	uint16_t size ,s;
-	player_t *player = pvParams;
-
-	while(1) {
-		// stop requested, terminate immediately
-		if(player->decoder_command == CMD_STOP)
-		{
-			break;
-		}
-
-		unsigned fsize = spiRamFifoFill();
-		size = min(VSTASKBUF, fsize);
-/*
-		if (size > 	VSTASKBUF)
-		{
-			ESP_LOGE(TAG, "Decoder vs1053 size: %d, fsize: %d, VSTASKBUF: %d .\n",size,fsize,VSTASKBUF );
-			size = 	VSTASKBUF;
-		}
-*/
-		if (size > 0)
-		{
-			spiRamFifoRead((char*)b, size);
-			s = 0;
-			while(s < size)
-			{
-				s += VS1053_SendMusicBytes(b+s, size-s);
-			}
-		} else vTaskDelay(10);
-		vTaskDelay(2);
-	}
-
-	player->decoder_status = STOPPED;
-	player->decoder_command = CMD_NONE;
-	spiRamFifoReset();
-	ESP_LOGD(TAG, "Decoder vs1053 stopped.\n");
-	uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-	ESP_LOGI(TAG,"watermark: %x  %d",uxHighWaterMark,uxHighWaterMark);
-	vTaskDelete(NULL);
 }

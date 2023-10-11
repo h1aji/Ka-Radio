@@ -53,7 +53,7 @@
 <!--			<a href="https://github.com/PiotrSperka/ESP8266-WebRadio" style="font-size:8px" target="_blank">From PiotrSperka</a> -->
 			</div>
 			<div id="HEAD">
-			<span class="bold4"><span id="meta">Karadio32</span></span>
+			<span class="bold4"><span id="meta">KaRadio</span></span>
 			</div>	
 </div>	
 		<div id="MAINCONTENT" class="CONTENT" >
@@ -173,23 +173,13 @@
 					<label for="tab3">Setting</label>
 					<div id="tab-content3" class="tab-content">
 					<h1>Sound Setting </h1>
-						<p><span class="bold">Output: </span>
-						<span class="coutput">
-						<input type="radio" name="output" id="output0"   /><label for="output0">I2S</label>
-						<input type="radio" name="output" id="output1"   /><label for="output1">MERUS</label>
-						<input type="radio" name="output" id="output2"   /><label for="output2">DAC</label>
-						<input type="radio" name="output" id="output3"   /><label for="output3">PDM</label>
-						<input type="radio" name="output" id="output4" 	 /><label for="output4">VS1053</label>
-						<input type="radio" name="output" id="output5" 	 /><label for="output5">SPDIF</label>			
-						<br/><span class="bold"> </span><input type="button" value="Validate" onclick="validOutput()" />
-						</span><br>
-						<span id="vs1052Only">
+						<input type="button" value="Reset" onClick="resetEQ()"/></h1>
+						<p>
 						<span class="bold">Treble control: </span><input type="range" id="treble_range" name="treble"  onChange="onRangeChange('treble_range', 'treble_span', 1.5, false)" min=-8 max=7 > <span id="treble_span"></span><br>
 						<span class="bold">Treble frequency: </span><input type="range" id="treblefreq_range" name="treblefreq"  onChange="onRangeChangeFreqTreble('treblefreq_range', 'treblefreq_span', 1, false)" min=1 max=15 > <span id="treblefreq_span"></span><br>
-						<span class="bold">  Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 > <span id="bass_span"></span><br>
-						<span class="bold">  Bass frequency: </span><input type="range"  id="bassfreq_range" name="bassfreq"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 > <span id="bassfreq_span"></span><br>
-						<span class="bold">  Spacialization: </span><input type="range"  id="spacial_range" name="spacial"  onChange="onRangeChangeSpatial('spacial_range', 'spacial_span')" min=0 max=3 > <span id="spacial_span"></span><br/>
-						<span class="bold"> </span><input type="button" value="Reset" onClick="resetEQ()"/><br/>			</span><br/>
+						<span class="bold">Bass enhance: </span><input type="range"  id="bass_range" name="bass"  onChange="onRangeChange('bass_range', 'bass_span', 1, false)" min=0 max=15 > <span id="bass_span"></span><br>
+						<span class="bold">Bass frequency: </span><input type="range"  id="bassfreq_range" name="bassfreq"  onChange="onRangeChangeFreqBass('bassfreq_range', 'bassfreq_span', 10, false)" min=2 max=15 > <span id="bassfreq_span"></span><br>
+						<span class="bold">Spacialization: </span><input type="range"  id="spacial_range" name="spacial"  onChange="onRangeChangeSpatial('spacial_range', 'spacial_span')" min=0 max=3 > <span id="spacial_span"></span><br><br/>
 						<span class="bold">Volume: </span><input type="range" id="vol_range" name="vol"  onChange="onRangeVolChange(this.value,true)" value=100 min=0 max=254 > <span id="vol_span"></span><br>
 						</p>
 						<h1>Stations Save & Restore</h1>
