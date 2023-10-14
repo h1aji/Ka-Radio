@@ -36,7 +36,7 @@ static uint8_t once = 0;
 static uint8_t volume = 0;
 static uint8_t playing = 0;
 
-static const char* icyHeaders[] = { 
+static const char* icyHeaders[] = {
 	"icy-name:",
 	"icy-notice1:",
 	"icy-notice2:",
@@ -56,20 +56,18 @@ static char parEmpty[] = {" "};
 static char CLIPLAY[]  = {"##CLI.PLAYING#%c%c"};
 static char CLISTOP[]  = {"##CLI.STOPPED# from %s\n"};
 
-#define strcMALLOC  	"Client: incmalloc fails for %d"
-#define strcMALLOC1  	"%s kmalloc fails"
+#define strcMALLOC		"Client: incmalloc fails for %d"
+#define strcMALLOC1		"%s kmalloc fails"
 
 #define URLMAX	256
 #define PATHMAX	512
 
-static struct icyHeader header =
-  { {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL}} };
+static struct icyHeader header = { {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL}} };
 
 static char metaint[10];
 static char clientURL[URLMAX]= {0,0};
 static char clientPath[PATHMAX] = {0,0};
 static uint16_t clientPort = 80;
-
 
 static const struct hostent *serverInfo = NULL;
 static char* pseudoUtf8(char* str,int *len);
@@ -84,6 +82,7 @@ void *incmalloc(size_t n)
 	ESP_LOGV(TAG,"Client kmalloc after of %d bytes ret:%x  Heap size: %d",n,(int)ret,esp_get_free_heap_size());
 	return ret;
 }
+
 void incfree(void *p,const char* from)
 {
 	if (p != NULL) free(p);
@@ -93,15 +92,13 @@ void incfree(void *p,const char* from)
 
 bool getState()
 {
-	 return playing;
+	return playing;
 }
 
 void clientPrintState()
 {
-	if (playing)
-		kprintf(CLIPLAY,0x0d,0x0a);
-	else
-		kprintf(CLISTOP,"State");
+	if (playing) kprintf(CLIPLAY,0x0d,0x0a);
+	else kprintf(CLISTOP,"State");
 }
 
 void clientInit() {
@@ -115,7 +112,8 @@ void clientInit() {
 }
 
 uint8_t clientIsConnected() {
-	if(xSemaphoreTake(sConnected, 0)) {
+	if(xSemaphoreTake(sConnected, 0))
+	{
 		xSemaphoreGive(sConnected);
 		return 0;
 	}
@@ -123,7 +121,6 @@ uint8_t clientIsConnected() {
 }
 
 // for debug only
-
 void dump(uint8_t* from, uint32_t len) {
 	uint32_t i ;
 	uint8_t* addr ;
@@ -294,7 +291,6 @@ bool clientParsePlaylist(char* s)
 	}
 }
 
-//---------------------------------------
 // add escape char to special char of the string  json constructor
 static char* stringify(char* str,int len) {
 #define MORE	20
@@ -576,7 +572,7 @@ void wsMonitor()
 }
 
 // websocket cannot send other char than utf8
-static char* pseudoUtf8(char* str, int* len) //,int len)
+static char* pseudoUtf8(char* str, int* len)
 {
 #define MOREU 20
 	//if (len == 0) return str;
@@ -612,7 +608,6 @@ static char* pseudoUtf8(char* str, int* len) //,int len)
 //websocket: broadcast all icy and meta info to web client.
 static void wsHeaders()
 {
-//remove	uint8_t header_num;
 	char currentSt[6];
 	sprintf(currentSt,"%d",getCurrentStation());
 	char* not2;
@@ -668,9 +663,10 @@ static void clearHeaders()
 
 bool clientPrintOneHeader(uint8_t header_num)
 {
-	if (header.members.mArr[header_num] != NULL)
-	kprintf("##CLI.ICY%d#: %s\n",header_num,header.members.mArr[header_num]);
-return true;
+	if (header.members.mArr[header_num] != NULL) {
+		kprintf("##CLI.ICY%d#: %s\n",header_num,header.members.mArr[header_num]);
+	}
+	return true;
 }
 
 bool clientPrintHeaders()
@@ -809,7 +805,7 @@ void clientSetURL(char* url)
 		strncat(clientURL,url,URLMAX-9);
 	else
 		strcat(clientURL, url);
-	kprintf("##CLI.URLSET#: %s\n",clientURL);
+		kprintf("##CLI.URLSET#: %s\n",clientURL);
 }
 
 void clientSetPath(char* path)
@@ -819,7 +815,7 @@ void clientSetPath(char* path)
 		strncpy(clientPath,path,PATHMAX-1);
 	else
 		strcpy(clientPath, path);
-	kprintf("##CLI.PATHSET#: %s\n",clientPath);
+		kprintf("##CLI.PATHSET#: %s\n",clientPath);
 }
 
 void clientSetPort(uint16_t port)
@@ -1028,7 +1024,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 						break;
 					}
 					vTaskDelay(1); //avoid watchdog is infernal loop
-					bread = recvfrom(sockfd, pdata+len, RECEIVE-len, 0, NULL, NULL);					
+					bread = recvfrom(sockfd, pdata+len, RECEIVE-len, 0, NULL, NULL);
 					if (bread < 0) {
 						clientDisconnect("header11");
 						break;
@@ -1240,7 +1236,6 @@ if (rest <0) ESP_LOGD(TAG,"mt1 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  res
 //ESP_LOGD(TAG,"metaout len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d",len,clen,metad, l,(int)inpdata,rest );
 		} else
 		{
-
 			if (header.members.single.metaint != 0) metad -= len;
 //printf("out len = %d, metad = %d  metaint= %d, rest:%d\n",len,metad,header.members.single.metaint,rest);
 			if (len >0)
@@ -1256,7 +1251,7 @@ if (rest <0) ESP_LOGD(TAG,"mt1 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  res
 		if ((!playing )  && (((++dloop) % 40)==0)) 
 		{
 			kprintf(CLIPLAY,0x0d,0x0a);
-			playing=1;			
+			playing=1;
 			setVolumei(getVolume());
 		}
 	}
@@ -1312,7 +1307,6 @@ void clientTask(void *pvParams)
 			{
 //				printf("WebClient Socket connected\n");
 				memset(bufrec,0, RECEIVE+20);
-
 				char *t0 = strstr(clientPath, ".m3u");
 				if (t0 == NULL)  t0 = strstr(clientPath, ".pls");
 				if (t0 == NULL)  t0 = strstr(clientPath, ".xspf");

@@ -41,7 +41,7 @@ esp_err_t open_partition(const char *partition_label, const char *namespace,nvs_
 		ESP_LOGD(TAG,"Namespace %s not found, ERR: %x",namespace,err);
 		nvs_flash_deinit_partition(partition_label);	
 		xSemaphoreGive(muxnvs);
-	}	
+	}
 	return err;
 }
 
@@ -153,7 +153,7 @@ void option_get_ddmm(uint8_t *enca)
 	if (err != ESP_OK) ESP_LOGD(TAG,"oget_ddmm err 0x%x",err);
 	else{
 		if (dmm != 255) *enca = dmm;
-		if (*enca) *enca = 1;		
+		if (*enca) *enca = 1;
 	}
 	close_partition(hardware_handle,hardware);
 }
@@ -171,7 +171,7 @@ void option_set_ddmm(uint8_t enca)
 
 	err = nvs_set_u8(hardware_handle, "O_DDMM_FLAG",enca?1:0);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_ddmm err 0x%x",err);
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_set_lcd_out(uint32_t enca)
@@ -187,7 +187,7 @@ void option_set_lcd_out(uint32_t enca)
 
 	err = nvs_set_u32(hardware_handle, "O_LCD_OUT",enca);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_out err 0x%x",err);
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_set_lcd_stop(uint32_t enca)
@@ -217,7 +217,7 @@ void option_set_lcd_blv(int blv)
 	}
 	err = nvs_set_i32(hardware_handle, "O_LCD_BLV",blv);
 	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_blv err 0x%x",err);
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
@@ -227,7 +227,7 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 	uint32_t lout;
 
 	// init default lcd_out
-	//	*enca = g_device->lcd_out;	
+	//	*enca = g_device->lcd_out;
 	*enca = 0;
 	// init default lcd_stop
 	*encb = 0;
@@ -263,7 +263,7 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 		if (lout == 255) lout = 0; // special case
 		*encb = lout;
 	}
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void option_get_lcd_blv(int *blv)
@@ -314,7 +314,7 @@ void gpio_get_active_buttons(bool *abtn0, bool *abtn1)
 	err = nvs_get_u8(hardware_handle, "O_BTN1",(uint8_t *) abtn1);
 	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_active_buttons err 0x%x",err);
 	
-	close_partition(hardware_handle,hardware);			
+	close_partition(hardware_handle,hardware);
 }
 
 void gpio_get_i2c(gpio_num_t *scl,gpio_num_t *sda,gpio_num_t *rsti2c)
@@ -330,14 +330,12 @@ void gpio_get_i2c(gpio_num_t *scl,gpio_num_t *sda,gpio_num_t *rsti2c)
 	{
 		ESP_LOGD(TAG,"i2c");
 		return;
-	}	
-	
+	}
 	err = nvs_get_u8(hardware_handle, "P_I2C_SCL",(uint8_t *) scl);
 	err |=nvs_get_u8(hardware_handle, "P_I2C_SDA",(uint8_t *) sda);
 	err |=nvs_get_u8(hardware_handle, "P_I2C_RST", (uint8_t *)rsti2c);
 	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_i2c err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 void gpio_get_ir_signal(gpio_num_t *ir)
@@ -351,12 +349,10 @@ void gpio_get_ir_signal(gpio_num_t *ir)
 	{
 		ESP_LOGD(TAG,"ir");
 		return;
-	}	
-	
+	}
 	err = nvs_get_u8(hardware_handle, "P_IR_SIGNAL",(uint8_t *) ir);
 	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_ir_signal err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);		
+	close_partition(hardware_handle,hardware);
 }
 
 bool gpio_get_ir_key(nvs_handle handle,const char *key, uint32_t *out_value1 , uint32_t *out_value2)
@@ -370,13 +366,12 @@ bool gpio_get_ir_key(nvs_handle handle,const char *key, uint32_t *out_value1 , u
 	if (required_size >1)
 	{
 		char* string = kmalloc(required_size);
-		nvs_get_str(handle, key, string, &required_size);	
+		nvs_get_str(handle, key, string, &required_size);
 		sscanf(string,"%x %x",out_value1,out_value2);
 //		ESP_LOGV(TAG,"String \"%s\"\n Required size: %d",string,required_size);
 		free (string);
 		ret = true;
 	}
-	ESP_LOGV(TAG,"Key: %s, value1: %x, value2: %x, ret: %d",key,*out_value1,*out_value2,ret);	
-	
+	ESP_LOGV(TAG,"Key: %s, value1: %x, value2: %x, ret: %d",key,*out_value1,*out_value2,ret);
 	return ret;
 }

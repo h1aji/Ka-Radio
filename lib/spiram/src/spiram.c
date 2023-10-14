@@ -34,7 +34,7 @@
 //Initialize the SPI port to talk to the chip.
 void spiRamInit() {
 	char dummy[64];
-	ESP_LOGI(TAG, "Init 23LC1024 SPI RAM");
+	ESP_LOGI(TAG, "Init 23LC1024");
 
 	// Configure the SPI interface
 	//WRITE_PERI_REG(PERIPHS_IO_MUX,0x105); // Configure pins to use for SPI

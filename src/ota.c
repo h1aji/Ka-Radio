@@ -50,7 +50,7 @@ void wsUpgrade(const char* str,int count,int total)
 	char answer[50];
 	if (strlen(str)!= 0)
 		sprintf(answer,"{\"upgrade\":\"%s\"}",str);
-	else		
+	else
 	{
 		int value = count*100/total;
 		memset(answer,0,50);
@@ -79,7 +79,7 @@ static int read_until(char *buffer, char delim, int len)
 /* resolve a packet from http socket
  * return true if packet including \r\n\r\n that means http packet header finished,start to receive packet body
  * otherwise return false
- * */
+ */
 static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t update_handle)
 {
 	/* i means current position */
@@ -284,7 +284,7 @@ static void ota_task(void *pvParameter)
 	exit:
 	taskState = false;
 	close(sockfd);
-	(void)vTaskDelete( NULL ); 	
+	(void)vTaskDelete( NULL );
 }
 
 /******************************************************************************

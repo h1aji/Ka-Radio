@@ -264,21 +264,21 @@ void websocketparsedata(int socket, char* buf, int len)
 		}
 		payload += 8;
 	}		
-	if(header.payloadLen > MAXDATA-WEBSOCKETS_MAX_HEADER_SIZE) {	// we must be in one buf max for payload
+	if(header.payloadLen > MAXDATA-WEBSOCKETS_MAX_HEADER_SIZE) { // we must be in one buf max for payload
 	// disconnect
-	return;
+		return;
 	}
 
 	if(header.mask) {
-		headerLen += 4;	
+		headerLen += 4;
 		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 		header.maskKey = payload;
 		payload += 4;
 	}	
-	 headerLen += header.payloadLen;	
+	 headerLen += header.payloadLen;
 	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 //
-	if(header.payloadLen > 0) {		
+	if(header.payloadLen > 0) {
 		if(header.mask) {
 			size_t i ;
 			//decode XOR
@@ -289,7 +289,7 @@ void websocketparsedata(int socket, char* buf, int len)
 	}
 	payload[header.payloadLen] = 0x00;
 	
-// ok payload is unmasked now.	
+// ok payload is unmasked now.
 		switch(header.opCode) {
 			case WSop_text:
 				// no break here!
@@ -317,7 +317,7 @@ void websocketparsedata(int socket, char* buf, int len)
 //write a txt data
 void websocketwrite(int socket, char* buf, int len)
 {
-	sendFrame(socket, WSop_text, (uint8_t *)buf , len );
+	sendFrame(socket, WSop_text, (uint8_t *)buf, len);
 }
 
 //broadcast a txt data to all clients
@@ -328,7 +328,7 @@ void websocketbroadcast(char* buf, int len)
 	for (i = 0;i<NBCLIENT;i++)	
 		if (iswebsocket( webserverclients[i].socket))
 		{
-			websocketwrite( webserverclients[i].socket,  buf, len);
+			websocketwrite( webserverclients[i].socket, buf, len);
 		}
 }
 
@@ -340,7 +340,7 @@ void websocketlimitedbroadcast(int socket,char* buf, int len)
 	for (i = 0;i<NBCLIENT;i++)	
 		if (iswebsocket( webserverclients[i].socket))
 		{
-			if (webserverclients[i].socket != socket) websocketwrite( webserverclients[i].socket,  buf, len);
+			if (webserverclients[i].socket != socket) websocketwrite(webserverclients[i].socket, buf, len);
 		}
 }
 
@@ -349,11 +349,11 @@ void websocketAccept(int wsocket,char* bufin,int buflen)
 int32_t recbytes = 0;
 	char buf[150];
 	bufin[buflen] = 0;
-		if ((!iswebsocket(wsocket ))&&(websocketnewclient(wsocket))) 
+		if ((!iswebsocket(wsocket ))&&(websocketnewclient(wsocket)))
 		{
 			recbytes = decodeHttpMessage (bufin, buf);
 			buf[recbytes+1] = 0;
-			write(wsocket, buf, strlen(buf));  // reply to accept	
+			write(wsocket, buf, strlen(buf));  //reply to accept
 		}
 }
 
@@ -370,7 +370,7 @@ int websocketRead(int conn)
 				if ((errno != 104 /*ECONNRESET*/ )&&(errno != 113 /*EHOSTUNREACH*/ ))
 				{
 					printf (strwSOCKET,"read", errno);
-					wsclientDisconnect(conn, 500,NULL,0);		
+					wsclientDisconnect(conn, 500,NULL,0);
 				}
 				return recbytes;
 			}

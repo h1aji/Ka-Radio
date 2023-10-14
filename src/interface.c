@@ -158,12 +158,11 @@ static uint8_t rotat;
 //log print
 void lkprintf(const char *format, va_list ap)
 {
-  extern bool logTel;
+	extern bool logTel;
 //print to uart0
-  int i = vprintf(format,ap);
-  
+	int i = vprintf(format,ap);
 // send to all telnet clients
-  if (logTel) vTelnetWrite(i,format,ap); 
+	if (logTel) vTelnetWrite(i,format,ap); 
 }
 
 uint8_t getDdmm()
@@ -196,13 +195,13 @@ void setVolumePlus()
 void setVolumeMinus()
 {
 	setRelVolume(-10);
-}		
+}
 
 void setVolumew(char* vol)
 {
 	setVolume(vol);
 	wsVol(vol);
-}	
+}
 
 uint16_t getCurrentStation()
 {
@@ -251,17 +250,16 @@ const char htitle []  = {"\
 "};
 const char hscan1 []  = {"#WIFI.SCAN#\n Number of access points found: %d\n"};
 
-void wifiScan()
+void wifiScan() 
 {
-uint16_t number;
-wifi_ap_record_t *records;
-wifi_scan_config_t config = {
-	.ssid = NULL,
-	.bssid = NULL,
-	.channel = 0,
-	.show_hidden = true
-};
-
+	uint16_t number;
+	wifi_ap_record_t *records;
+	wifi_scan_config_t config = {
+		.ssid = NULL,
+		.bssid = NULL,
+		.channel = 0,
+		.show_hidden = true
+	};
 	config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
 	config.scan_time.passive = 500;
 	esp_wifi_scan_start(&config, true);
@@ -324,7 +322,6 @@ void wifiConnect(char* cmd)
 	}
 	
 	strncpy(g_device->ssid1, (t+2), (t_end-t-2));
-	
 	t = t_end+3;
 	t_end = strstr(t, parquoteslash);
 	if(t_end == 0)
@@ -332,7 +329,7 @@ void wifiConnect(char* cmd)
 		kprintf(stritCMDERROR);
 		return;
 	}
-	
+
 	strncpy(g_device->pass1, t, (t_end-t));
 	g_device->current_ap = 1;
 	g_device->dhcpEn1 = 1;
@@ -379,13 +376,11 @@ void wifiAuto(char* cmd)
 	{
 		kprintf(stritCMDERROR);
 		return;
-	}	
+	}
 	uint8_t value = atoi(t+2);
-	
-	if (value == 0)
-		g_device->options32 &= NT_WIFIAUTO;
-	else 
-		g_device->options32 |= T_WIFIAUTO;
+	if (value == 0) g_device->options32 &= NT_WIFIAUTO;
+	else g_device->options32 |= T_WIFIAUTO;
+
 	autoWifi = value;
 	saveDeviceSettings(g_device);
 
@@ -509,7 +504,7 @@ void clientParsePort(char *s)
 
 void clientPlay(char *s)
 {
-   	char *t_end = NULL;
+	char *t_end = NULL;
 	char *t = strstr(s, parslashquote);
 	if (t) t_end  = strstr(t, parquoteslash);
 	if ((!t)||(!t_end))
@@ -540,34 +535,31 @@ void clientList(char *s)
 	struct shoutcast_info* si;
 	uint16_t i = 0,j = 255;
 	bool onlyOne = false;
-	
 	char *t = strstr(s, parslashquote);
 	if(t != NULL) // a number specified
-	{	
+	{
 		char *t_end  = strstr(t, parquoteslash)-2;
 		if(t_end <= (char*)0)
 		{
 			kprintf(stritCMDERROR);
 			return;
-		}	
+		}
 		i = atoi(t+2);
 		if (i>254) i = 0;
 		j = i+1;
-		onlyOne = true;		
-	} 
-	{	
+		onlyOne = true;
+	}
+	{
 		if (!onlyOne) kprintf(strilDLIST);	
 		for (;i<j; i++)
 		{
 			vTaskDelay(1);
 			si = getStation(i);
-			
 			if ((si == NULL) || (si->port ==0))
 			{
 				if (si != NULL) {free(si);}
 				continue;
 			}
-
 			if (si !=NULL)
 			{
 				if(si->port !=0)
@@ -578,8 +570,8 @@ void clientList(char *s)
 						kprintf(strilNUM,i,si->name,si->domain,si->port,si->file,si->ovol);	
 				}
 				free(si);
-			}	
-		}	
+			}
+		}
 		if (!onlyOne) kprintf(strilLIST);
 	}
 }
@@ -608,8 +600,8 @@ bool parseUrl(char* src, char* url, char* path, uint16_t *port)
 	{
 		tmp = teu+1;
 		*port = atoi(tmp);
-	}	
-	tbpa = strchr(tmp,'/');	
+	}
+	tbpa = strchr(tmp,'/');
 	if (tbpa)
 	{
 		if(!teu) teu = tbpa-1;
@@ -648,35 +640,39 @@ char url[200];
 	tmp = s+10;
 	tmpend = strchr(tmp,':');
 	if ((tmp==NULL)||(tmpend==NULL)) return;
-	if (tmpend-tmp) id = atoi(tmp);	
+	if (tmpend-tmp) id = atoi(tmp);
 	tmp = ++tmpend;//:
 	tmpend = strchr(tmp,',');
 	if ((tmp==NULL)||(tmpend==NULL)) return;
-	if (tmpend-tmp) {strncpy(si->name,tmp,tmpend-tmp);} //*tmpend = 0; }
+	if (tmpend-tmp) {
+		strncpy(si->name,tmp,tmpend-tmp);
+		}
 	tmp = ++tmpend;//,
 	tmpend = strchr(tmp,'%');
-	if (tmpend == NULL )tmpend = strchr(tmp,'"');
-	if (tmpend-tmp){ strncpy(url,tmp,tmpend-tmp);} //*tmpend = 0; }
+	if (tmpend == NULL) tmpend = strchr(tmp,'"');
+	if (tmpend-tmp) {
+		strncpy(url,tmp,tmpend-tmp);
+		}
 	else url[0] = 0;
-	tmp = ++tmpend;//%
+	tmp = ++tmpend;
 	tmpend = strchr(tmp,'"');
-	if ((tmpend != NULL)&&(tmpend-tmp)) si->ovol = atoi(tmp);	
-	
-	
-//printf("==> id: %d, name: %s, url: %s\n",id,si->name,url);	
-	
+	if ((tmpend != NULL)&&(tmpend-tmp)) si->ovol = atoi(tmp);
+
+//printf("==> id: %d, name: %s, url: %s\n",id,si->name,url);
 	// Parsing
 	if (url[0] != 0)
 		parseUrl(url, si->domain, si->file, &(si->port));
 	
 	kprintf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
-	if (id < 0xff) {
-		if (si->domain[0]==0) {si->port = 0;si->file[0] = 0;}
-		saveStation(si, id); 
+	if (id < 0xff)
+	{
+		if (si->domain[0]==0) {
+			si->port = 0;si->file[0] = 0;
+			}
+		saveStation(si, id);
 		kprintf("##CLI.EDIT#: OK (%d)\n",id);
 	}
-	else
-		kprintf("##CLI.EDIT#: ERROR\n");		
+	else kprintf("##CLI.EDIT#: ERROR\n");
 }
 
 void clientInfo()
@@ -709,7 +705,6 @@ char* webInfo()
 		free(si);
 	}
 	return resp;
-
 }
 
 char* webList(int id)
@@ -726,7 +721,6 @@ char* webList(int id)
 		free(si);
 	}
 	return resp;
-
 }
 
 void sysI2S(char* s)
@@ -758,7 +752,7 @@ void sysUart(char* s)
 	char *t_end;
 	t = NULL;
 	if (s != NULL)
-	{	
+	{
 		t = strstr(s, parslashquote);
 		if(t == NULL)
 		{
@@ -769,7 +763,7 @@ void sysUart(char* s)
 			if(t_end == NULL)
 			{
 				empty = true;
-			}	
+			}
 		}
 	}
 	if ((!empty)&&(t!=NULL))
@@ -952,7 +946,7 @@ void sysddmm(char* s)
 	else 
 		g_device->options32 |= T_DDMM;
 	ddmm = (value)?1:0;
-	saveDeviceSettings(g_device);	
+	saveDeviceSettings(g_device);
 	//option_set_ddmm(ddmm);
 	sysddmm((char*) "");
 }
@@ -1034,7 +1028,6 @@ void sysrotat(char* s)
 	saveDeviceSettings(g_device);	
 	sysrotat((char*) "");
 }
-
 
 // Timer in seconds to switch off the lcd
 void syslcdout(char* s)
@@ -1160,14 +1153,14 @@ void heapSize()
 // set hostname in mDNS
 void setHostname(char* s)
 {
-		ESP_ERROR_CHECK(mdns_service_remove("_http", "_tcp"));
-		ESP_ERROR_CHECK(mdns_service_remove("_telnet", "_tcp"));
-		vTaskDelay(10);
-		ESP_ERROR_CHECK(mdns_hostname_set(s));
-		ESP_ERROR_CHECK(mdns_instance_name_set(s));
-		vTaskDelay(10);
-		ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));	
-		ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));	
+	ESP_ERROR_CHECK(mdns_service_remove("_http", "_tcp"));
+	ESP_ERROR_CHECK(mdns_service_remove("_telnet", "_tcp"));
+	vTaskDelay(10);
+	ESP_ERROR_CHECK(mdns_hostname_set(s));
+	ESP_ERROR_CHECK(mdns_instance_name_set(s));
+	vTaskDelay(10);
+	ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));	
+	ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));	
 }
 
 //display or change the hostname and services
@@ -1179,7 +1172,7 @@ void hostname(char* s)
 		kprintf("##SYS.HOST#: %s.local\n  IP:%s #\n",g_device->hostname,getIp());
 		return;
 	}
-	
+
 	t +=2;
 	char *t_end  = strstr(t, parquoteslash);
 	if(t_end == NULL)
@@ -1191,7 +1184,7 @@ void hostname(char* s)
 	if (t_end-t ==0)
 		strcpy(g_device->hostname, "karadio");
 	else
-	{	
+	{
 		if (t_end-t >= HOSTLEN) t_end = t+HOSTLEN;
 		strncpy(g_device->hostname,t,(t_end-t)*sizeof(char));
 		g_device->hostname[(t_end-t)*sizeof(char)] = 0;
@@ -1205,31 +1198,31 @@ void displayLogLevel()
 {
 	switch (s_log_default_level){
 		case ESP_LOG_NONE:
-		  kprintf("Log level is now ESP_LOG_NONE\n");
-		  break;
+			kprintf("Log level is now ESP_LOG_NONE\n");
+			break;
 		case ESP_LOG_ERROR:
-		  kprintf("Log level is now ESP_LOG_ERROR\n");
-		  break;
+			kprintf("Log level is now ESP_LOG_ERROR\n");
+			break;
 		case ESP_LOG_WARN:
-		  kprintf("Log level is now ESP_LOG_WARN\n");
-		  break;
+			kprintf("Log level is now ESP_LOG_WARN\n");
+			break;
 		case ESP_LOG_INFO:
-		  kprintf("Log level is now ESP_LOG_INFO\n");
-		  break;
+			kprintf("Log level is now ESP_LOG_INFO\n");
+			break;
 		case ESP_LOG_DEBUG:
-		  kprintf("Log level is now ESP_LOG_DEBUG\n");
-		  break;
+			kprintf("Log level is now ESP_LOG_DEBUG\n");
+			break;
 		case ESP_LOG_VERBOSE:
-		  kprintf("Log level is now ESP_LOG_VERBOSE\n");
-		  break;
+			kprintf("Log level is now ESP_LOG_VERBOSE\n");
+			break;
 		default:
-		  kprintf("Log level is now Unknonwn\n");	
+			kprintf("Log level is now Unknonwn\n");
 	}
 }
 
 esp_log_level_t getLogLevel()
 {
-	 return s_log_default_level;
+	return s_log_default_level;
 }
 
 void setLogLevel(esp_log_level_t level)
@@ -1239,7 +1232,7 @@ void setLogLevel(esp_log_level_t level)
 	g_device->trace_level = level;
 	saveDeviceSettings(g_device);
 	displayLogLevel();
-} 
+}
 
 void setLogTelnet(char* s)
 {
@@ -1309,7 +1302,7 @@ void checkCommand(int size, char* s)
 		else if(startsWith (  "vol",tmp+3)) 	clientVol(tmp);	
 		else printInfo(tmp);
 	} else
-*/		
+*/
 	if(startsWith ("dbg.", tmp))
 	{
 		if     (strcmp(tmp+4, "fifo") == 0) 	kprintf( "Buffer fill %u%%, %d bytes, OverRun: %ld, UnderRun: %ld\n",
@@ -1351,10 +1344,10 @@ void checkCommand(int size, char* s)
 		else if(startsWith (  "wake",tmp+4)) 	clientWake(tmp);
 		else if(startsWith (  "sleep",tmp+4)) 	clientSleep(tmp);
 		else printInfo(tmp);
-	} else
-	if(startsWith ("sys.", tmp))
+	}
+	else if(startsWith ("sys.", tmp))
 	{
-			 if(startsWith (  "i2s",tmp+4)) 	sysI2S(tmp);
+		if     (startsWith (  "i2s",tmp+4)) 	sysI2S(tmp);
 //		else if(strcmp(tmp+4, "adc") == 0) 		readAdc();
 		else if(startsWith (  "uart",tmp+4)) 	sysUart(tmp);
 		else if(strcmp(tmp+4, "erase") == 0) 	eeEraseAll();
@@ -1384,7 +1377,8 @@ void checkCommand(int size, char* s)
 		else if(startsWith (  "host",tmp+4)) 	hostname(tmp);
 		else if(startsWith (  "rotat",tmp+4)) 	sysrotat(tmp);
 		else printInfo(tmp);
-	} else 
+	}
+	else
 	{
 		if(strcmp(tmp, "help") == 0)
 		{
@@ -1396,11 +1390,11 @@ void checkCommand(int size, char* s)
 			vTaskDelay(1);
 			kprintf(stritHELP3);
 			vTaskDelay(1);
-			kprintf(stritHELP4);		
+			kprintf(stritHELP4);
 			vTaskDelay(1);
 			kprintf(stritHELP5);
 		}
 		else printInfo(tmp);
-	} 
-	free(tmp);	
+	}
+	free(tmp);
 }

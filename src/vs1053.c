@@ -24,10 +24,10 @@
 #include "vs1053.h"
 
 
-#define TMAX  4096
-#define CHUNK 32
+#define TMAX	4096
+#define CHUNK	32
 
-#define SPI 	0
+#define SPI		0
 #define HSPI	1
 
 extern void LoadUserCodes(void);
@@ -38,7 +38,7 @@ int vsVersion = -1; // the version of the chip
 static SemaphoreHandle_t sSPI = NULL;
 
 uint8_t spi_take_semaphore() {
-	if(sSPI) 
+	if(sSPI)
 		if(xSemaphoreTake(sSPI, portMAX_DELAY))
 			return 1;
 	return 0;
@@ -54,8 +54,12 @@ bool VS1053_HW_init() {
 	ESP_LOGI(TAG, "Init VS1053 pins");
 
 	// Set DREQ pin as input
-	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
-	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
+	gpio_set_direction(GPIO_NUM_9, GPIO_MODE_INPUT);
+	//gpio_set_pull_mode(GPIO_NUM_9, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
+
+	// Set RST pin as output and high
+	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_OUTPUT);
+	gpio_set_level(GPIO_NUM_10, 1);
 
 	// Set DCS pin as output and high
 	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
@@ -87,7 +91,7 @@ bool VS1053_HW_init() {
 
 void VS1053_SPI_SpeedUp() {
 	// 10MHz
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+	WRITE_PERI_REG(SPI_CLOCK(HSPI),
 			((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
@@ -148,8 +152,7 @@ void SPIPutChar(uint8_t data) {
 }
 
 void ControlReset(uint8_t State) {
-	gpio_set_level(GPIO_NUM_0, State);
-	gpio_set_level(GPIO_NUM_16, State);
+	gpio_set_level(GPIO_NUM_10, State);
 }
 
 void SCI_ChipSelect(uint8_t State) {
@@ -161,12 +164,12 @@ void SDI_ChipSelect(uint8_t State) {
 }
 
 uint8_t CheckDREQ() {
-	return gpio_get_level(GPIO_NUM_10);
+	return gpio_get_level(GPIO_NUM_9);
 }
 
 void WaitDREQ() {
 	uint16_t time_out = 0;
-	while(gpio_get_level(GPIO_NUM_10) == 0 && time_out++ < TMAX)
+	while(gpio_get_level(GPIO_NUM_9) == 0 && time_out++ < TMAX)
 	{
 		taskYIELD();
 	}
@@ -253,9 +256,9 @@ void VS1053_regtest() {
 void VS1053_I2SRate(uint8_t speed) { // 0 = 48kHz, 1 = 96kHz, 2 = 128kHz
 	if (speed > 2) speed = 0;
 	if (vsVersion != 4) return;
-	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017	
+	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017
 	VS1053_WriteRegister16(SPI_WRAM, 0x0008|speed); //
-	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017	
+	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017
 	VS1053_WriteRegister16(SPI_WRAM, 0x000C|speed); //
 	ESP_LOGI(TAG,"I2S Speed: %d",speed);
 }
@@ -614,7 +617,5 @@ void VS1053_flush_cancel() {
 			break;
 		}
 	}
-
-	for (y = 0; y < 64; y++) 
-		VS1053_SendMusicBytes(buf, 32); //2080 bytes
+	for (y = 0; y < 64; y++) VS1053_SendMusicBytes(buf, 32); //2080 bytes
 }

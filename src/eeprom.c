@@ -83,10 +83,10 @@ if (eebuf != NULL)
 return true;
 }
 
-
-void eeEraseAll() { // clear (0) stations and device
-uint8_t* buffer= kmalloc(PARTITIONLEN);
-int i = 0;
+void eeEraseAll()
+{ // clear (0) stations and device
+	uint8_t* buffer= kmalloc(PARTITIONLEN);
+	int i = 0;
 //	printf("erase All\n");
 	while (buffer == NULL) 
 	{
@@ -108,12 +108,12 @@ int i = 0;
 		}
 		kprintf("#erase All done##\n");
 		free(buffer);
-	} else	
-		ESP_LOGE(TAG,"erase All fails");
+	} else ESP_LOGE(TAG,"erase All fails");
 	
 }
 
-void eeErasesettings(void){
+void eeErasesettings(void)
+{
 	int i = 0;
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
 	for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
@@ -121,7 +121,8 @@ void eeErasesettings(void){
 	free(buffer);
 }
 
-void eeEraseStations() {
+void eeEraseStations()
+{
 	uint8_t* buffer = kmalloc(PARTITIONLEN);
 	int i=0;
 	while (buffer == NULL) 
@@ -130,7 +131,7 @@ void eeEraseStations() {
 		vTaskDelay(10); 
 		buffer= kmalloc(PARTITIONLEN); // last chance
 	}
-	if (buffer != NULL) 
+	if (buffer != NULL)
 	{
 		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;	
 		for (i=0;i<16;i++)
@@ -195,7 +196,7 @@ void copyDeviceSettings()
 		ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE1,0,DEVICE1->size));
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE1,0,buffer,DEVICE1->size));
 	} 
-	free (buffer);	
+	free (buffer);
 }
 
 void restoreDeviceSettings()
@@ -206,7 +207,7 @@ void restoreDeviceSettings()
 		ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE,0,DEVICE->size));
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,DEVICE->size));
 	} 
-	free (buffer);		
+	free (buffer);
 }
 
 void saveDeviceSettingsInt(struct device_settings *settings)
@@ -215,7 +216,7 @@ void saveDeviceSettingsInt(struct device_settings *settings)
 	vTaskDelay(1);
 	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,settings,DEVICE->size));
 	vTaskDelay(1);
-	xSemaphoreGive(muxDevice);	
+	xSemaphoreGive(muxDevice);
 }
 void saveDeviceSettings(struct device_settings *settings) {
 	if (settings == NULL) { ESP_LOGE(TAG,"saveDeviceSetting fails");return;}
@@ -227,7 +228,7 @@ void saveDeviceSettingsVolume(struct device_settings *settings) {
 	if (settings == NULL) { ESP_LOGE(TAG,"saveDeviceSetting fails");return;}
 	ESP_LOGD(TAG,"saveDeviceSettingsVolume");
 	if (xSemaphoreTake(muxDevice, 0) == pdFALSE) return; // not important. An other one in progress
-	saveDeviceSettingsInt(settings);	
+	saveDeviceSettingsInt(settings);
 }
 
 struct device_settings* getDeviceSettingsSilent() {
@@ -236,7 +237,7 @@ struct device_settings* getDeviceSettingsSilent() {
 	if(buffer) {	
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE, 0, buffer, size));
 		return (struct device_settings*)buffer;
-	} 
+	}
 	return NULL;
 }
 

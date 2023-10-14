@@ -207,17 +207,17 @@ static char* getParameter(const char* sep,const char* param, char* data, uint16_
 
 static char* getParameterFromResponse(const char* param, char* data, uint16_t data_length)
 {
-	return getParameter("&",param,data, data_length) ;
+	return getParameter("&",param,data, data_length);
 }
 
 static bool getSParameterFromResponse(char* result,uint32_t size, const char* param, char* data, uint16_t data_length)
 {
-	return getSParameter(result,size,"&",param,data, data_length) ;
+	return getSParameter(result,size,"&",param,data, data_length);
 }
 
 static char* getParameterFromComment(const char* param, char* data, uint16_t data_length)
 {
-	return getParameter("\"",param,data, data_length) ;
+	return getParameter("\"",param,data, data_length);
 }
 
 // volume offset
@@ -264,7 +264,8 @@ static void setOffsetVolume(void)
 	setVolumei(uvol);
 }
 
-uint16_t getVolume() {
+uint16_t getVolume()
+{
 	return (getIvol());
 }
 
@@ -339,7 +340,7 @@ void startSleep(uint32_t delay)
 	if (delay == 0) return;
 	sleepDelay = delay*60; // minutes to seconds
 	os_timer_disarm(&sleepTimer);
-	os_timer_arm(&sleepTimer, 1000, true); // 1 second and rearm	
+	os_timer_arm(&sleepTimer, 1000, true); // 1 second and rearm
 }
 
 void stopSleep()
@@ -371,8 +372,7 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 	if (strstr((char*)payload,"wsvol=")!= NULL)
 	{
 		char answer[17];
-		if (strstr((char*)payload,"&") != NULL)
-			*strstr((char*)payload,"&")=0;
+		if (strstr((char*)payload,"&") != NULL) *strstr((char*)payload,"&")=0;
 		else return;
 //		setVolume(payload+6);
 		sprintf(answer,"{\"wsvol\":\"%s\"}",payload+6);
@@ -380,16 +380,14 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 	}
 	else if (strstr((char*)payload,"startSleep=")!= NULL)
 	{
-		if (strstr((char*)payload,"&") != NULL)
-			*strstr((char*)payload,"&")=0;
+		if (strstr((char*)payload,"&") != NULL) *strstr((char*)payload,"&")=0;
 		else return;
 		startSleep(atoi((char*)payload+11));
 	}
 	else if (strstr((char*)payload,"stopSleep")!= NULL){stopSleep();}
 	else if (strstr((char*)payload,"startWake=")!= NULL)
 	{
-		if (strstr((char*)payload,"&") != NULL)
-			*strstr((char*)payload,"&")=0;
+		if (strstr((char*)payload,"&") != NULL) *strstr((char*)payload,"&")=0;
 		else return;
 		startWake(atoi((char*)payload+10));
 	}
@@ -449,13 +447,16 @@ void playStation(char* id)
 
 unsigned char h2int(char c)
 {
-	if (c >= '0' && c <='9'){
+	if (c >= '0' && c <='9')
+	{
 		return((unsigned char)c - '0');
 	}
-	if (c >= 'a' && c <='f'){
+	if (c >= 'a' && c <='f')
+	{
 		return((unsigned char)c - 'a' + 10);
 	}
-	if (c >= 'A' && c <='F'){
+	if (c >= 'A' && c <='F')
+	{
 		return((unsigned char)c - 'A' + 10);
 	}
 	return(0);
@@ -698,7 +699,6 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 						infree(url);
 					}
 				}
-
 				data = strstr(data,"&&")+2;
 				ESP_LOGV(TAG,"si:%x, nsi:%x, addr:%x",(int)si,(int)nsi,(int)data);
 			}
@@ -1033,7 +1033,8 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 				infree(buf);
 			}
 
-			if (val){
+			if (val)
+			{
 				// set current_ap to the first filled ssid
 				ESP_LOGD(TAG,"currentAP: %d",g_device->current_ap);
 				if (g_device->current_ap == APMODE)
@@ -1078,9 +1079,8 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen)
 			if(c_end == NULL) return true;
 			*(c_end-1) = 0;
 			c_end = strstr(c,"?");
-//
+
 // web command api,
-///////////////////
 			if(c_end != NULL) // commands api
 			{
 				char* param;
@@ -1159,15 +1159,18 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen)
 			else
 // file GET
 			{
-				if(strlen(c) > 32) {
+				if(strlen(c) > 32)
+				{
 					respKo(conn);
-					return true;}
+					return true;
+				}
 				ESP_LOGV(TAG,"GET file  socket:%d file:%s",conn,c);
 				serveFile(c, conn);
 				ESP_LOGV(TAG,"GET end socket:%d file:%s",conn,c);
 			}
 		}
-	} else if( (c = strstr(buf, "POST ")) != NULL) {
+	} else if ((c = strstr(buf, "POST ")) != NULL)
+	{
 // a post request
 		ESP_LOGV(TAG,"POST socket: %d  buflen: %d",conn,buflen);
 		char fname[32];
@@ -1223,7 +1226,10 @@ void serverclientTask(void *pvParams)
 					printf(strsSOCKET,"client_sock",errno);
 					vTaskDelay(10);
 					break;
-				} else {printf(strsSOCKET,tryagain,errno);break;}
+				} else {
+					printf(strsSOCKET,tryagain,errno);
+					break;
+				}
 			}
 			char* bend = NULL;
 			do {
@@ -1254,7 +1260,6 @@ void serverclientTask(void *pvParams)
 					}
 				}
 				else {
-
 //					printf ("Server: try receive more for end:%d bytes\n", recbytes);
 					while(((recb= read(client_sock , buf+recbytes, DRECLEN-recbytes))==0)||(errno == EAGAIN))
 					{
@@ -1279,7 +1284,7 @@ void serverclientTask(void *pvParams)
 			vTaskDelay(1);
 		}
 //		infree(buf);
-	} else  printf(strsMALLOC1,"buf");
+	} else printf(strsMALLOC1,"buf");
 	if (result)
 	{
 		int err;
@@ -1294,6 +1299,5 @@ void serverclientTask(void *pvParams)
 	ESP_LOGV(TAG,"Give client_sock: %d",client_sock);
 	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	ESP_LOGD(TAG,"watermark serverClientTask: %x  %d",uxHighWaterMark,uxHighWaterMark);
-
 	vTaskDelete( NULL );
 }

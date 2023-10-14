@@ -5,7 +5,7 @@
 *******************************************************************************/
 
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#define TAG  "Addon"
+#define TAG "Addon"
 
 #include <stddef.h>
 #include <string.h>
@@ -69,8 +69,8 @@ static bool dvolume = true; // display volume screen
 typedef enum {KEY_UP,KEY_LEFT,KEY_OK,KEY_RIGHT,KEY_DOWN,
 		KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,
 		KEY_STAR,KEY_DIESE,KEY_INFO, KEY_MAX} customKey_t;
-		
-static uint32_t customKey[KEY_MAX][2]; 
+
+static uint32_t customKey[KEY_MAX][2];
 static bool isCustomKey = false;
 
 //backlight value
@@ -80,7 +80,10 @@ void Screen(typeScreen st);
 void drawScreen();
 static void evtScreen(typelcmd value);
 
-struct tm* getDt() { return dt;}
+struct tm* getDt()
+{
+	return dt;
+}
 
 void setBlv(int val)
 {
@@ -102,7 +105,7 @@ void lcd_init(uint8_t Type)
 
 void in_welcome(const char* ip,const char*state,int y,char* Version)
 {
-}		
+}
 
 void lcd_welcome(const char* ip,const char*state)
 {
@@ -121,7 +124,7 @@ IRAM_ATTR void ServiceAddon(void)
 	{
 		// Time compute
 		timestamp++;  // time update  
-		if (timerLcdOut >0) timerLcdOut--; // 
+		if (timerLcdOut >0) timerLcdOut--;
 		timein++;
 		if ((timestamp % (10*DTIDLE))==0){ itAskTime=true;} // synchronise with ntp every x*DTIDLE
 		 
@@ -150,32 +153,31 @@ int16_t getFuturNum()
 
 // scroll each line
 void scroll()
-{	
+{
 }
 
 
-
 // Change the current screen
-void Screen(typeScreen st){
+void Screen(typeScreen st)
+{
 //printf("Screen: st: %d, stateScreen: %d, mTscreen: %d, default: %d\n",st,stateScreen,mTscreen,defaultStateScreen);
-  if (stateScreen != st)
-  {
-	mTscreen = MTNEW;
-//	wakeLcd();
-  }
-  else
-  {
-	if (mTscreen == MTNODISPLAY) mTscreen = MTREFRESH;
-  }
+	if (stateScreen != st)
+	{
+		mTscreen = MTNEW;
+		//wakeLcd();
+	}
+	else
+	{
+		if (mTscreen == MTNODISPLAY) mTscreen = MTREFRESH;
+	}
 
 //  printf("Screenout: st: %d, stateScreen: %d, mTscreen: %d, default: %d, timerScreen: %d \n",st,stateScreen,mTscreen,defaultStateScreen,timerScreen);
-
-  stateScreen = st;  
-  timein = 0;
-  timerScreen = 0;  
-  drawScreen();
+	stateScreen = st;
+	timein = 0;
+	timerScreen = 0;
+	drawScreen();
 //printf("Screendis: st: %d, stateScreen: %d, mTscreen: %d, default: %d\n",st,stateScreen,mTscreen,defaultStateScreen);  
-//  vTaskDelay(1);
+//	vTaskDelay(1);
 }
 
 
@@ -186,7 +188,7 @@ void drawFrame()
 }
 
 void drawTTitle(char* ttitle)
-{ 
+{
 }
 
 // draw the number entered from IR
@@ -369,7 +371,7 @@ event_ir_t evt;
 		case 0xDF2041:
 		case 0xFF0044:
 		case 0xF70842:
-		case 0xF70815: /*(" LEFT");*/  setRelVolume(-5);  
+		case 0xF70815: /*(" LEFT");*/  setRelVolume(-5);
 		break;
 		case 0xDF204A:
 		case 0xFF0040:
@@ -388,53 +390,53 @@ event_ir_t evt;
 		break;
 		case 0xDF2000:
 		case 0xFF0016:
-		case 0xF70801: /*(" 1");*/ if (!evt.repeat_flag ) nbStation('1');   
+		case 0xF70801: /*(" 1");*/ if (!evt.repeat_flag) nbStation('1');
 		break;
 		case 0xDF2010:
 		case 0xFF0019:
-		case 0xF70802: /*(" 2");*/ if (!evt.repeat_flag ) nbStation('2');   
+		case 0xF70802: /*(" 2");*/ if (!evt.repeat_flag) nbStation('2');
 		break;
 		case 0xDF2011:
 		case 0xFF000D:
-		case 0xF70803: /*(" 3");*/ if (!evt.repeat_flag ) nbStation('3');   
+		case 0xF70803: /*(" 3");*/ if (!evt.repeat_flag) nbStation('3');
 		break;
 		case 0xDF2013:
 		case 0xFF000C:
-		case 0xF70804: /*(" 4");*/ if (!evt.repeat_flag ) nbStation('4');   
+		case 0xF70804: /*(" 4");*/ if (!evt.repeat_flag) nbStation('4');
 		break;
 		case 0xDF2014:
 		case 0xFF0018:
-		case 0xF70805: /*(" 5");*/ if (!evt.repeat_flag ) nbStation('5');   
+		case 0xF70805: /*(" 5");*/ if (!evt.repeat_flag) nbStation('5');
 		break;
 		case 0xDF2015:
 		case 0xFF005E:
-		case 0xF70806: /*(" 6");*/ if (!evt.repeat_flag ) nbStation('6');   
+		case 0xF70806: /*(" 6");*/ if (!evt.repeat_flag) nbStation('6');
 		break;
 		case 0xDF2017:
 		case 0xFF0008:
-		case 0xF70807: /*(" 7");*/ if (!evt.repeat_flag ) nbStation('7');   
+		case 0xF70807: /*(" 7");*/ if (!evt.repeat_flag) nbStation('7');
 		break;
 		case 0xDF2018:
 		case 0xFF001C:
-		case 0xF70808: /*(" 8");*/ if (!evt.repeat_flag ) nbStation('8');   
+		case 0xF70808: /*(" 8");*/ if (!evt.repeat_flag) nbStation('8');
 		break;
 		case 0xDF2019:
 		case 0xFF005A:
-		case 0xF70809: /*(" 9");*/ if (!evt.repeat_flag ) nbStation('9');   
+		case 0xF70809: /*(" 9");*/ if (!evt.repeat_flag) nbStation('9');
 		break;
 		case 0xDF2045:
 		case 0xFF0042:
-		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) playStationInt(futurNum);
+		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag) playStationInt(futurNum);
 		break;
 		case 0xDF201B:
 		case 0xFF0052:
-		case 0xF70800: /*(" 0");*/ if (!evt.repeat_flag ) nbStation('0');
+		case 0xF70800: /*(" 0");*/ if (!evt.repeat_flag) nbStation('0');
 		break;
 		case 0xDF205B:
 		case 0xFF004A:
-		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  stopStation();
+		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag)  stopStation();
 		break;
-		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag ) toggletime();
+		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag) toggletime();
 		break;
 		default:;
 		/*SERIALX.println(F(" other button   "));*/
@@ -480,7 +482,7 @@ IRAM_ATTR void multiService()  // every 1ms
 void task_lcd(void *pvParams)
 {
 }
- 
+
 // Main task of addon
 extern void rmt_nec_rx_task();
 
