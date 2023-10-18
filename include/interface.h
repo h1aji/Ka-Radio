@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2018 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -18,7 +18,7 @@
 #define REVISION "0"
 
 uint32_t checkUart(uint32_t speed);
-extern unsigned short adcdiv;	
+extern unsigned short adcdiv;
 void switchCommand(void );
 void checkCommand(int size, char* s);
 esp_log_level_t getLogLevel();

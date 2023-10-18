@@ -17,7 +17,7 @@
 #include "interface.h"
 
 // list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
-// time.nist.gov 
+// time.nist.gov
 
 // A task if needed
 /*
@@ -35,7 +35,7 @@ bool ntp_get_time(struct tm **dt)
 {
 	struct timeval timeout;
 	timeout.tv_usec = 0;
-	timeout.tv_sec = 5; 
+	timeout.tv_sec = 5;
 	int sockfd = 0;
 	ntp_t* ntp;
 	char *msg;
@@ -46,7 +46,7 @@ bool ntp_get_time(struct tm **dt)
 //	struct tm *dt;
 	time_t timestamp;
 //	int8_t tz;
-	
+
 	msg = kcalloc(sizeof(ntp_t),1);
 	if (msg == NULL){
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on kcalloc");
@@ -67,7 +67,7 @@ bool ntp_get_time(struct tm **dt)
 		//ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on %s %d","getaddrinfo",rv);
 		free(msg);
 		return false;
-	} 		
+	}
 // loop in result socket
 	for (p = servinfo; p != NULL; p = p->ai_next) {
 		if ((sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol)) == -1) {
@@ -86,13 +86,13 @@ bool ntp_get_time(struct tm **dt)
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on %s %d","sendto",rv); free (msg);freeaddrinfo(servinfo);	close(sockfd);
 		return false;
 	}
-	freeaddrinfo(servinfo);	
+	freeaddrinfo(servinfo);
  	if ((rv = recvfrom(sockfd, msg, sizeof(ntp_t) , 0,NULL, NULL)) <=0) {
 		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on %s %d","recvfrom",rv);free(msg);close(sockfd);
 		return false;
 	}
 	//extract time
-	ntp = (ntp_t*)msg;	
+	ntp = (ntp_t*)msg;
 	timestamp = ntp->trans_time[0] << 24 | ntp->trans_time[1] << 16 |ntp->trans_time[2] << 8 | ntp->trans_time[3];
 	// convert to unix time
 	timestamp -= 2208988800UL;
@@ -109,12 +109,12 @@ void ntp_print_time()
 	struct tm* dt;
 	int8_t tz;
 	char msg[30];
-	
+
 	if (ntp_get_time(&dt))
 	{
 		tz = applyTZ(dt);
-//	os_printf("##Time: isdst: %d %02d:%02d:%02d\n",dt->tm_isdst, dt->tm_hour, dt->tm_min, dt->tm_sec);		
-//	os_printf("##Date: %02d-%02d-%04d\n", dt->tm_mday, dt->tm_mon+1, dt->tm_year+1900);	
+//	os_printf("##Time: isdst: %d %02d:%02d:%02d\n",dt->tm_isdst, dt->tm_hour, dt->tm_min, dt->tm_sec);
+//	os_printf("##Date: %02d-%02d-%04d\n", dt->tm_mday, dt->tm_mon+1, dt->tm_year+1900);
 		strftime(msg, 48, "%Y-%m-%dT%H:%M:%S", dt);
 //	ISO-8601 local time   https://www.w3.org/TR/NOTE-datetime
 //  YYYY-MM-DDThh:mm:ssTZD (eg 1997-07-16T19:20:30+01:00)

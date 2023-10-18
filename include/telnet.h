@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -8,7 +8,7 @@
 #define __TELNET_H__
 
 #include <stdbool.h>
-#include <stddef.h> 
+#include <stddef.h>
 
 // max size of the WS Message Header
 #define NBCLIENTT 5
@@ -22,7 +22,7 @@ extern int telnetclients[NBCLIENTT];
 void telnetinit(void);
 // a demand received, accept it
 bool telnetAccept(int tsocket);
-// a socket with a telnet . 
+// a socket with a telnet
 bool telnetnewclient(int socket);
 // a socket with a telnet closed
 void telnetremoveclient(int socket);

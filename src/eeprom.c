@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  * il ne faut pas decoder KaRadio
  *
@@ -32,8 +32,7 @@ const esp_partition_t * STATIONS;
 
 struct device_settings* g_device;
 
-void partitions_init(void)
-{
+void partitions_init(void) {
 	DEVICE = esp_partition_find_first(64,0,NULL);
 	if (DEVICE == NULL) ESP_LOGE(TAG, "DEVICE Partition not found");
 	STATIONS = esp_partition_find_first(65,0,NULL);
@@ -45,60 +44,55 @@ void partitions_init(void)
 }
 
 bool eeSetData(int address, void* buffer, int size) { // address, size in BYTES !!!!
-uint8_t* inbuf = buffer;
-uint32_t* eebuf= kmalloc(PARTITIONLEN);
-uint16_t i = 0;
-if (eebuf != NULL)
-{
-	while(1) {
-		
-		uint32_t sector = address & 0xFFF000;
-		uint8_t* eebuf8 = (uint8_t*)eebuf;
-		uint16_t startaddr = address & 0xFFF;
-		uint16_t maxsize = PARTITIONLEN - startaddr;
-//printf("set1 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,(int)sector,(int)eebuf);
-		//spi_flash_read(sector, (uint32_t *)eebuf, PARTITIONLEN);
-		ESP_ERROR_CHECK(esp_partition_read(STATIONS, sector,eebuf, PARTITIONLEN));
-		vTaskDelay(1);
-		ESP_ERROR_CHECK(esp_partition_erase_range(STATIONS,sector,PARTITIONLEN));
-		//spi_flash_erase_sector(sector >> 12);		
-		
-//printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,(int)sector,(int)eebuf);
-		for(i=0; (i<size && i<maxsize); i++) eebuf8[i+startaddr] = inbuf[i];
-		ESP_ERROR_CHECK(esp_partition_write(STATIONS,sector,eebuf,PARTITIONLEN));
-		//spi_flash_write(sector, (uint32_t *)eebuf, PARTITIONLEN);
-//printf("set3 startaddr: %x, size:%x, maxsize: %x, result:%x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,result,sector,eebuf);
-		if(maxsize >= size) break;		
-		address += i;
-		inbuf += i;
-		size -= i;
-//printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
+	uint8_t* inbuf = buffer;
+	uint32_t* eebuf= kmalloc(PARTITIONLEN);
+	uint16_t i = 0;
+	if (eebuf != NULL) {
+		while(1) {
+			uint32_t sector = address & 0xFFF000;
+			uint8_t* eebuf8 = (uint8_t*)eebuf;
+			uint16_t startaddr = address & 0xFFF;
+			uint16_t maxsize = PARTITIONLEN - startaddr;
+	//printf("set1 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,(int)sector,(int)eebuf);
+			//spi_flash_read(sector, (uint32_t *)eebuf, PARTITIONLEN);
+			ESP_ERROR_CHECK(esp_partition_read(STATIONS, sector,eebuf, PARTITIONLEN));
+			vTaskDelay(1);
+			ESP_ERROR_CHECK(esp_partition_erase_range(STATIONS,sector,PARTITIONLEN));
+			//spi_flash_erase_sector(sector >> 12);
+
+	//printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,(int)sector,(int)eebuf);
+			for(i=0; (i<size && i<maxsize); i++) eebuf8[i+startaddr] = inbuf[i];
+			ESP_ERROR_CHECK(esp_partition_write(STATIONS,sector,eebuf,PARTITIONLEN));
+			//spi_flash_write(sector, (uint32_t *)eebuf, PARTITIONLEN);
+	//printf("set3 startaddr: %x, size:%x, maxsize: %x, result:%x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,result,sector,eebuf);
+			if(maxsize >= size) break;
+			address += i;
+			inbuf += i;
+			size -= i;
+	//printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
+		}
+		free (eebuf);
+	} else {
+		ESP_LOGE(TAG,"Warning %s kmalloc low memory","eebuf");
+		return false;
 	}
-	free (eebuf);
-} else 
-{
-	ESP_LOGE(TAG,"Warning %s kmalloc low memory","eebuf");
-	return false;
-}
-return true;
+	return true;
 }
 
-void eeEraseAll()
-{ // clear (0) stations and device
+void eeEraseAll() {
+	// clear (0) stations and device
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
 	int i = 0;
 //	printf("erase All\n");
-	while (buffer == NULL) 
-	{
+	while (buffer == NULL) {
 		if (++i > 4) break;
-		vTaskDelay(100); 
+		vTaskDelay(100);
 		buffer= kmalloc(PARTITIONLEN); // last chance
-	}	
-	if (buffer != NULL)
-	{
-		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;	
-		ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,PARTITIONLEN));	 //clear device		
-		ESP_ERROR_CHECK(esp_partition_write(DEVICE1,0,buffer,PARTITIONLEN));	 //clear device1		
+	}
+	if (buffer != NULL) {
+		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
+		ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,PARTITIONLEN));		//clear device
+		ESP_ERROR_CHECK(esp_partition_write(DEVICE1,0,buffer,PARTITIONLEN));	//clear device1
 		for (i=0;i<16;i++)
 		{
 //			printf("erase from %x \n",PARTITIONLEN*i);
@@ -108,60 +102,65 @@ void eeEraseAll()
 		}
 		kprintf("#erase All done##\n");
 		free(buffer);
-	} else ESP_LOGE(TAG,"erase All fails");
-	
+	} else {
+		ESP_LOGE(TAG,"erase All fails");
+	}
 }
 
-void eeErasesettings(void)
-{
+void eeErasesettings(void) {
 	int i = 0;
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
 	for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
-	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,PARTITIONLEN));	 //clear device	
+	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,PARTITIONLEN));	//clear device
 	free(buffer);
 }
 
-void eeEraseStations()
-{
+void eeEraseStations() {
 	uint8_t* buffer = kmalloc(PARTITIONLEN);
 	int i=0;
-	while (buffer == NULL) 
-	{
+	while (buffer == NULL) {
 		if (++i > 10) break;
-		vTaskDelay(10); 
+		vTaskDelay(10);
 		buffer= kmalloc(PARTITIONLEN); // last chance
 	}
-	if (buffer != NULL)
-	{
-		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;	
-		for (i=0;i<16;i++)
-		{
-//			printf("erase from %x \n",PARTITIONLEN*i);
-			ESP_ERROR_CHECK(esp_partition_write(STATIONS,PARTITIONLEN*i,buffer,PARTITIONLEN));	//clear stations
-//			eeSetClear(PARTITIONLEN*i,buffer);
-			vTaskDelay(1); // avoid watchdog
-		}
+	if (buffer != NULL) {
+		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
+			for (i=0;i<16;i++) {
+	//			printf("erase from %x \n",PARTITIONLEN*i);
+				ESP_ERROR_CHECK(esp_partition_write(STATIONS,PARTITIONLEN*i,buffer,PARTITIONLEN));	//clear stations
+	//			eeSetClear(PARTITIONLEN*i,buffer);
+				vTaskDelay(1); // avoid watchdog
+			}
 		free(buffer);
-	} else ESP_LOGE(TAG,"Warning %s kmalloc low memory","eeEraseStations");
+	} else {
+		ESP_LOGE(TAG,"Warning %s kmalloc low memory","eeEraseStations");
+	}
 }
 
 void saveStation(struct shoutcast_info *station, uint16_t position) {
 	uint32_t i = 0;
-	if (position > NBSTATIONS-1) {ESP_LOGE(TAG,"saveStation fails pos=%d",position);return;}
-	while (!eeSetData((position)*256, station, 256)) 
+	if (position > NBSTATIONS-1) {
+		ESP_LOGE(TAG,"saveStation fails pos=%d",position);
+		return;
+	}
+	while (!eeSetData((position)*256, station, 256))
 	{
 		ESP_LOGW(TAG,"Retrying %d on saveStation",i);
 		vTaskDelay ((i+1)*20+100) ;
-		i++; 
+		i++;
 		if (i == 10) return;
 	}
 }
+
 void saveMultiStation(struct shoutcast_info *station, uint16_t position, uint8_t number) {
 	uint32_t i = 0;
-	while ((position +number-1) > NBSTATIONS-1) {ESP_LOGE(TAG,"saveStation fails pos=%d",position+number-1); number--; }
+	while ((position +number-1) > NBSTATIONS-1) {
+		ESP_LOGE(TAG,"saveStation fails pos=%d",position+number-1);
+		number--;
+	}
 	if (number <= 0) return;
 	while (!eeSetData((position)*256, station, number*256))
-	{		
+	{
 		ESP_LOGW(TAG,"Retrying %d on SaveMultiStation for %d stations",i,number);
 		vTaskDelay ((i++)*20+100) ;
 //		if (i == 3) {clientDisconnect("saveMultiStation low Memory"); vTaskDelay (300) ;}
@@ -169,72 +168,78 @@ void saveMultiStation(struct shoutcast_info *station, uint16_t position, uint8_t
 	}
 }
 
-
 struct shoutcast_info* getStation(uint8_t position) {
-	if (position > NBSTATIONS-1) {kprintf("getStation fails pos=%d\n",position); return NULL;}
+	if (position > NBSTATIONS-1) {
+		kprintf("getStation fails pos=%d\n",position);
+		return NULL;
+	}
+
 	uint8_t* buffer = kmalloc(256);
 	uint8_t i = 0;
-	
-	while (buffer == NULL) 
-	{
+	while (buffer == NULL) {
 //		ESP_LOGE(TAG,"getStation fails pos=%d",256);
 		if (++i > 2) break;
-		vTaskDelay(400); 
+		vTaskDelay(400);
 		buffer= kmalloc(256); // last chance
-	}	
+	}
 	ESP_ERROR_CHECK(esp_partition_read(STATIONS, (position)*256, buffer, 256));
-	//eeGetData((position+1)*256, buffer, 256);
-	
 	return (struct shoutcast_info*)buffer;
 }
 
-void copyDeviceSettings()
-{
+void copyDeviceSettings() {
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
-	if(buffer) {	
+	if(buffer) {
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE, 0, buffer, sizeof(struct device_settings)));
 		ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE1,0,DEVICE1->size));
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE1,0,buffer,DEVICE1->size));
-	} 
+	}
 	free (buffer);
 }
 
-void restoreDeviceSettings()
-{
+void restoreDeviceSettings() {
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
-	if(buffer) {	
+	if(buffer) {
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE1, 0, buffer, sizeof(struct device_settings)));
 		ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE,0,DEVICE->size));
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,DEVICE->size));
-	} 
+	}
 	free (buffer);
 }
 
-void saveDeviceSettingsInt(struct device_settings *settings)
-{
+void saveDeviceSettingsInt(struct device_settings *settings) {
 	ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE,0,DEVICE->size));
 	vTaskDelay(1);
 	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,settings,DEVICE->size));
 	vTaskDelay(1);
 	xSemaphoreGive(muxDevice);
 }
+
 void saveDeviceSettings(struct device_settings *settings) {
-	if (settings == NULL) { ESP_LOGE(TAG,"saveDeviceSetting fails");return;}
+	if (settings == NULL) {
+		ESP_LOGE(TAG,"saveDeviceSetting fails");
+		return;
+	}
 	ESP_LOGD(TAG,"saveDeviceSettings");
 	xSemaphoreTake(muxDevice, portMAX_DELAY);
 	saveDeviceSettingsInt(settings);
 }
+
 void saveDeviceSettingsVolume(struct device_settings *settings) {
-	if (settings == NULL) { ESP_LOGE(TAG,"saveDeviceSetting fails");return;}
+	if (settings == NULL) {
+		ESP_LOGE(TAG,"saveDeviceSetting fails");
+		return;
+	}
 	ESP_LOGD(TAG,"saveDeviceSettingsVolume");
-	if (xSemaphoreTake(muxDevice, 0) == pdFALSE) return; // not important. An other one in progress
+	if (xSemaphoreTake(muxDevice, 0) == pdFALSE) {
+		return; // not important. An other one in progress
+	}
 	saveDeviceSettingsInt(settings);
 }
 
 struct device_settings* getDeviceSettingsSilent() {
 	uint16_t size = sizeof(struct device_settings);
 	uint8_t* buffer = kmalloc(size);
-	if(buffer) {	
+	if(buffer) {
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE, 0, buffer, size));
 		return (struct device_settings*)buffer;
 	}
@@ -243,7 +248,8 @@ struct device_settings* getDeviceSettingsSilent() {
 
 struct device_settings* getDeviceSettings() {
 	struct device_settings* buffer ;
-	if ((buffer = getDeviceSettingsSilent())==NULL) ESP_LOGE(TAG,"getDeviceSetting fails");
-//		printf(streGETDEVICE,0);
+	if ((buffer = getDeviceSettingsSilent())==NULL) {
+		ESP_LOGE(TAG,"getDeviceSetting fails");
+	}
 	return buffer;
 }

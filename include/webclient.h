@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2018 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -68,7 +68,7 @@ char* getMeta();
 
 struct icyHeader* clientGetHeader();
 void clientConnect();
-void clientSilentConnect(); 
+void clientSilentConnect();
 void clientConnectOnce();
 void clientDisconnect(const char* from);
 void clientSilentDisconnect();

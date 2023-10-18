@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -100,7 +100,7 @@ void VS1053_SPI_SpeedUp() {
 
 void VS1053_SPI_SpeedDown() {
 	// 2MHz
-	WRITE_PERI_REG(SPI_CLOCK(HSPI), 
+	WRITE_PERI_REG(SPI_CLOCK(HSPI),
 			((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
@@ -278,7 +278,7 @@ void VS1053_HighPower() {
 	if (vsVersion == 4) // only 1053
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
 	else
-		VS1053_WriteRegister16(SPI_CLOCKF,0xb000);	
+		VS1053_WriteRegister16(SPI_CLOCKF,0xb000);
 }
 
 // patch if GPIO1 is not wired to GND
@@ -304,9 +304,9 @@ void VS1053_InitVS() {
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_RESET);
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode
 	WaitDREQ();
-	
+
 	VS1053_regtest();
-	
+
 	// enable I2C dac output of the vs1053
 	if (vsVersion == 4) // only 1053
 	{
@@ -342,13 +342,13 @@ void VS1053_Start() {
 
 	vsVersion = (VS1053_ReadRegister(SPI_STATUSVS) >> 4) & 0x000F; //Mask out only the four version bits
 	//0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053,
-	//5 for VS1033, 7 for VS1103, and 6 for VS1063	
+	//5 for VS1033, 7 for VS1103, and 6 for VS1063
 	ESP_LOGI(TAG,"VS10xx detection. Version: %x",vsVersion);
 
 	// plugin patch
 	if ((vsVersion == 4) && ((g_device->options&T_PATCH)==0))
 	{
-		LoadUserCodes() ;	// vs1053b patch
+		LoadUserCodes() ; // vs1053b patch
 		ESP_LOGI(TAG,"SPI_AUDATA 2 = %x",VS1053_ReadRegister(SPI_AUDATA));
 		if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) //midi mode?
 		{
@@ -371,7 +371,7 @@ void VS1053_Start() {
 	vTaskDelay(1);
 	ESP_LOGI(TAG,"volume: %d",g_device->vol);
 	setIvol(g_device->vol);
-	VS1053_SetVolume(g_device->vol);	
+	VS1053_SetVolume(g_device->vol);
 	VS1053_SetTreble(g_device->treble);
 	VS1053_SetBass(g_device->bass);
 	VS1053_SetTrebleFreq(g_device->freqtreble);
@@ -384,28 +384,20 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 	spi_take_semaphore();
 	int o = 0;
 
-	while(CheckDREQ() == 0)
-	{
-		vTaskDelay(1);
-	}
+	while(CheckDREQ() == 0) vTaskDelay(1);
 
 	VS1053_SPI_SpeedUp();
 	SDI_ChipSelect(SET);
 
-	while(quantity)
-	{
-		if(CheckDREQ()) 
-		{
+	while(quantity) {
+		if(CheckDREQ()) {
 			int t = quantity;
 			int k;
 			if(t > CHUNK) t = CHUNK;
-			for (k=o; k < o+t; k++)
-			{
-				SPIPutChar(music[k]);
-			}
+			for (k=o; k < o+t; k++) SPIPutChar(music[k]);
 			o += t;
 			quantity -= t;
-		} 
+		}
 	}
 	SDI_ChipSelect(RESET);
 	VS1053_SPI_SpeedDown();
@@ -417,11 +409,9 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 uint8_t VS1053_GetVolume() {
 	uint8_t i,j;
 	uint8_t value = VS1053_ReadRegister(SPI_VOL) & 0x00FF;
-	for (i = 0;i< 255; i++)
-	{
+	for (i = 0;i< 255; i++) {
 		j = (log10(255/((float)i+1)) * 105.54571334); // magic no?
-		if (value == j)
-			return i;
+		if (value == j) return i;
 	}
 	return 127;
 }
@@ -448,7 +438,7 @@ void VS1053_SetVolume(uint8_t xMinusHalfdB) {
  * @return Returned value describes enhancement in multiplies
  * 		of 1.5dB. 0 value means no enhancement, 8 max (12dB).
  */
-int8_t	VS1053_GetTreble() {
+int8_t VS1053_GetTreble() {
 	int8_t treble = (VS1053_ReadRegister(SPI_BASS) & 0xF000) >> 12;
 	if ((treble&0x08)) treble |= 0xF0; // negative value
 	return (treble);
@@ -456,8 +446,7 @@ int8_t	VS1053_GetTreble() {
 
 /**
  * Sets treble level.
- * @note If xOneAndHalfdB is greater than max value, sets treble
- * 		to maximum.
+ * @note If xOneAndHalfdB is greater than max value, sets treble to maximum.
  * @param xOneAndHalfdB describes level of enhancement. It is a multiplier
  * 		of 1.5dB. 0 - no enhancement, -8 minimum -12dB , 7 - maximum, 10.5dB.
  * @return void
@@ -524,7 +513,7 @@ uint8_t	VS1053_GetBassFreq() {
 	return ((VS1053_ReadRegister(SPI_BASS) & 0x000F));
 }
 
-uint8_t	VS1053_GetSpatial(){
+uint8_t	VS1053_GetSpatial() {
 	if (vsVersion != 4) return 0;
 	uint16_t spatial = (VS1053_ReadRegister(SPI_MODE) & 0x0090) >>4;
 	return ((spatial&1)|((spatial>>2) & 2));
@@ -597,7 +586,7 @@ uint16_t VS1053_GetSampleRate() {
 void VS1053_flush_cancel() {
 	int8_t endFillByte ;
 	int16_t y;
-	uint8_t buf[33];	
+	uint8_t buf[33];
 	// set spimode with SM_CANCEL
 	uint16_t spimode = VS1053_ReadRegister(SPI_MODE)|SM_CANCEL;
 	// set CANCEL
@@ -607,11 +596,9 @@ void VS1053_flush_cancel() {
 	endFillByte = (int8_t) (VS1053_ReadRegister(SPI_WRAM) & 0xFF);
 	for (y = 0; y < 32; y++) buf[y] = endFillByte;
 	y = 0;
-	while (VS1053_ReadRegister(SPI_MODE)&SM_CANCEL)
-	{
-		VS1053_SendMusicBytes( buf, 32); 
-		if (y++ > 64) 
-		{
+	while (VS1053_ReadRegister(SPI_MODE)&SM_CANCEL) {
+		VS1053_SendMusicBytes( buf, 32);
+		if (y++ > 64) {
 			ESP_LOGE(TAG,"VS1053 Reset");
 //			VS1053_Start();
 			break;

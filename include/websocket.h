@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -36,7 +36,7 @@ typedef struct {
 } wsMessageHeader_t;
 
 typedef struct {
-	int socket;	
+	int socket;
 } client_t;
 
 extern client_t webserverclients[NBCLIENT];
@@ -46,7 +46,7 @@ extern client_t webserverclients[NBCLIENT];
 void websocketinit(void);
 // a demand received, accept it
 void websocketAccept(int wsocket,char* bufin,int buflen);
-// a socket with a websocket . 
+// a socket with a websocket
 bool websocketnewclient(int socket);
 // a socket with a websocket closed
 void websocketremoveclient(int socket);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -355,7 +355,7 @@ void startWake(uint32_t delay)
 	if (delay == 0) return;
 	wakeDelay = delay*60; // minutes to seconds
 	os_timer_disarm(&wakeTimer);
-	os_timer_arm(&wakeTimer, 1000, true); // 1 second and rearm	
+	os_timer_arm(&wakeTimer, 1000, true); // 1 second and rearm
 }
 
 void stopWake()
@@ -525,14 +525,14 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 		}
 	} else if(strcmp(name, "/soundvol") == 0) {
 		if(data_size > 0) {
-/*			
+/*
 			char * vol = data+4;
 			data[data_size-1] = 0;
 			ESP_LOGD(TAG,"/soundvol vol: %s num:%d",vol, atoi(vol));
 			setVolume(vol);
 			respOk(conn,NULL);
 			return;
-*/			
+*/
 			char param[4];
 			int vol;
 			if(getSParameterFromResponse(param,4,"vol=", data, data_size)) {
@@ -544,9 +544,9 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 				wsVol(param);
 				respOk(conn,NULL);
 				return;
-			}			
-			
-			
+			}
+
+
 		}
 	} else if(strcmp(name, "/sound") == 0) {
 		if(data_size > 0) {
@@ -602,7 +602,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 	} else if(strcmp(name, "/getStation") == 0) {
 		if(data_size > 0) {
 			char id[6];
-			
+
 			if (getSParameterFromResponse(id,6,"idgp=", data, data_size) )
 			{
 				if ((atoi(id) >=0) && (atoi(id) < 255))
@@ -838,10 +838,10 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 			}
 
 			char buf[110];
-			/* 
+			/*
 			int json_length ;
 			json_length = 15;
-			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"coutput\":\"%d\"}", json_length, g_device->audio_output_mode); 
+			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"coutput\":\"%d\"}", json_length, g_device->audio_output_mode);
 			*/
 			ESP_LOGV(TAG,"hardware Buf len:%d\n%s",strlen(buf),buf);
 			write(conn, buf, strlen(buf));
@@ -929,7 +929,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 				}
 				if (pasw2 != NULL){
 					if (strcmp(pasw2,apMode)!=0) strcpy(g_device->pass2,pasw2);
-				}						
+				}
 
 				infree(ssid); infree(pasw);infree(ssid2); infree(pasw2);
 				infree(aip);infree(amsk);infree(agw);
@@ -999,7 +999,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 			char macstr[20];	 // = inmalloc(20*sizeof(char));
 			char adhcp[4],adhcp2[4];
 			esp_wifi_get_mac(WIFI_IF_STA,macaddr);
-			
+
 			int json_length ;
 			json_length =95+ 39+ 19+
 			strlen(g_device->ssid1) +
@@ -1027,7 +1027,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 			else {
 				sprintf(buf, strsWIFI,
 				json_length,
-				g_device->ssid1,"",g_device->ssid2,"",tmpip,tmpmsk,tmpgw,tmpip2,tmpmsk2,tmpgw2,g_device->ua,adhcp,adhcp2,macstr,g_device->hostname,tmptzo); 
+				g_device->ssid1,"",g_device->ssid2,"",tmpip,tmpmsk,tmpgw,tmpip2,tmpmsk2,tmpgw2,g_device->ua,adhcp,adhcp2,macstr,g_device->hostname,tmptzo);
 				ESP_LOGV(TAG,"wifi Buf len:%d\n%s",strlen(buf),buf);
 				write(conn, buf, strlen(buf));
 				infree(buf);

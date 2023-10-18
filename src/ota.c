@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -48,26 +48,26 @@ static unsigned int  reclen = 0;
 void wsUpgrade(const char* str,int count,int total)
 {
 	char answer[50];
-	if (strlen(str)!= 0)
+	if (strlen(str)!= 0) {
 		sprintf(answer,"{\"upgrade\":\"%s\"}",str);
-	else
-	{
+	} else {
 		int value = count*100/total;
 		memset(answer,0,50);
-		if (value >= 100)
+		if (value >= 100) {
 			sprintf(answer,"{\"upgrade\":\"Done. Refresh the page.\"}");
-		else
-		if (value == 0)
-			sprintf(answer,"{\"upgrade\":\"Starting.\"}");
-		else
-			sprintf(answer,"{\"upgrade\":\"%d / %d\"}",value,100);
+		} else {
+			if (value == 0) {
+				sprintf(answer,"{\"upgrade\":\"Starting.\"}");
+			} else {
+				sprintf(answer,"{\"upgrade\":\"%d / %d\"}",value,100);
+			}
+		}
 	}
 	websocketbroadcast(answer, strlen(answer));
 }
 
 /*read buffer by byte still delim ,return read bytes counts*/
-static int read_until(char *buffer, char delim, int len)
-{
+static int read_until(char *buffer, char delim, int len) {
 	/* TODO: delim check,buffer check,further: do an buffer length limited */
 	int i = 0;
 	while (buffer[i] != delim && i < len) {
@@ -80,8 +80,7 @@ static int read_until(char *buffer, char delim, int len)
  * return true if packet including \r\n\r\n that means http packet header finished,start to receive packet body
  * otherwise return false
  */
-static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t update_handle)
-{
+static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t update_handle) {
 	/* i means current position */
 	int i = 0, i_read_len = 0;
 	while (text[i] != 0 && i < total_len) {
@@ -110,17 +109,16 @@ static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t u
 
 /******************************************************************************
  * FunctionName : ota task
- * Description  : 
+ * Description  :
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-static void ota_task(void *pvParameter)
-{
+static void ota_task(void *pvParameter) {
 	// the get request
 	char http_request[80] = {0};
 	struct hostent *serv ;
 	int sockfd;
-	struct sockaddr_in dest;	
+	struct sockaddr_in dest;
 	char* name = (char*)pvParameter; // name of the bin file to load
 	unsigned int cnt =0;
 	clientDisconnect("OTA");
@@ -150,17 +148,16 @@ static void ota_task(void *pvParameter)
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd >= 0) {ESP_LOGI(TAG,"WebClient Socket created"); }
 	else {ESP_LOGE(TAG,"socket create errno: %d",errno);wsUpgrade("Failed: socket errno", 0,100); goto exit;}
-	bzero(&dest, sizeof(dest));	
+	bzero(&dest, sizeof(dest));
 	dest.sin_family = AF_INET;
 	dest.sin_port   = htons(80);
 	dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0]))); // remote server ip
 	ESP_LOGI(TAG,"distant ip: %x   ADDR:%s\n", dest.sin_addr.s_addr, inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0])));
 
 	/*---Connect to server---*/
-	if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0)
-		{ESP_LOGI(TAG,"Connected to server");}
-	else
-	{
+	if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0) {
+		ESP_LOGI(TAG,"Connected to server");
+	} else {
 		ESP_LOGE(TAG, "Connect to server failed! errno=%d", errno);
 		close(sockfd);
 		wsUpgrade("Connect to server failed!" , 0,100);
@@ -204,22 +201,21 @@ static void ota_task(void *pvParameter)
 			kprintf("Error: receive data error! errno=%d\n", errno);
 			wsUpgrade("Error: receive data error!" , 0,100);
 			goto exit;
-		} else if (buff_len > 0 && !resp_body_start) 
-		{ /*deal with response header*/
+		} else if (buff_len > 0 && !resp_body_start) {
+			/*deal with response header*/
 			/*the header*/
 			char header[BUFFSIZE + 1] = { 0 };
 			strncat(header,text,buff_len);
 			resp_body_start = read_past_http_header(text, buff_len, update_handle);
-			if (resp_body_start)
-			{
+			if (resp_body_start) {
 				char* str = NULL;
 				str=strstr(header,"Content-Length:");
-				if (str!=NULL) reclen = atoi(str+15);				
+				if (str!=NULL) reclen = atoi(str+15);
 				ESP_LOGI(TAG, "must receive:%d bytes",reclen);
 				kprintf("must receive:%d bytes\n",reclen);
 			}
-		} else if (buff_len > 0 && resp_body_start)
-		{ /*deal with response body*/
+		} else if (buff_len > 0 && resp_body_start) {
+			/*deal with response body*/
 			memcpy(ota_write_data, text, buff_len);
 			err = esp_ota_write( update_handle, (const void *)ota_write_data, buff_len);
 			if (err != ESP_OK) {
@@ -232,15 +228,14 @@ static void ota_task(void *pvParameter)
 			binary_file_length += buff_len;
 			//ESP_LOGI(TAG, "Have written image length %d  of  %d", binary_file_length,reclen);
 			cnt = (cnt+1) & 0x1F;
-			if (cnt ==0){
+			if (cnt ==0) {
 				kprintf("Written  %d  of  %d\n", binary_file_length,reclen);
 				wsUpgrade( "",binary_file_length,reclen);
 			}
-			if (binary_file_length >= reclen)
-			{
+			if (binary_file_length >= reclen) {
 				flag = false; // all received, exit
 				kprintf("Have written image length %d  of  %d\n", binary_file_length,reclen);
-				wsUpgrade("", binary_file_length,reclen);				
+				wsUpgrade("", binary_file_length,reclen);
 				ESP_LOGI(TAG, "Connection closed, all packets received");
 				kprintf("\nConnection closed, all packets received\n");
 				close(sockfd);
@@ -279,12 +274,12 @@ static void ota_task(void *pvParameter)
 	ESP_LOGI(TAG, "Prepare to restart system!");
 	kprintf("Update firmware succeded. Restarting\n");
 	vTaskDelay(10);
-	esp_restart();	
-	
+	esp_restart();
+
 	exit:
 	taskState = false;
 	close(sockfd);
-	(void)vTaskDelete( NULL );
+	(void)vTaskDelete(NULL);
 }
 
 /******************************************************************************
@@ -293,16 +288,13 @@ static void ota_task(void *pvParameter)
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-void update_firmware(char* fname)
-{
-	if (!taskState)
-	{
+void update_firmware(char* fname) {
+	if (!taskState) {
 		taskState = true;
 		xTaskHandle pxCreatedTask;
 		xTaskCreatePinnedToCore(ota_task, "ota_task", 8192, fname, PRIO_OTA, &pxCreatedTask,CPU_OTA);
 		ESP_LOGI(TAG, "ota_task: %x",(unsigned int)pxCreatedTask);
-	} else
-	{
+	} else {
 		ESP_LOGI(TAG, "ota_task: already running. Ignore");
 		wsUpgrade("Update already running. Ignored." , 0,100);
 	}

@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -76,7 +76,7 @@ void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonL
 void websocketinit(void)
 {
 	int i;
-	for (i = 0;i<NBCLIENT;i++) 
+	for (i = 0;i<NBCLIENT;i++)
 	{
 		webserverclients[i].socket = -1;
 	}
@@ -117,7 +117,7 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 	//Fill Output Buffer
 	encodedLength = strlen(encodedSha1);
 	outputLength = encodedLength + strlen(str1) + 2*strlen(s);
-	
+
 	strcpy(outputMessage,str1);
 	strcat(outputMessage,encodedSha1);
 	strcat(outputMessage,s);
@@ -133,11 +133,11 @@ bool websocketnewclient(int socket)
 //	printf("ws newclient:%d\n",socket);
 	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == socket) return true;
 	else
-	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == -1) 
+	for (i = 0;i<NBCLIENT;i++) if (webserverclients[i].socket == -1)
 	{
 		webserverclients[i].socket = socket;
 		return true;
-	}	
+	}
 	return false; // no more room
 }
 
@@ -145,8 +145,8 @@ bool websocketnewclient(int socket)
 void websocketremoveclient(int socket)
 {
 	int i ;
-	for (i = 0;i<NBCLIENT;i++) 
-		if (webserverclients[i].socket == socket) 
+	for (i = 0;i<NBCLIENT;i++)
+		if (webserverclients[i].socket == socket)
 		{
 			webserverclients[i].socket = -1;
 //			printf("ws removeclient:%d removed\n",socket);
@@ -159,7 +159,7 @@ void websocketremoveclient(int socket)
 bool iswebsocket( int socket)
 {
 	int i ;
-	for (i = 0;i<NBCLIENT;i++) 
+	for (i = 0;i<NBCLIENT;i++)
 		if ((webserverclients[i].socket!= -1)&&(webserverclients[i].socket == socket)) return true;
 	return false;
 }
@@ -246,8 +246,8 @@ void websocketparsedata(int socket, char* buf, int len)
 	payload++; // second bytes
 	header.mask = ((*payload >> 7) & 0x01);
 	header.payloadLen = (wsopcode_t) (*payload & 0x7F);
-	payload++;	
-	
+	payload++;
+
 	if(header.payloadLen == 126) {
 		headerLen += 2;
 		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
@@ -255,7 +255,7 @@ void websocketparsedata(int socket, char* buf, int len)
 		payload += 2;
 	} else if(header.payloadLen == 127) {
 		headerLen += 8;
-		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);		
+		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 		if(payload[0] != 0 || payload[1] != 0 || payload[2] != 0 || payload[3] != 0) {
 			// really to big!
 			header.payloadLen = 0xFFFFFFFF;
@@ -263,7 +263,7 @@ void websocketparsedata(int socket, char* buf, int len)
 			header.payloadLen = payload[4] << 24 | payload[5] << 16 | payload[6] << 8 | payload[7];
 		}
 		payload += 8;
-	}		
+	}
 	if(header.payloadLen > MAXDATA-WEBSOCKETS_MAX_HEADER_SIZE) { // we must be in one buf max for payload
 	// disconnect
 		return;
@@ -274,7 +274,7 @@ void websocketparsedata(int socket, char* buf, int len)
 		while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 		header.maskKey = payload;
 		payload += 4;
-	}	
+	}
 	 headerLen += header.payloadLen;
 	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 //
@@ -288,7 +288,7 @@ void websocketparsedata(int socket, char* buf, int len)
 		}
 	}
 	payload[header.payloadLen] = 0x00;
-	
+
 // ok payload is unmasked now.
 		switch(header.opCode) {
 			case WSop_text:
@@ -302,7 +302,7 @@ void websocketparsedata(int socket, char* buf, int len)
 				break;
 			case WSop_pong:
 				break;
-			case WSop_close: 
+			case WSop_close:
 				websocketremoveclient(socket);
 				break;
 			case WSop_continuation:
@@ -325,7 +325,7 @@ void websocketbroadcast(char* buf, int len)
 {
 	int i ;
 	ESP_LOGV(TAG,"websocketbroadcast: %s",buf);
-	for (i = 0;i<NBCLIENT;i++)	
+	for (i = 0;i<NBCLIENT;i++)
 		if (iswebsocket( webserverclients[i].socket))
 		{
 			websocketwrite( webserverclients[i].socket, buf, len);
@@ -337,7 +337,7 @@ void websocketlimitedbroadcast(int socket,char* buf, int len)
 {
 	int i ;
 	ESP_LOGV(TAG,"websocketlimitedbroadcast: %s",buf);
-	for (i = 0;i<NBCLIENT;i++)	
+	for (i = 0;i<NBCLIENT;i++)
 		if (iswebsocket( webserverclients[i].socket))
 		{
 			if (webserverclients[i].socket != socket) websocketwrite(webserverclients[i].socket, buf, len);

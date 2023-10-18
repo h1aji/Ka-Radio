@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -223,7 +223,7 @@ bool clientParsePlaylist(char* s)
 	ns = str;
 	while ((strlen(ns) > 0) && (ns[0]!=0x0A)) ns++;
 //	ESP_LOGV(TAG,"EXTM3U: %s",ns);
-	if (strlen(ns)>0) 
+	if (strlen(ns)>0)
 		s = ns+1; // skip \n
 	}
 // skip if icy lines
@@ -318,7 +318,7 @@ static char* stringify(char* str,int len) {
 					new[j++] = '\\';
 					new[j++] =(str)[i] ;
 				}
-				else 
+				else
 				if (str[i] == 0x09) {  // TAB
 					new[j++] = '\\';
 					new[j++] ='t' ;
@@ -413,12 +413,12 @@ static void clientSaveMetadata(char* s,int len)
 		}
 	}
 	t = strstr(t,"StreamTitle='");
-	if (t!= NULL) 
+	if (t!= NULL)
 	{
 		t += 13;found = true;
 		len -=13;
-	} 
-	else { 
+	}
+	else {
 		t = s;
 	}
 	ilen = strlen(t) ;
@@ -738,7 +738,7 @@ bool clientParseHeader(char* s)
 			wsHeaders(); // update all server
 			vTaskDelay(10);
 			clientDisconnect("unknown contentType");
-			cstatus = C_HEADER;		
+			cstatus = C_HEADER;
 		}
 		ESP_LOGD(TAG, "contentType: %d", contentType);
 	}
@@ -927,7 +927,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 			wsHeaders();
 			vTaskDelay(1);
 			cstatus = C_HEADER;
-			clientDisconnect("C_LIST"); 
+			clientDisconnect("C_LIST");
 			return;
 		}
 	}
@@ -951,7 +951,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 		if (t1 == NULL) {
 			t1 = strstr(pdata, "301 ");
 		}
-		else 
+		else
 		{ // moved to a new address
 			if (strcmp(t1,"Found")||strcmp(t1,"Temporarily")||strcmp(t1,"Moved"))
 			{
@@ -997,9 +997,9 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							while (len -(t1-pdata)<8) {
 								vTaskDelay(1);
 								int ilen;
-								ilen = recv(sockfd, pdata+len, RECEIVE+8-len, 0); 
+								ilen = recv(sockfd, pdata+len, RECEIVE+8-len, 0);
 								if (ilen >0)
-									len += ilen; 
+									len += ilen;
 								if (ilen <0) {
 									clientDisconnect("chunk2");
 									break;
@@ -1248,7 +1248,7 @@ if (rest <0) ESP_LOGD(TAG,"mt1 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  res
 		}
 // ---------------
 
-		if ((!playing )  && (((++dloop) % 40)==0)) 
+		if ((!playing )  && (((++dloop) % 40)==0))
 		{
 			kprintf(CLIPLAY,0x0d,0x0a);
 			playing=1;
@@ -1284,8 +1284,8 @@ void clientTask(void *pvParams)
 
 	while(1) {
 		xSemaphoreGive(sConnected);
-		if(xSemaphoreTake(sConnect, portMAX_DELAY)) 
-		{		
+		if(xSemaphoreTake(sConnect, portMAX_DELAY))
+		{
 			VS1053_HighPower();
 			xSemaphoreTake(sDisconnect, 0);
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -1417,7 +1417,7 @@ void clientTask(void *pvParams)
 				}
 			}
 			if (playing)  // stop clean
-			{		
+			{
 				volume = VS1053_GetVolume();
 				VS1053_SetVolume(0);
 				VS1053_flush_cancel();

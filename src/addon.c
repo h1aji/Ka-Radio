@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -64,7 +64,7 @@ static bool state = false; // start stop on Ok key
 
 static int16_t currentValue = 0;
 static bool dvolume = true; // display volume screen
- 
+
 // custom ir code init from hardware nvs
 typedef enum {KEY_UP,KEY_LEFT,KEY_OK,KEY_RIGHT,KEY_DOWN,
 		KEY_0,KEY_1,KEY_2,KEY_3,KEY_4,KEY_5,KEY_6,KEY_7,KEY_8,KEY_9,
@@ -76,7 +76,7 @@ static bool isCustomKey = false;
 //backlight value
 static int blv = 100;
 
-void Screen(typeScreen st); 
+void Screen(typeScreen st);
 void drawScreen();
 static void evtScreen(typelcmd value);
 
@@ -123,14 +123,15 @@ IRAM_ATTR void ServiceAddon(void)
 	if (timer1s >=1000)
 	{
 		// Time compute
-		timestamp++;  // time update  
+		timestamp++;  // time update
 		if (timerLcdOut >0) timerLcdOut--;
 		timein++;
-		if ((timestamp % (10*DTIDLE))==0){ itAskTime=true;} // synchronise with ntp every x*DTIDLE
-		 
-		if (((timein % DTIDLE)==0)&&(!state))
-		{
-			{itAskStime=true;timein = 0;} // start the time display when paused
+		if ((timestamp % (10*DTIDLE))==0) {
+			itAskTime=true;
+		} // synchronise with ntp every x*DTIDLE
+
+		if (((timein % DTIDLE)==0)&&(!state)) {
+			{ itAskStime=true; timein = 0; } // start the time display when paused
 		}
 		if (timerLcdOut == 1) itLcdOut = 1; // ask to go to sleep
 		if (!syncTime) itAskTime=true; // first synchro if not done
@@ -156,7 +157,6 @@ void scroll()
 {
 }
 
-
 // Change the current screen
 void Screen(typeScreen st)
 {
@@ -176,7 +176,7 @@ void Screen(typeScreen st)
 	timein = 0;
 	timerScreen = 0;
 	drawScreen();
-//printf("Screendis: st: %d, stateScreen: %d, mTscreen: %d, default: %d\n",st,stateScreen,mTscreen,defaultStateScreen);  
+//printf("Screendis: st: %d, stateScreen: %d, mTscreen: %d, default: %d\n",st,stateScreen,mTscreen,defaultStateScreen);
 //	vTaskDelay(1);
 }
 
@@ -223,7 +223,7 @@ void stopStation()
 void startStation()
 {
 //	irStr[0] = 0;
-	playStationInt(futurNum); ; 
+	playStationInt(futurNum);
 }
 
 void startStop()
@@ -259,7 +259,7 @@ void changeStation(int16_t value)
 	//else if (value != 0) mTscreen = MTREFRESH;
 }
 
-// IR 
+// IR
 // a number of station in progress...
 void nbStation(char nb)
 {
@@ -273,35 +273,35 @@ void nbStation(char nb)
 static void evtClearScreen()
 {
 	event_lcd_t evt;
-	evt.lcmd = eclrs;	
+	evt.lcmd = eclrs;
 	evt.lline = NULL;
-	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);	
+	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);
 }
 
 static void evtScreen(typelcmd value)
 {
 	event_lcd_t evt;
-	evt.lcmd = escreen;	
+	evt.lcmd = escreen;
 	evt.lline = (char*)((uint32_t)value);
 	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);
-	
+
 }
 
 static void evtStation(int16_t value)
 { // value +1 or -1
-	event_lcd_t evt; 
+	event_lcd_t evt;
 	evt.lcmd = estation;
 	evt.lline = (char*)((uint32_t)value);
-	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);			
+	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);
 }
 
 // toggle main / time
 static void toggletime()
 {
 	event_lcd_t evt;
-	evt.lcmd = etoggle;	
+	evt.lcmd = etoggle;
 	evt.lline = NULL;
-	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);	
+	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);
 }
 
 // compute custom IR
@@ -345,7 +345,6 @@ bool irCustom(uint32_t evtir, bool repeat)
  //-----------------------
  // Compute the ir code
  //----------------------
- 
 void irLoop()
 {
 // IR
@@ -355,7 +354,7 @@ event_ir_t evt;
 		wakeLcd();
 		uint32_t evtir = ((evt.addr)<<8)|(evt.cmd&0xFF);
 		ESP_LOGI(TAG,"IR event: Channel: %x, ADDR: %x, CMD: %x = %X, REPEAT: %d",evt.channel,evt.addr,evt.cmd, evtir,evt.repeat_flag );
-		
+
 		if (isCustomKey){
 			if (irCustom(evtir,evt.repeat_flag)) continue;
 		}
@@ -364,8 +363,8 @@ event_ir_t evt;
 		{
 		case 0xDF2047:
 		case 0xDF2002:
-		case 0xFF0046: 
-		case 0xF70812:  /*(" UP");*/  evtStation(+1);  
+		case 0xFF0046:
+		case 0xF70812:  /*(" UP");*/  evtStation(+1);
 		break;
 		case 0xDF2049:
 		case 0xDF2041:
@@ -382,7 +381,7 @@ event_ir_t evt;
 		case 0xFF0043:
 		case 0xF70841:
 		case 0xF70814: /*(" RIGHT");*/ setRelVolume(+5);
-		break; 
+		break;
 		case 0xDF204D:
 		case 0xDF2009:
 		case 0xFF0015:
@@ -452,10 +451,10 @@ void customKeyInit()
 	customKey_t index;
 	nvs_handle handle;
 	const char *klab[] = {"K_UP","K_LEFT","K_OK","K_RIGHT","K_DOWN","K_0","K_1","K_2","K_3","K_4","K_5","K_6","K_7","K_8","K_9","K_STAR","K_DIESE","K_INFO"};
-	
+
 	memset(&customKey,0,sizeof(uint32_t)*2*KEY_MAX); // clear custom
 	if (open_partition(hardware, "custom_ir_space",NVS_READONLY,&handle)!= ESP_OK) return;
-		
+
 	for (index = KEY_UP; index < KEY_MAX;index++)
 	{
 		// get the key in the nvs
@@ -491,11 +490,12 @@ void task_addon(void *pvParams)
 }
 
 // force a new dt ntp fetch
-void addonDt() { itAskTime = true; }
+void addonDt() { 
+	itAskTime = true;
+}
 
 // parse the karadio received line and do the job
-void addonParse(const char *fmt, ...)
-{
+void addonParse(const char *fmt, ...) {
 	event_lcd_t evt;
 	char *line = NULL;
 //	char* lfmt;
@@ -510,25 +510,25 @@ void addonParse(const char *fmt, ...)
 	rlen = vsprintf(line,fmt, ap);
 	va_end(ap);
 	line = realloc(line,rlen+1);
-	if (line == NULL) return;	
+	if (line == NULL) return;
 	ESP_LOGV(TAG,"LINE: %s",line);
 	evt.lcmd = -1;
 	char* ici;
- 
- ////// Meta title  ##CLI.META#: 
+
+ ////// Meta title  ##CLI.META#:
 	if ((ici=strstr(line,"META#: ")) != NULL)
 	{
 		evt.lcmd = lmeta;
 		evt.lline = kmalloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
-   } else 
+   } else
  ////// ICY4 Description  ##CLI.ICY4#:
 	if ((ici=strstr(line,"ICY4#: ")) != NULL)
 	{
 		evt.lcmd = licy4;
 		evt.lline = kmalloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
-	} else 
+	} else
  ////// ICY0 station name   ##CLI.ICY0#:
 	if ((ici=strstr(line,"ICY0#: ")) != NULL)
 	{
@@ -539,7 +539,7 @@ void addonParse(const char *fmt, ...)
  ////// STOPPED   ##CLI.STOPPED#
 	if (((ici=strstr(line,"STOPPED")) != NULL)&&(strstr(line,"C_HDER") == NULL)&&(strstr(line,"C_PLIST") == NULL))
 	{
-		state = false;	  
+		state = false;
  		evt.lcmd = lstop;
 		evt.lline = NULL;
 	}
