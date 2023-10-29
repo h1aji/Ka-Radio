@@ -23,13 +23,6 @@
 #include "interface.h"
 #include "vs1053.h"
 
-
-#define TMAX	4096
-#define CHUNK	32
-
-#define SPI		0
-#define HSPI	1
-
 extern void LoadUserCodes(void);
 
 int vsVersion = -1; // the version of the chip
@@ -74,7 +67,7 @@ bool VS1053_HW_init() {
 	if(!sSPI) vSemaphoreCreateBinary(sSPI);
 	spi_give_semaphore();
 
-	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9)); 				//Set bit 9 if 80MHz sysclock required
+	WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105|(0<<9));				//Set bit 9 if 80MHz sysclock required
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_HSPIQ_MISO);	//GPIO12 is HSPI MISO pin (Master Data In)
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_HSPID_MOSI);	//GPIO13 is HSPI MOSI pin (Master Data Out)
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_HSPI_CLK);		//GPIO14 is HSPI CLK pin (Clock)
@@ -111,44 +104,45 @@ int getVsVersion() {
 	return vsVersion;
 }
 
-uint8_t SPIGetChar() {
-	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready
-
-	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MOSI);
-
-	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MISO);
-
-	WRITE_PERI_REG(SPI_USER1(HSPI),(0&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S|	//number of bits to send
-			(7&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S|			//number of bits to receive
-			(23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S);		//number of bits in address
-
-	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
-	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR) ;
-
-	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_RD_BYTE_ORDER) {
-		return READ_PERI_REG(SPI_W0(HSPI))>>24;	//assuming data in is written to MSB. TBC
-	} else {
-		return READ_PERI_REG(SPI_W0(HSPI));
-	}
-}
-
 void SPIPutChar(uint8_t data) {
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready
 
-	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE|SPI_USR_MISO);
+	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
 
-	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI);	//enable MOSI function in SPI module
+	WRITE_PERI_REG(SPI_USER1(HSPI), SPI_USR_ADDR_BITLEN<<SPI_USR_ADDR_BITLEN_S |	//Number of bits in Address
+									(7&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S |	//Number of bits to Send
+									SPI_USR_MISO_BITLEN<<SPI_USR_MISO_BITLEN_S |	//Number of bits to Receive
+									SPI_USR_DUMMY_CYCLELEN<<SPI_USR_DUMMY_CYCLELEN_S);	//Number of Dummy bits to insert
 
-	WRITE_PERI_REG(SPI_USER1(HSPI),((7&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S)|	//len bits of data out
-			((0&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S)|		//no data in
-			((23&SPI_USR_ADDR_BITLEN)<<SPI_USR_ADDR_BITLEN_S));		//address is 24 bits A0-A23
+	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI); //enable MOSI function in SPI module
 
 	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_WR_BYTE_ORDER) {
-		WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data<<24);
+			WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data<<24);
 	} else {
-		WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data);
+			WRITE_PERI_REG(SPI_W0(HSPI),(uint32_t)data);
 	}
 	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
+}
+
+uint8_t SPIGetChar() {
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready
+
+	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
+	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MISO);
+
+	WRITE_PERI_REG(SPI_USER1(HSPI), SPI_USR_ADDR_BITLEN<<SPI_USR_ADDR_BITLEN_S |	//Number of bits in Address
+									SPI_USR_MOSI_BITLEN<<SPI_USR_MOSI_BITLEN_S |	//Number of bits to Send
+									(7&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S |	//Number of bits to Receive
+									SPI_USR_DUMMY_CYCLELEN<<SPI_USR_DUMMY_CYCLELEN_S);	//Number of Dummy bits to insert
+
+	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
+	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
+	if (READ_PERI_REG(SPI_USER(HSPI))&SPI_RD_BYTE_ORDER) {
+			return READ_PERI_REG(SPI_W0(HSPI))>>24;	//assuming data in is written to MSB. TBC
+	} else {
+			return READ_PERI_REG(SPI_W0(HSPI));
+	}
 }
 
 void ControlReset(uint8_t State) {

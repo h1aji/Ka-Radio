@@ -14,6 +14,12 @@
 #define SET   0
 #define RESET 1
 
+#define TMAX  4096
+#define CHUNK 32
+
+#define SPI   0
+#define HSPI  1
+
 #define RXNE  0x01
 #define TXE   0x02
 #define BSY   0x80
