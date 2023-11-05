@@ -46,6 +46,9 @@ bool VS1053_HW_init() {
 
 	ESP_LOGI(TAG, "Init VS1053 pins");
 
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO9);
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
+
 	// Set DREQ pin as input
 	gpio_set_direction(GPIO_NUM_9, GPIO_MODE_INPUT);
 	//gpio_set_pull_mode(GPIO_NUM_9, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
@@ -88,7 +91,7 @@ void VS1053_SPI_SpeedUp() {
 			((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S)); //clear bit 31,set SPI clock div
+			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));	//clear bit 31,set SPI clock div
 }
 
 void VS1053_SPI_SpeedDown() {
@@ -109,9 +112,9 @@ void SPIPutChar(uint8_t data) {
 
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
 
-	WRITE_PERI_REG(SPI_USER1(HSPI), SPI_USR_ADDR_BITLEN<<SPI_USR_ADDR_BITLEN_S |	//Number of bits in Address
+	WRITE_PERI_REG(SPI_USER1(HSPI), SPI_USR_ADDR_BITLEN<<SPI_USR_ADDR_BITLEN_S |		//Number of bits in Address
 									(7&SPI_USR_MOSI_BITLEN)<<SPI_USR_MOSI_BITLEN_S |	//Number of bits to Send
-									SPI_USR_MISO_BITLEN<<SPI_USR_MISO_BITLEN_S |	//Number of bits to Receive
+									SPI_USR_MISO_BITLEN<<SPI_USR_MISO_BITLEN_S |		//Number of bits to Receive
 									SPI_USR_DUMMY_CYCLELEN<<SPI_USR_DUMMY_CYCLELEN_S);	//Number of Dummy bits to insert
 
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI); //enable MOSI function in SPI module
@@ -131,8 +134,8 @@ uint8_t SPIGetChar() {
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MISO);
 
-	WRITE_PERI_REG(SPI_USER1(HSPI), SPI_USR_ADDR_BITLEN<<SPI_USR_ADDR_BITLEN_S |	//Number of bits in Address
-									SPI_USR_MOSI_BITLEN<<SPI_USR_MOSI_BITLEN_S |	//Number of bits to Send
+	WRITE_PERI_REG(SPI_USER1(HSPI), SPI_USR_ADDR_BITLEN<<SPI_USR_ADDR_BITLEN_S |		//Number of bits in Address
+									SPI_USR_MOSI_BITLEN<<SPI_USR_MOSI_BITLEN_S |		//Number of bits to Send
 									(7&SPI_USR_MISO_BITLEN)<<SPI_USR_MISO_BITLEN_S |	//Number of bits to Receive
 									SPI_USR_DUMMY_CYCLELEN<<SPI_USR_DUMMY_CYCLELEN_S);	//Number of Dummy bits to insert
 
