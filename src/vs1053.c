@@ -46,16 +46,11 @@ bool VS1053_HW_init() {
 
 	ESP_LOGI(TAG, "Init VS1053 pins");
 
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO9);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
 
 	// Set DREQ pin as input
-	gpio_set_direction(GPIO_NUM_9, GPIO_MODE_INPUT);
-	//gpio_set_pull_mode(GPIO_NUM_9, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
-
-	// Set RST pin as output and high
-	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_OUTPUT);
-	gpio_set_level(GPIO_NUM_10, 1);
+	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
+	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
 
 	// Set DCS pin as output and high
 	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
@@ -149,7 +144,8 @@ uint8_t SPIGetChar() {
 }
 
 void ControlReset(uint8_t State) {
-	gpio_set_level(GPIO_NUM_10, State);
+	gpio_set_level(GPIO_NUM_0, State);
+	gpio_set_level(GPIO_NUM_16, State);
 }
 
 void SCI_ChipSelect(uint8_t State) {
@@ -161,12 +157,12 @@ void SDI_ChipSelect(uint8_t State) {
 }
 
 uint8_t CheckDREQ() {
-	return gpio_get_level(GPIO_NUM_9);
+	return gpio_get_level(GPIO_NUM_10);
 }
 
 void WaitDREQ() {
 	uint16_t time_out = 0;
-	while(gpio_get_level(GPIO_NUM_9) == 0 && time_out++ < TMAX)
+	while(gpio_get_level(GPIO_NUM_10) == 0 && time_out++ < TMAX)
 	{
 		taskYIELD();
 	}

@@ -12,15 +12,20 @@ Please note that the wiring is slightly different from the original project
 |-----|--------|-------|---------|--------|----------|
 |16   |D0      |XDCS   |         |        |          |
 |05   |D1      |       |         |SCL     |          |
-|04   |D2      |       |         |SDA     |OUT       |
+|04   |D2      |       |         |SDA     |          |
 |00   |D3      |XCS    |         |        |          |
-|02   |D4      |       |         |        |          |
+|02   |D4      |       |         |        |OUT       |
 |14   |D5      |SCK    |SCK      |        |          |
 |12   |D6      |MISO   |SO/SIO1  |        |          |
 |13   |D7      |MOSI   |SI/SIO0  |        |          |
 |15   |D8      |       |CS       |        |          |
-|9    |SDD2    |DREQ   |         |        |          |
-|10   |SDD3    |RST    |         |        |          |
+|10   |SDD3    |DREQ   |         |        |          |
+|     |        |RST    |         |        |          |
+
+## Reset circuit
+Please note that the reset circuit for VS1053 is made of 2 signal diodes 1N4148 and 1K Ohm resistor connected to the ground
+
+![reset circuit](./doc/reset.png)
 
 ## Issues
  - TIMERG0 in ota.c (line 260)
