@@ -528,7 +528,7 @@ void wsStationPrev()
 	struct shoutcast_info* si = NULL;
 	do {
 		if (si != NULL) incfree(si,"wsstationP");
-		if (getCurrentStation() >0)
+		if (getCurrentStation()>0)
 		{
 			setCurrentStation(getCurrentStation()-1);
 			si = getStation(getCurrentStation());
@@ -537,7 +537,7 @@ void wsStationPrev()
 	}
 	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
 
-	playStationInt	(getCurrentStation());
+	playStationInt(getCurrentStation());
 	incfree(si,"wsstation");
 }
 

@@ -148,18 +148,7 @@ uint32_t checkUart(uint32_t speed)
 	return 115200; // default
 }
 
-/******************************************************************************
- * FunctionName : init_hardware
- * Description  : Init all hardware, partitions etc
- * Parameters   :
- * Returns      :
-*******************************************************************************/
-static void init_hardware()
-{
-	if (VS1053_HW_init()) // init SPI
-		VS1053_Start();
-	ESP_LOGI(TAG, "Hardware initialized");
-}
+
 
 /* event handler for pre-defined wifi events */
 static esp_err_t event_handler(void *ctx, system_event_t *event)
@@ -654,7 +643,12 @@ void app_main()
 	setDdmm(ddmm?1:0);
 
 	//SPI init for the VS1053 chip
-	init_hardware();
+	if (VS1053_HW_init()) {
+		VS1053_Start();
+		ESP_LOGI(TAG, "VS1053 initialized");
+	} else {
+		ESP_LOGI(TAG, "VS1053 not initialized");
+	}
 
 	//ESP_LOGE(TAG,"Corrupt1 %d",heap_caps_check_integrity(MALLOC_CAP_DMA,1));
 
