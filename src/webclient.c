@@ -1273,7 +1273,6 @@ void clientTask(void *pvParams)
 	//int ret;
 
 	vTaskDelay(200);
-	spiRamFifoInit();
 
 	if (strlen(g_device->ua) == 0) strcpy(g_device->ua,"Karadio/2.0");
 	strcpy(userAgent, g_device->ua);

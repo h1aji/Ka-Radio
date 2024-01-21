@@ -34,11 +34,20 @@ struct device_settings* g_device;
 
 void partitions_init(void) {
 	DEVICE = esp_partition_find_first(64,0,NULL);
-	if (DEVICE == NULL) ESP_LOGE(TAG, "DEVICE Partition not found");
+	if (DEVICE == NULL) {
+		ESP_LOGE(TAG, "DEVICE Partition not found");
+	}
+
 	STATIONS = esp_partition_find_first(65,0,NULL);
-	if (STATIONS == NULL) ESP_LOGE(TAG, "STATIONS Partition not found");
+	if (STATIONS == NULL) {
+		ESP_LOGE(TAG, "STATIONS Partition not found");
+	}
+
 	DEVICE1 = esp_partition_find_first(66,0,NULL);
-	if (DEVICE1 == NULL) ESP_LOGE(TAG, "DEVICE1 Partition not found");
+	if (DEVICE1 == NULL) {
+		ESP_LOGE(TAG, "DEVICE1 Partition not found");
+	}
+
 	muxDevice=xSemaphoreCreateMutex();
 	g_device = getDeviceSettings();  // allocate one time for all
 }
@@ -90,11 +99,12 @@ void eeEraseAll() {
 		buffer= kmalloc(PARTITIONLEN); // last chance
 	}
 	if (buffer != NULL) {
-		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
+		for(i=0; i<PARTITIONLEN; i++) {
+			buffer[i] = 0;
+		}
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,PARTITIONLEN));		//clear device
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE1,0,buffer,PARTITIONLEN));	//clear device1
-		for (i=0;i<16;i++)
-		{
+		for (i=0;i<16;i++) {
 //			printf("erase from %x \n",PARTITIONLEN*i);
 			ESP_ERROR_CHECK(esp_partition_write(STATIONS,PARTITIONLEN*i,buffer,PARTITIONLEN));	//clear stations
 //			eeSetClear(PARTITIONLEN*i,buffer);
@@ -110,7 +120,9 @@ void eeEraseAll() {
 void eeErasesettings(void) {
 	int i = 0;
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
-	for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
+	for (i=0; i<PARTITIONLEN; i++) {
+		buffer[i] = 0;
+	}
 	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,PARTITIONLEN));	//clear device
 	free(buffer);
 }
@@ -123,6 +135,7 @@ void eeEraseStations() {
 		vTaskDelay(10);
 		buffer= kmalloc(PARTITIONLEN); // last chance
 	}
+
 	if (buffer != NULL) {
 		for(i=0; i<PARTITIONLEN; i++) buffer[i] = 0;
 			for (i=0;i<16;i++) {
@@ -143,8 +156,8 @@ void saveStation(struct shoutcast_info *station, uint16_t position) {
 		ESP_LOGE(TAG,"saveStation fails pos=%d",position);
 		return;
 	}
-	while (!eeSetData((position)*256, station, 256))
-	{
+
+	while (!eeSetData((position)*256, station, 256)) {
 		ESP_LOGW(TAG,"Retrying %d on saveStation",i);
 		vTaskDelay ((i+1)*20+100) ;
 		i++;
@@ -158,9 +171,12 @@ void saveMultiStation(struct shoutcast_info *station, uint16_t position, uint8_t
 		ESP_LOGE(TAG,"saveStation fails pos=%d",position+number-1);
 		number--;
 	}
-	if (number <= 0) return;
-	while (!eeSetData((position)*256, station, number*256))
-	{
+
+	if (number <= 0) {
+		return;
+	}
+
+	while (!eeSetData((position)*256, station, number*256))	{
 		ESP_LOGW(TAG,"Retrying %d on SaveMultiStation for %d stations",i,number);
 		vTaskDelay ((i++)*20+100) ;
 //		if (i == 3) {clientDisconnect("saveMultiStation low Memory"); vTaskDelay (300) ;}
@@ -188,7 +204,7 @@ struct shoutcast_info* getStation(uint8_t position) {
 
 void copyDeviceSettings() {
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
-	if(buffer) {
+	if (buffer) {
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE, 0, buffer, sizeof(struct device_settings)));
 		ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE1,0,DEVICE1->size));
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE1,0,buffer,DEVICE1->size));
@@ -198,7 +214,7 @@ void copyDeviceSettings() {
 
 void restoreDeviceSettings() {
 	uint8_t* buffer= kmalloc(PARTITIONLEN);
-	if(buffer) {
+	if (buffer) {
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE1, 0, buffer, sizeof(struct device_settings)));
 		ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE,0,DEVICE->size));
 		ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,buffer,DEVICE->size));
@@ -239,7 +255,7 @@ void saveDeviceSettingsVolume(struct device_settings *settings) {
 struct device_settings* getDeviceSettingsSilent() {
 	uint16_t size = sizeof(struct device_settings);
 	uint8_t* buffer = kmalloc(size);
-	if(buffer) {
+	if (buffer) {
 		ESP_ERROR_CHECK(esp_partition_read(DEVICE, 0, buffer, size));
 		return (struct device_settings*)buffer;
 	}
@@ -249,7 +265,7 @@ struct device_settings* getDeviceSettingsSilent() {
 struct device_settings* getDeviceSettings() {
 	struct device_settings* buffer ;
 	if ((buffer = getDeviceSettingsSilent())==NULL) {
-		ESP_LOGE(TAG,"getDeviceSetting fails");
+		ESP_LOGE(TAG,"getDeviceSettings fails");
 	}
 	return buffer;
 }

@@ -579,12 +579,13 @@ void app_main()
 	xTaskHandle pxCreatedTask;
 	esp_err_t err;
 
-	ESP_LOGI(TAG, "starting app_main()");
+	ESP_LOGI(TAG, "Starting app_main()");
 	ESP_LOGI(TAG, "RAM left: %u, Internal %u", esp_get_free_heap_size(), heap_caps_get_free_size(MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT));
 
 	const esp_partition_t *running = esp_ota_get_running_partition();
 	ESP_LOGE(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
 					running->type, running->subtype, running->address);
+
 	// Initialize NVS.
 	err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -606,9 +607,8 @@ void app_main()
 		free(g_device);
 		restoreDeviceSettings(); // try to restore the config from the saved one
 		g_device = getDeviceSettings();
-		if (g_device->cleared != 0xAABB)
-		{
-			ESP_LOGE(TAG,"Device config not cleared. Clear it.");
+		if (g_device->cleared != 0xAABB) {
+			ESP_LOGE(TAG, "Device config not cleared. Clear it.");
 			free(g_device);
 			eeEraseAll();
 			g_device = getDeviceSettings();
@@ -618,8 +618,9 @@ void app_main()
 			g_device->vol = 100; //default
 			g_device->led_gpio = 255;
 			saveDeviceSettings(g_device);
-		} else
-			ESP_LOGE(TAG,"Device config restored");
+		} else {
+			ESP_LOGE(TAG, "Device config restored");
+		}
 	}
 
 	copyDeviceSettings(); // copy in the safe partion
@@ -646,30 +647,16 @@ void app_main()
 	if (VS1053_HW_init()) {
 		VS1053_Start();
 		ESP_LOGI(TAG, "VS1053 initialized");
+		if (spiRamFifoInit()) {
+			ESP_LOGI(TAG, "SPI RAM detected");
+		} else {
+			ESP_LOGI(TAG, "SPI RAM not detected");
+		}
 	} else {
 		ESP_LOGI(TAG, "VS1053 not initialized");
 	}
 
 	//ESP_LOGE(TAG,"Corrupt1 %d",heap_caps_check_integrity(MALLOC_CAP_DMA,1));
-
-/*
-	// Init i2c if lcd doesn't not (spi) for rde5807=
-	if (g_device->lcd_type >= LCD_SPI)
-	{
-		i2c_config_t conf;
-		conf.mode = I2C_MODE_MASTER;
-		conf.sda_io_num = (g_device->lcd_type == LCD_NONE)?PIN_I2C_SDA:PIN_SI2C_SDA;
-		conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-		conf.scl_io_num = (g_device->lcd_type == LCD_NONE)?PIN_I2C_SCL:PIN_SI2C_SCL;
-		conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-		conf.master.clk_speed = I2C_MASTER_RFREQ_HZ;
-		//ESP_ERROR_CHECK
-		(i2c_param_config(I2C_MASTER_NUM, &conf));
-		ESP_LOGD(TAG, "i2c_driver_install %d", I2C_MASTER_NUM);
-		//ESP_ERROR_CHECK
-		(i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0));
-	}
-*/
 
 	//uart speed
 	uspeed = g_device->uartspeed;
@@ -693,11 +680,29 @@ void app_main()
 	ESP_LOGI(TAG, "Heap size: %d",esp_get_free_heap_size());
 
 	// lcd init
+/*
+	// Init i2c if lcd doesn't not (spi) for rde5807=
+	if (g_device->lcd_type >= LCD_SPI)
+	{
+		i2c_config_t conf;
+		conf.mode = I2C_MODE_MASTER;
+		conf.sda_io_num = (g_device->lcd_type == LCD_NONE)?PIN_I2C_SDA:PIN_SI2C_SDA;
+		conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+		conf.scl_io_num = (g_device->lcd_type == LCD_NONE)?PIN_I2C_SCL:PIN_SI2C_SCL;
+		conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+		conf.master.clk_speed = I2C_MASTER_RFREQ_HZ;
+		//ESP_ERROR_CHECK
+		(i2c_param_config(I2C_MASTER_NUM, &conf));
+		ESP_LOGD(TAG, "i2c_driver_install %d", I2C_MASTER_NUM);
+		//ESP_ERROR_CHECK
+		(i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0));
+	}
+*/
 	//option_get_lcd_info(&g_device->lcd_type,&rt);
 	ESP_LOGI(TAG,"LCD Type %d",g_device->lcd_type);
 
 	lcd_init(g_device->lcd_type);
-	ESP_LOGI(TAG, "Hardware init done...");
+	ESP_LOGI(TAG, "LCD init done...");
 
 	lcd_welcome("","");
 	lcd_welcome("","STARTING");
@@ -708,6 +713,7 @@ void app_main()
 
 	xTaskCreatePinnedToCore(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask,CPU_UART);
 	ESP_LOGI(TAG, "%s task: %x","uartInterfaceTask",(unsigned int)pxCreatedTask);
+
 
 //-----------------------------
 // start the network
