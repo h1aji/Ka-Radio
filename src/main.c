@@ -586,6 +586,17 @@ void app_main()
 	ESP_LOGE(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
 					running->type, running->subtype, running->address);
 
+	// Version infos
+	ESP_LOGI(TAG, "\n");
+	ESP_LOGI(TAG, "Project name: %s",esp_ota_get_app_description()->project_name);
+	ESP_LOGI(TAG, "Version: %s",esp_ota_get_app_description()->version);
+	ESP_LOGI(TAG, "Release %s, Revision %s",RELEASE,REVISION);
+//	ESP_LOGI(TAG, "Date: %s,  Time: %s",esp_ota_get_app_description()->date,esp_ota_get_app_description()->time);
+	ESP_LOGI(TAG, "SDK %s\n",esp_get_idf_version());
+	ESP_LOGI(TAG, "Date %s, Time: %s\n", __DATE__,__TIME__ );
+	ESP_LOGI(TAG, "Heap size: %d",esp_get_free_heap_size());
+	//ESP_LOGE(TAG,"Corrupt1 %d",heap_caps_check_integrity(MALLOC_CAP_DMA,1));
+
 	// Initialize NVS.
 	err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -656,8 +667,6 @@ void app_main()
 		ESP_LOGI(TAG, "VS1053 not initialized");
 	}
 
-	//ESP_LOGE(TAG,"Corrupt1 %d",heap_caps_check_integrity(MALLOC_CAP_DMA,1));
-
 	//uart speed
 	uspeed = g_device->uartspeed;
 	uspeed = checkUart(uspeed);
@@ -668,16 +677,6 @@ void app_main()
 		g_device->uartspeed = uspeed;
 		saveDeviceSettings(g_device);
 	}
-
-	// Version infos
-	ESP_LOGI(TAG, "\n");
-	ESP_LOGI(TAG, "Project name: %s",esp_ota_get_app_description()->project_name);
-	ESP_LOGI(TAG, "Version: %s",esp_ota_get_app_description()->version);
-	ESP_LOGI(TAG, "Release %s, Revision %s",RELEASE,REVISION);
-//	ESP_LOGI(TAG, "Date: %s,  Time: %s",esp_ota_get_app_description()->date,esp_ota_get_app_description()->time);
-	ESP_LOGI(TAG, "SDK %s\n",esp_get_idf_version());
-	ESP_LOGI(TAG, "Date %s, Time: %s\n", __DATE__,__TIME__ );
-	ESP_LOGI(TAG, "Heap size: %d",esp_get_free_heap_size());
 
 	// lcd init
 /*
@@ -702,7 +701,7 @@ void app_main()
 	ESP_LOGI(TAG,"LCD Type %d",g_device->lcd_type);
 
 	lcd_init(g_device->lcd_type);
-	ESP_LOGI(TAG, "LCD init done...");
+	ESP_LOGI(TAG, "Hardware init done...");
 
 	lcd_welcome("","");
 	lcd_welcome("","STARTING");
