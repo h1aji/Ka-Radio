@@ -5,9 +5,7 @@ This is part of the libb64 project, and has been placed in the public domain.
 For details, see http://sourceforge.net/projects/libb64
 */
 
-
-#ifndef CORE_HAS_LIBB64
-#include "cencode.h"
+#include <cencode.h>
 
 const int CHARS_PER_LINE = 72;
 
@@ -18,9 +16,9 @@ void base64_init_encodestate(base64_encodestate* state_in)
 	state_in->stepcount = 0;
 }
 
-static const char* encoding = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 char base64_encode_value(char value_in)
 {
+	static const char* encoding = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	if (value_in > 63) return '=';
 	return encoding[(int)value_in];
 }
@@ -50,7 +48,6 @@ int base64_encode_block(const char* plaintext_in, int length_in, char* code_out,
 			result = (fragment & 0x0fc) >> 2;
 			*codechar++ = base64_encode_value(result);
 			result = (fragment & 0x003) << 4;
-			/* fall through */
 	case step_B:
 			if (plainchar == plaintextend)
 			{
@@ -61,7 +58,7 @@ int base64_encode_block(const char* plaintext_in, int length_in, char* code_out,
 			fragment = *plainchar++;
 			result |= (fragment & 0x0f0) >> 4;
 			*codechar++ = base64_encode_value(result);
-			/* fall through */
+			result = (fragment & 0x00f) << 2;
 	case step_C:
 			if (plainchar == plaintextend)
 			{
@@ -105,9 +102,8 @@ int base64_encode_blockend(char* code_out, base64_encodestate* state_in)
 	case step_A:
 		break;
 	}
-	*codechar++ = 0x00;
+	*codechar++ = '\n';
 	
 	return codechar - code_out;
 }
 
-#endif

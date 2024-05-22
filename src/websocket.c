@@ -45,7 +45,7 @@ void base64_encode_local(uint8_t * data, size_t length, char* output)
  * @param clientKey char*
  * @param Output char*
  */
-void websocketacceptKey(char* clientKey,char* Output)
+void websocketacceptKey(char* clientKey, char* Output)
 {
 	uint8_t sha1HashBin[20] = { 0 };
 	strcat(clientKey ,"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
@@ -56,7 +56,7 @@ void websocketacceptKey(char* clientKey,char* Output)
 	SHA1Update(&ctx, (const unsigned char*)clientKey, strlen(clientKey));
 	SHA1Final(&sha1HashBin[0], &ctx);
 
-	base64_encode_local(sha1HashBin, 20,Output);
+	base64_encode_local(sha1HashBin, 20, Output);
 }
 
 void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen)
