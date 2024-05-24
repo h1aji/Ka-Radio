@@ -92,7 +92,7 @@ cli.info: Respond with nameset, all icy, meta, volume and stae playing or stoppe
   System commands\n\
 //////////////////\n\
 sys.uart(\"x\"): Change the baudrate of the uart on the next reset.\n\
- Valid x are: 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 76880, 115200, 230400\n\
+ Valid x are: 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 74880, 115200, 230400\n\
 sys.i2s: Display the current I2S speed\n\
 "};
 
