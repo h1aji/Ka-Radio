@@ -57,7 +57,7 @@ static char CLIPLAY[]  = {"##CLI.PLAYING#%c%c"};
 static char CLISTOP[]  = {"##CLI.STOPPED# from %s\n"};
 
 #define strcMALLOC		"Client: incmalloc fails for %d"
-#define strcMALLOC1		"%s kmalloc fails"
+#define strcMALLOC1		"%s malloc fails"
 
 #define URLMAX	256
 #define PATHMAX	512
@@ -75,11 +75,11 @@ static char* pseudoUtf8(char* str,int *len);
 void *incmalloc(size_t n)
 {
 	void* ret;
-//printf ("Client kmalloc of %d %d,  Heap size: %d\n",n,((n / 32) + 1) * 32,esp_get_free_heap_size());
-	ret = kmalloc(n);
+//printf ("Client malloc of %d %d,  Heap size: %d\n",n,((n / 32) + 1) * 32,esp_get_free_heap_size());
+	ret = malloc(n);
 	if (ret == NULL) ESP_LOGV(TAG,strcMALLOC,n);
 //	if (n <4) printf("Client: incmalloc size:%d\n",n);
-	ESP_LOGV(TAG,"Client kmalloc after of %d bytes ret:%x  Heap size: %d",n,(int)ret,esp_get_free_heap_size());
+	ESP_LOGV(TAG,"Client malloc after of %d bytes ret:%x  Heap size: %d",n,(int)ret,esp_get_free_heap_size());
 	return ret;
 }
 
@@ -558,7 +558,7 @@ void wsMonitor()
 	char *answer;
 	uint16_t len;
 	len = strlen(clientURL)+strlen(clientPath)+30;
-	answer= kmalloc(len);
+	answer = malloc(len);
 	if (answer)
 	{
 		memset(answer,0,len);

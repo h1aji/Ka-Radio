@@ -264,7 +264,7 @@ void wifiScan()
 	config.scan_time.passive = 500;
 	esp_wifi_scan_start(&config, true);
 	esp_wifi_scan_get_ap_num(&number);
-	records = kmalloc(sizeof(wifi_ap_record_t) * number);
+	records = malloc(sizeof(wifi_ap_record_t) * number);
 	if (records == NULL) return;
 	esp_wifi_scan_get_ap_records(&number, records); // get the records
 	kprintf(hscan1,number);
@@ -431,14 +431,14 @@ void clientParseUrl(char* s)
 	}
 	t_end -= 2;
 
-	char *url = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *url = (char*)malloc((t_end-t+1)*sizeof(char));
 	if(url != NULL)
 	{
 		uint8_t tmp;
 		for(tmp=0; tmp<(t_end-t+1); tmp++) url[tmp] = 0;
 		strncpy(url, t+2, (t_end-t));
 		clientSetURL(url);
-		char* title = kmalloc(strlen(url)+13);
+		char* title = malloc(strlen(url)+13);
 		sprintf(title,"{\"iurl\":\"%s\"}",url);
 		websocketbroadcast(title, strlen(title));
 		free(title);
@@ -458,7 +458,7 @@ void clientParsePath(char* s)
 	}
 	t_end -= 2;
 
-	char *path = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *path = (char*)malloc((t_end-t+1)*sizeof(char));
 	if(path != NULL)
 	{
 		uint8_t tmp;
@@ -466,7 +466,7 @@ void clientParsePath(char* s)
 		strncpy(path, t+2, (t_end-t));
 //kprintf("cli.path: %s\n",path);
 		clientSetPath(path);
-		char* title = kmalloc(strlen(path)+14);
+		char* title = malloc(strlen(path)+14);
 		sprintf(title,"{\"ipath\":\"%s\"}",path);
 		websocketbroadcast(title, strlen(title));
 		free(title);
@@ -486,7 +486,7 @@ void clientParsePort(char *s)
 	}
 	t_end -= 2;
 
-	char *port = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *port = (char*)malloc((t_end-t+1)*sizeof(char));
 	if(port != NULL)
 	{
 		uint8_t tmp;
@@ -494,7 +494,7 @@ void clientParsePort(char *s)
 		strncpy(port, t+2, (t_end-t));
 		uint16_t porti = atoi(port);
 		clientSetPort(porti);
-		char* title = kmalloc(24);
+		char* title = malloc(24);
 		sprintf(title,"{\"iport\":\"%d\"}",porti);
 		websocketbroadcast(title, strlen(title));
 		free(title);
@@ -514,7 +514,7 @@ void clientPlay(char *s)
 	}
 	t_end -= 2;
 
-	char *id = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *id = (char*)malloc((t_end-t+1)*sizeof(char));
 	if(id != NULL)
 	{
 		uint8_t tmp;
@@ -627,7 +627,7 @@ char* tmp;
 char* tmpend ;
 char url[200];
 
-	si = kmalloc(sizeof(struct shoutcast_info));
+	si = malloc(sizeof(struct shoutcast_info));
 	if (si == NULL) { kprintf("##CLI.EDIT#: ERROR MEM#") ; return;}
 	memset(si->domain, 0, sizeof(si->domain));
 	memset(si->file, 0, sizeof(si->file));
@@ -695,7 +695,7 @@ char* webInfo()
 {
 	struct shoutcast_info* si;
 	si = getStation(currentStation);
-	char* resp = kmalloc(1024);
+	char* resp = malloc(1024);
 	if (si != NULL)
 	{
 		if (resp != NULL)
@@ -711,7 +711,7 @@ char* webList(int id)
 {
 	struct shoutcast_info* si;
 	si = getStation(id);
-	char* resp = kmalloc(1024);
+	char* resp = malloc(1024);
 	if (si != NULL)
 	{
 		if (resp != NULL)
@@ -792,7 +792,7 @@ void clientVol(char *s)
 		kprintf(stritCMDERROR);
 		return;
 	}
-	char *vol = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *vol = (char*)malloc((t_end-t+1)*sizeof(char));
 	if (vol != NULL)
 	{
 		uint8_t tmp;
@@ -824,7 +824,7 @@ void clientWake(char *s)
 		kprintf(stritCMDERROR);
 		return;
 	}
-	char *label = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *label = (char*)malloc((t_end-t+1)*sizeof(char));
 	if (label != NULL)
 	{
 		uint8_t tmp;
@@ -857,7 +857,7 @@ void clientSleep(char *s)
 		kprintf(stritCMDERROR);
 		return;
 	}
-	char *label = (char*) kmalloc((t_end-t+1)*sizeof(char));
+	char *label = (char*)malloc((t_end-t+1)*sizeof(char));
 	if (label != NULL)
 	{
 		uint8_t tmp;
@@ -1286,7 +1286,7 @@ void sys_conf()
 
 void checkCommand(int size, char* s)
 {
-	char *tmp = (char*)kmalloc((size+1)*sizeof(char));
+	char *tmp = (char*)malloc((size+1)*sizeof(char));
 	int i;
 	for(i=0;i<size;i++) tmp[i] = s[i];
 	tmp[size] = 0;

@@ -15,13 +15,12 @@
 #include "lwip/opt.h"
 #include "lwip/sockets.h"
 
-#include "cencode.h"
 #include "telnet.h"
 #include "interface.h"
 
 #define strtSOCKET "Telnet Socket fails %s errno: %d"
 const char strtWELCOME[] = {"Karadio telnet\n> "};
-//const char strtMALLOC1[] = {"Telnet %s kmalloc fails\n"};
+//const char strtMALLOC1[] = {"Telnet %s malloc fails\n"};
 
 
 int telnetclients[NBCLIENTT];
@@ -61,7 +60,7 @@ void telnetinit(void)
 	memset(brec,0,sizeof(brec));
 	irec = 0;
 	iiac = 0;
-	obrec = kmalloc(2);
+	obrec = malloc(2);
 }
 
 // a socket with a websocket request. Note it and answer to the client
@@ -116,7 +115,7 @@ void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap) {
 	char *buf = NULL;
 	int i;
 
-	buf = (char *)kmalloc(lenb+1);
+	buf = (char *)malloc(lenb+1);
 	if (buf == NULL) return;
 	buf[0] = 0;
 	vsprintf(buf,fmt, ap);
@@ -135,7 +134,7 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...) {
 	int i ;
 	char *buf = NULL;
 	int rlen;
-	buf = (char *)kmalloc(lenb+1);
+	buf = (char *)malloc(lenb+1);
 	if (buf == NULL) return;
 	buf[0] = 0;
 	strcpy(buf,"ok\n");
@@ -184,11 +183,11 @@ int telnetRead(int tsocket) {
 	char *buf ;
 	int32_t recbytes ;
 	int i;
-	buf = (char *)kmalloc(MAXDATAT);
+	buf = (char *)malloc(MAXDATAT);
 	recbytes = 0;
 	if (buf == NULL) {
 		vTaskDelay(100); // wait a while and retry
-		buf = (char *)kmalloc(MAXDATAT);
+		buf = (char *)malloc(MAXDATAT);
 	}
 	if (buf != NULL) {
 		recbytes = read(tsocket , buf, MAXDATAT);

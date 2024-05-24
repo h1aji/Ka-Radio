@@ -62,7 +62,7 @@ void gpio_get_label(char** label) {
 	}
 	nvs_get_str(hardware_handle, "L_LABEL", NULL, &required_size);
 	if (required_size >1) {
-		*label = kmalloc(required_size);
+		*label = malloc(required_size);
 		nvs_get_str(hardware_handle, "L_LABEL", *label, &required_size);
 		ESP_LOGV(TAG,"Label: \"%s\"\n Required size: %d",*label,required_size);
 	}
@@ -79,7 +79,7 @@ void gpio_get_comment(char** label) {
 	}
 	nvs_get_str(hardware_handle, "L_COMMENT", NULL, &required_size);
 	if (required_size >1) {
-		*label = kmalloc(required_size);
+		*label = malloc(required_size);
 		nvs_get_str(hardware_handle, "L_COMMENT", *label, &required_size);
 		ESP_LOGV(TAG,"Label: \"%s\"\n Required size: %d",*label,required_size);
 	}
@@ -318,7 +318,7 @@ bool gpio_get_ir_key(nvs_handle handle,const char *key, uint32_t *out_value1 , u
 	size_t required_size;
 	nvs_get_str(handle, key, NULL, &required_size);
 	if (required_size >1) {
-		char* string = kmalloc(required_size);
+		char* string = malloc(required_size);
 		nvs_get_str(handle, key, string, &required_size);
 		sscanf(string,"%x %x",out_value1,out_value2);
 //		ESP_LOGV(TAG,"String \"%s\"\n Required size: %d",string,required_size);

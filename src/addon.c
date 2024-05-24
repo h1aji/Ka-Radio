@@ -355,91 +355,89 @@ event_ir_t evt;
 		uint32_t evtir = ((evt.addr)<<8)|(evt.cmd&0xFF);
 		ESP_LOGI(TAG,"IR event: Channel: %x, ADDR: %x, CMD: %x = %X, REPEAT: %d",evt.channel,evt.addr,evt.cmd, evtir,evt.repeat_flag );
 
-		if (isCustomKey){
+		if (isCustomKey) {
 			if (irCustom(evtir,evt.repeat_flag)) continue;
-		}
-		else{ // no predefined keys
+		} else { // no predefined keys
 		switch(evtir)
 		{
-		case 0xDF2047:
-		case 0xDF2002:
-		case 0xFF0046:
-		case 0xF70812:  /*(" UP");*/  evtStation(+1);
-		break;
-		case 0xDF2049:
-		case 0xDF2041:
-		case 0xFF0044:
-		case 0xF70842:
-		case 0xF70815: /*(" LEFT");*/  setRelVolume(-5);
-		break;
-		case 0xDF204A:
-		case 0xFF0040:
-		case 0xF7081E: /*(" OK");*/ if (!evt.repeat_flag ) stationOk();
-		break;
-		case 0xDF204B:
-		case 0xDF2003:
-		case 0xFF0043:
-		case 0xF70841:
-		case 0xF70814: /*(" RIGHT");*/ setRelVolume(+5);
-		break;
-		case 0xDF204D:
-		case 0xDF2009:
-		case 0xFF0015:
-		case 0xF70813: /*(" DOWN");*/ evtStation(-1);
-		break;
-		case 0xDF2000:
-		case 0xFF0016:
-		case 0xF70801: /*(" 1");*/ if (!evt.repeat_flag) nbStation('1');
-		break;
-		case 0xDF2010:
-		case 0xFF0019:
-		case 0xF70802: /*(" 2");*/ if (!evt.repeat_flag) nbStation('2');
-		break;
-		case 0xDF2011:
-		case 0xFF000D:
-		case 0xF70803: /*(" 3");*/ if (!evt.repeat_flag) nbStation('3');
-		break;
-		case 0xDF2013:
-		case 0xFF000C:
-		case 0xF70804: /*(" 4");*/ if (!evt.repeat_flag) nbStation('4');
-		break;
-		case 0xDF2014:
-		case 0xFF0018:
-		case 0xF70805: /*(" 5");*/ if (!evt.repeat_flag) nbStation('5');
-		break;
-		case 0xDF2015:
-		case 0xFF005E:
-		case 0xF70806: /*(" 6");*/ if (!evt.repeat_flag) nbStation('6');
-		break;
-		case 0xDF2017:
-		case 0xFF0008:
-		case 0xF70807: /*(" 7");*/ if (!evt.repeat_flag) nbStation('7');
-		break;
-		case 0xDF2018:
-		case 0xFF001C:
-		case 0xF70808: /*(" 8");*/ if (!evt.repeat_flag) nbStation('8');
-		break;
-		case 0xDF2019:
-		case 0xFF005A:
-		case 0xF70809: /*(" 9");*/ if (!evt.repeat_flag) nbStation('9');
-		break;
-		case 0xDF2045:
-		case 0xFF0042:
-		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag) playStationInt(futurNum);
-		break;
-		case 0xDF201B:
-		case 0xFF0052:
-		case 0xF70800: /*(" 0");*/ if (!evt.repeat_flag) nbStation('0');
-		break;
-		case 0xDF205B:
-		case 0xFF004A:
-		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag)  stopStation();
-		break;
-		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag) toggletime();
-		break;
-		default:;
-		/*SERIALX.println(F(" other button   "));*/
-		}// End Case
+			case 0xDF2047:
+			case 0xDF2002:
+			case 0xFF0046:
+			case 0xF70812:  /*(" UP");*/  evtStation(+1);
+			break;
+			case 0xDF2049:
+			case 0xDF2041:
+			case 0xFF0044:
+			case 0xF70842:
+			case 0xF70815: /*(" LEFT");*/  setRelVolume(-5);
+			break;
+			case 0xDF204A:
+			case 0xFF0040:
+			case 0xF7081E: /*(" OK");*/ if (!evt.repeat_flag ) stationOk();
+			break;
+			case 0xDF204B:
+			case 0xDF2003:
+			case 0xFF0043:
+			case 0xF70841:
+			case 0xF70814: /*(" RIGHT");*/ setRelVolume(+5);
+			break;
+			case 0xDF204D:
+			case 0xDF2009:
+			case 0xFF0015:
+			case 0xF70813: /*(" DOWN");*/ evtStation(-1);
+			break;
+			case 0xDF2000:
+			case 0xFF0016:
+			case 0xF70801: /*(" 1");*/ if (!evt.repeat_flag) nbStation('1');
+			break;
+			case 0xDF2010:
+			case 0xFF0019:
+			case 0xF70802: /*(" 2");*/ if (!evt.repeat_flag) nbStation('2');
+			break;
+			case 0xDF2011:
+			case 0xFF000D:
+			case 0xF70803: /*(" 3");*/ if (!evt.repeat_flag) nbStation('3');
+			break;
+			case 0xDF2013:
+			case 0xFF000C:
+			case 0xF70804: /*(" 4");*/ if (!evt.repeat_flag) nbStation('4');
+			break;
+			case 0xDF2014:
+			case 0xFF0018:
+			case 0xF70805: /*(" 5");*/ if (!evt.repeat_flag) nbStation('5');
+			break;
+			case 0xDF2015:
+			case 0xFF005E:
+			case 0xF70806: /*(" 6");*/ if (!evt.repeat_flag) nbStation('6');
+			break;
+			case 0xDF2017:
+			case 0xFF0008:
+			case 0xF70807: /*(" 7");*/ if (!evt.repeat_flag) nbStation('7');
+			break;
+			case 0xDF2018:
+			case 0xFF001C:
+			case 0xF70808: /*(" 8");*/ if (!evt.repeat_flag) nbStation('8');
+			break;
+			case 0xDF2019:
+			case 0xFF005A:
+			case 0xF70809: /*(" 9");*/ if (!evt.repeat_flag) nbStation('9');
+			break;
+			case 0xDF2045:
+			case 0xFF0042:
+			case 0xF70817: /*(" *");*/   if (!evt.repeat_flag) playStationInt(futurNum);
+			break;
+			case 0xDF201B:
+			case 0xFF0052:
+			case 0xF70800: /*(" 0");*/ if (!evt.repeat_flag) nbStation('0');
+			break;
+			case 0xDF205B:
+			case 0xFF004A:
+			case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag)  stopStation();
+			break;
+			case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag) toggletime();
+			break;
+			default:;
+			}
 		}
 	}
 }
@@ -500,7 +498,7 @@ void addonParse(const char *fmt, ...) {
 	char *line = NULL;
 //	char* lfmt;
 	int rlen;
-	line = (char *)kmalloc(1024);
+	line = (char *)malloc(1024);
 	if (line == NULL) return;
 	line[0] = 0;
 	strcpy(line,"ok\n");
@@ -519,21 +517,21 @@ void addonParse(const char *fmt, ...) {
 	if ((ici=strstr(line,"META#: ")) != NULL)
 	{
 		evt.lcmd = lmeta;
-		evt.lline = kmalloc(strlen(ici)+1);
+		evt.lline = malloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
    } else
  ////// ICY4 Description  ##CLI.ICY4#:
 	if ((ici=strstr(line,"ICY4#: ")) != NULL)
 	{
 		evt.lcmd = licy4;
-		evt.lline = kmalloc(strlen(ici)+1);
+		evt.lline = malloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
 	} else
  ////// ICY0 station name   ##CLI.ICY0#:
 	if ((ici=strstr(line,"ICY0#: ")) != NULL)
 	{
 		evt.lcmd = licy0;
-		evt.lline = kmalloc(strlen(ici)+1);
+		evt.lline = malloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
 	} else
  ////// STOPPED   ##CLI.STOPPED#
@@ -548,7 +546,7 @@ void addonParse(const char *fmt, ...) {
 	if ((ici=strstr(line,"MESET#: ")) != NULL)
 	{
 		evt.lcmd = lnameset;
-		evt.lline = kmalloc(strlen(ici)+1);
+		evt.lline = malloc(strlen(ici)+1);
 		strcpy(evt.lline,ici);
 	} else
  //////Playing   ##CLI.PLAYING#

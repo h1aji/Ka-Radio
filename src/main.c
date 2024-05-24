@@ -125,7 +125,7 @@ void* kcalloc(size_t elementCount, size_t elementSize)
 
 void tsocket(const char* lab, uint32_t cnt)
 {
-	char* title = kmalloc(strlen(lab)+50);
+	char* title = malloc(strlen(lab)+50);
 	sprintf(title,"{\"%s\":\"%d\"}",lab,cnt*60);
 	websocketbroadcast(title, strlen(title));
 	free(title);

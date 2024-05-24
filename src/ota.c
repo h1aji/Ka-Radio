@@ -12,7 +12,6 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
-//#include "esp_task_wdt.h"
 #include "esp_event.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
