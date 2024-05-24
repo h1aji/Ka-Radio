@@ -28,7 +28,6 @@ Please note that the reset circuit for VS1053 is made of 2 signal diodes 1N4148 
 ![reset circuit](./doc/reset.png)
 
 ## Issues
- - TIMERG0 in ota.c (line 260)
  - SSL functionality not ported
 
 ## Roadmap
