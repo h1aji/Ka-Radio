@@ -139,69 +139,69 @@ struct icyHeader* clientGetHeader()
 }
 
 void Unicode_decoding(char *string) {
-union {
-	struct {
-		unsigned char t_LOW;
-		unsigned char t_HIG;
-		};
-	uint16_t T_t;
-} T_t;
+	union {
+		struct {
+			unsigned char t_LOW;
+			unsigned char t_HIG;
+			};
+		uint16_t T_t;
+	} T_t;
 
-uint16_t ss = 0;
-uint16_t sss = 0;
-size_t len = 0;
-uint8_t l = 0;
-char * string_rec ;
+	uint16_t ss = 0;
+	uint16_t sss = 0;
+	size_t len = 0;
+	uint8_t l = 0;
+	char * string_rec ;
 
-if (strstr(string,"&#") != NULL)
-{
-string_rec  = kcalloc(strlen(string)+1, sizeof(uint8_t));
-	while (strstr(string,"&#") != NULL) {
-	len = strcspn(string, "&#");
-	if(len == 0) {l=1;}
-	else
+	if (strstr(string,"&#") != NULL)
 	{
-		for(uint16_t s=sss;s<len;s++){
+		string_rec = kcalloc(strlen(string)+1, sizeof(uint8_t));
+		while (strstr(string,"&#") != NULL) {
+		len = strcspn(string, "&#");
+		if(len == 0) {l=1;}
+		else
+		{
+			for(uint16_t s=sss;s<len;s++){
+				string_rec[ss++] = string[s];
+				sss++;
+			}
+		}
+		string[len++] = ' ';
+		string[len++] = ' ';
+
+		uint8_t p_s[4];
+		for(uint8_t a=0;a<4;a++){
+			p_s[a] = string[len++];
+		}
+
+		T_t.T_t = atol((const char *)p_s);
+		T_t.t_HIG = T_t.t_HIG << 2;
+		T_t.t_HIG = (T_t.t_HIG & 0x3F) ^ (  T_t.t_LOW & 0xC0 );
+		T_t.t_LOW = (T_t.t_LOW & 0x3F) ^ 0x80;
+		T_t.t_HIG = (T_t.t_HIG & 0x1F) ^ 0xC0;
+
+		string_rec[ss++] = T_t.t_HIG;
+		string_rec[ss++] = T_t.t_LOW;
+		sss = sss + 7;
+	//	if(len>=  sizeof(string)){break;}
+		if(len >= strlen(string)) {break;}
+		}
+
+		//if(len < sizeof(string)){
+		if(len < strlen(string)) {l = 1;}
+
+		if(l){
+		//len = sizeof(string);
+		len =  strlen(string);
+		for(uint16_t s=sss;s<len;s++)
+		{
 			string_rec[ss++] = string[s];
 			sss++;
 		}
+		}
+		strcpy(string,string_rec);
+		free(string_rec);
 	}
-	string[len++] = ' ';
-	string[len++] = ' ';
-
-	uint8_t p_s[4];
-	for(uint8_t a=0;a<4;a++){
-		p_s[a] = string[len++];
-	}
-
-	T_t.T_t = atol((const char *)p_s);
-	T_t.t_HIG = T_t.t_HIG << 2;
-	T_t.t_HIG = (T_t.t_HIG & 0x3F) ^ (  T_t.t_LOW & 0xC0 );
-	T_t.t_LOW = (T_t.t_LOW & 0x3F) ^ 0x80;
-	T_t.t_HIG = (T_t.t_HIG & 0x1F) ^ 0xC0;
-
-	string_rec[ss++] = T_t.t_HIG;
-	string_rec[ss++] = T_t.t_LOW;
-	sss = sss + 7;
-//	if(len>=  sizeof(string)){break;}
-	if(len >= strlen(string)) {break;}
-	}
-
-	//if(len < sizeof(string)){
-	if(len < strlen(string)) {l = 1;}
-
-	if(l){
-	//len = sizeof(string);
-	len =  strlen(string);
-	for(uint16_t s=sss;s<len;s++)
-	{
-		string_rec[ss++] = string[s];
-		sss++;
-	}
-	}
-	strcpy(string,string_rec);
-	free(string_rec);
-}
 }
 
 // extract the url from a playlist m3u pls etc.
@@ -292,7 +292,8 @@ bool clientParsePlaylist(char* s)
 }
 
 // add escape char to special char of the string  json constructor
-static char* stringify(char* str,int len) {
+static char* stringify(char* str,int len)
+{
 #define MORE	20
 //		if ((strchr(str,'"') == NULL)&&(strchr(str,'/') == NULL)) return str;
 		if (len == 0) return str;

@@ -747,28 +747,45 @@ void app_main()
 	ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));
 	ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));
 
-	// LCD Display infos
+	//LCD Display infos
 	lcd_welcome(localIp,"STARTED");
 	vTaskDelay(10);
 	ESP_LOGI(TAG, "RAM left %d, Internal %u", esp_get_free_heap_size(),heap_caps_get_free_size(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT));
 
 	//start tasks of KaRadio
-	vTaskDelay(1);
-	xTaskCreatePinnedToCore(clientTask, "clientTask", 3800, NULL, PRIO_CLIENT, &pxCreatedTask,CPU_CLIENT);
-	ESP_LOGI(TAG, "%s task: %x","clientTask",(unsigned int)pxCreatedTask);
-	vTaskDelay(1);
-	xTaskCreatePinnedToCore(serversTask, "serversTask", 3100, NULL, PRIO_SERVER, &pxCreatedTask,CPU_SERVER);
-	ESP_LOGI(TAG, "%s task: %x","serversTask",(unsigned int)pxCreatedTask);
-	vTaskDelay(1);
-	xTaskCreatePinnedToCore (task_addon, "task_addon", 2200, NULL, PRIO_ADDON, &pxCreatedTask,CPU_ADDON);
-	ESP_LOGI(TAG, "%s task: %x","task_addon",(unsigned int)pxCreatedTask);
+    ESP_LOGI(TAG, "Free heap size before creating tasks: %u", esp_get_free_heap_size());
 
-	vTaskDelay(60);// wait tasks init
+    vTaskDelay(1);
+    if (xTaskCreate(clientTask, "clientTask", 3800, NULL, PRIO_CLIENT, &pxCreatedTask) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create clientTask");
+    } else {
+        ESP_LOGI(TAG, "%s task: %p", "clientTask", (void *)pxCreatedTask);
+    }
+
+    vTaskDelay(1);
+    if (xTaskCreate(serversTask, "serversTask", 3100, NULL, PRIO_SERVER, &pxCreatedTask) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create serversTask");
+    } else {
+        ESP_LOGI(TAG, "%s task: %p", "serversTask", (void *)pxCreatedTask);
+    }
+
+    vTaskDelay(1);
+    if (xTaskCreate(task_addon, "task_addon", 2200, NULL, PRIO_ADDON, &pxCreatedTask) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to create task_addon");
+    } else {
+        ESP_LOGI(TAG, "%s task: %p", "task_addon", (void *)pxCreatedTask);
+    }
+
+    ESP_LOGI(TAG, "Free heap size after creating tasks: %u", esp_get_free_heap_size());
+
+
+	//wait tasks init
+	vTaskDelay(60);
 	ESP_LOGI(TAG," Init Done");
 
 	setIvol(g_device->vol);
 	kprintf("READY. Type help for a list of commands\n");
-	// error log on telnet
+	//error log on telnet
 	//esp_log_set_vprintf((vprintf_like_t)lkprintf);
 	//autostart
 	autoPlay();
