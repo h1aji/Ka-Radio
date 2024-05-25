@@ -635,7 +635,6 @@ void app_main()
 			g_device->uartspeed = 115200; // default
 			g_device->trace_level = ESP_LOG_ERROR; //default
 			g_device->vol = 100; //default
-			g_device->led_gpio = 255;
 			saveDeviceSettings(g_device);
 		} else {
 			ESP_LOGE(TAG, "Device config restored");
@@ -718,7 +717,7 @@ void app_main()
 	setIvol(g_device->vol);
 	ESP_LOGI(TAG, "Volume set to %d",g_device->vol);
 
-	xTaskCreatePinnedToCore(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask,CPU_UART);
+	xTaskCreate(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask);
 	ESP_LOGI(TAG, "%s task: %x","uartInterfaceTask",(unsigned int)pxCreatedTask);
 
 
@@ -740,10 +739,7 @@ void app_main()
 
 	//set mDNS hostname (required if you want to advertise services)
 	ESP_ERROR_CHECK(mdns_hostname_set(g_device->hostname));
-	ESP_LOGI(TAG, "mdns hostname set to: [%s]", g_device->hostname);
-
-	//set default mDNS instance name
-	ESP_ERROR_CHECK(mdns_instance_name_set(g_device->hostname));
+	ESP_LOGI(TAG, "mdns hostname set to: %s", g_device->hostname);
 	ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));
 	ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));
 

@@ -1165,7 +1165,7 @@ void setHostname(char* s)
 void hostname(char* s)
 {
 	char *t = strstr(s, parslashquote);
-	if(t == NULL)
+	if (t == NULL)
 	{
 		kprintf("##SYS.HOST#: %s.local\n  IP:%s #\n",g_device->hostname,getIp());
 		return;
@@ -1173,20 +1173,23 @@ void hostname(char* s)
 
 	t +=2;
 	char *t_end  = strstr(t, parquoteslash);
-	if(t_end == NULL)
+	if (t_end == NULL)
 	{
 		kprintf(stritCMDERROR);
 		return;
 	}
 
-	if (t_end-t ==0)
+	if (t_end-t == 0)
+	{
 		strcpy(g_device->hostname, "karadio");
+	}
 	else
 	{
 		if (t_end-t >= HOSTLEN) t_end = t+HOSTLEN;
 		strncpy(g_device->hostname,t,(t_end-t)*sizeof(char));
 		g_device->hostname[(t_end-t)*sizeof(char)] = 0;
 	}
+
 	saveDeviceSettings(g_device);
 	setHostname(g_device->hostname);
 	hostname((char*) "");

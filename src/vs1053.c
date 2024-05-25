@@ -81,7 +81,7 @@ bool VS1053_HW_init() {
 }
 
 void VS1053_SPI_SpeedUp() {
-	// 10MHz
+    // Set SPI clock to 10MHz
 	WRITE_PERI_REG(SPI_CLOCK(HSPI),
 			((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
@@ -90,7 +90,7 @@ void VS1053_SPI_SpeedUp() {
 }
 
 void VS1053_SPI_SpeedDown() {
-	// 2MHz
+    // Set SPI clock to 2MHz
 	WRITE_PERI_REG(SPI_CLOCK(HSPI),
 			((9&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|

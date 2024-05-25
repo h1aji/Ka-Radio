@@ -290,7 +290,7 @@ void update_firmware(char* fname) {
 	if (!taskState) {
 		taskState = true;
 		xTaskHandle pxCreatedTask;
-		xTaskCreatePinnedToCore(ota_task, "ota_task", 8192, fname, PRIO_OTA, &pxCreatedTask,CPU_OTA);
+		xTaskCreate(ota_task, "ota_task", 8192, fname, PRIO_OTA, &pxCreatedTask);
 		ESP_LOGI(TAG, "ota_task: %x",(unsigned int)pxCreatedTask);
 	} else {
 		ESP_LOGI(TAG, "ota_task: already running. Ignore");

@@ -185,12 +185,7 @@ void serversTask(void* pvParams) {
 //						printf ("Heap size server: %d\n",esp_get_free_heap_size());
 //						printf ("Accept socket %d\n",client_sock);
 						if (xSemaphoreTake(semclient,portMAX_DELAY)) {
-							while (xTaskCreatePinnedToCore( serverclientTask,
-								"serverclientTask",
-								stack,
-								(void *) client_sock,
-								PRIO_SUBSERV,
-								NULL, CPU_SUBSERV ) != pdPASS)
+							while (xTaskCreate(serverclientTask, "serverclientTask", stack, (void *) client_sock, PRIO_SUBSERV, NULL) != pdPASS)
 							{
 								vTaskDelay(300);
 								ESP_LOGW(TAG,"low mem. Retrying...");
