@@ -250,15 +250,20 @@ static void start_wifi()
 	char ssid[SSIDLEN];
 	char pass[PASSLEN];
 
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-//	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    // Check if Wi-Fi is already initialized
+    esp_err_t ret = esp_wifi_deinit();
+    if (ret == ESP_ERR_WIFI_NOT_INIT) {
+        ESP_LOGI(TAG, "Wi-Fi was not initialized, no need to deinit");
+    } else if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to deinitialize Wi-Fi: %s", esp_err_to_name(ret));
+    }
 
-	tcpip_adapter_init();
-	tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA); // Don't run a DHCP client
-	/* FreeRTOS event group to signal when we are connected & ready to make a request */
-	wifi_event_group = xEventGroupCreate();
-	ESP_ERROR_CHECK(esp_event_loop_init(event_handler, wifi_event_group));
+    tcpip_adapter_init();
+    wifi_event_group = xEventGroupCreate();
+    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, wifi_event_group));
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
 	if (g_device->current_ap == APMODE)
 	{
@@ -272,9 +277,12 @@ static void start_wifi()
 		saveDeviceSettings(g_device);
 	}
 
+    // Start Wi-Fi to ensure it is in a known state before stopping
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_stop());
+
 	while (1)
 	{
-		ESP_ERROR_CHECK(esp_wifi_stop());
 		vTaskDelay(10);
 
 		switch (g_device->current_ap)
