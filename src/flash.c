@@ -299,7 +299,7 @@ void gpio_get_ir_signal(gpio_num_t *ir) {
 	esp_err_t err;
 	nvs_handle hardware_handle;
 	// init default
-	*ir = GPIO_NUM_0;
+	*ir = GPIO_NUM_2;
 
 	if (open_partition(hardware, gpio_space,NVS_READONLY,&hardware_handle)!= ESP_OK) {
 		ESP_LOGD(TAG,"ir");

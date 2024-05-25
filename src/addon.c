@@ -111,7 +111,7 @@ void lcd_welcome(const char* ip,const char*state)
 {
 }
 
- // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // call this every 1 millisecond via timer ISR
 //
 void (*serviceAddon)() = NULL;
@@ -445,7 +445,8 @@ event_ir_t evt;
 // custom ir code init from hardware nvs partition
 #define hardware "hardware"
 void customKeyInit()
-{ /*
+{ 
+/*
 	customKey_t index;
 	nvs_handle handle;
 	const char *klab[] = {"K_UP","K_LEFT","K_OK","K_RIGHT","K_DOWN","K_0","K_1","K_2","K_3","K_4","K_5","K_6","K_7","K_8","K_9","K_STAR","K_DIESE","K_INFO"};
@@ -460,7 +461,8 @@ void customKeyInit()
 		ESP_LOGV(TAG," isCustomKey is %d for %d",isCustomKey,index);
 		taskYIELD();
 	}
-	close_partition(handle,hardware);	*/
+	close_partition(handle,hardware);
+*/
 }
 
 
