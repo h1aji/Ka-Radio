@@ -29,7 +29,6 @@ Please note that the reset circuit for VS1053 is made of 2 signal diodes 1N4148 
 
 ## Issues
  - SSL functionality not ported
- - addon.c line 556 gpio_get_ir_key
 
 ## Roadmap
  - Implement control via IR (GPIO2)
