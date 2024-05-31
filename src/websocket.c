@@ -13,9 +13,8 @@
 #include "lwip/api.h"
 #include "lwip/sockets.h"
 
-#include "cencode.h"
-#include "cencode.h"
-#include "libsha1.h"
+#include "mbedtls/base64.h"
+#include "mbedtls/sha1.h"
 
 #include "interface.h"
 #include "webserver.h"
@@ -29,15 +28,25 @@ client_t webserverclients[NBCLIENT];
 //set of socket descriptors
 fd_set readfds;
 
-void base64_encode_local(uint8_t * data, size_t length, char* output)
+void base64_encode_local(uint8_t *data, size_t length, char* output)
 {
-//	size_t size = ((length * 1.6f) + 1);
-	if(output) {
-		base64_encodestate _state;
-		base64_init_encodestate(&_state);
-		int len = base64_encode_block((const char *) data, length, output, &_state);
-		len = base64_encode_blockend((output + len), &_state);
-	}
+    if (!data || !output) {
+        return; // Handle null pointers appropriately
+    }
+
+    // Calculate the required output size for the base64 encoded data
+    size_t output_size = ((length + 2) / 3) * 4 + 1;
+
+    size_t olen = 0;  // This will store the output length
+    int ret = mbedtls_base64_encode((unsigned char*)output, output_size, &olen, data, length);
+
+    // mbedtls_base64_encode returns 0 on success
+    if (ret == 0) {
+        output[olen] = '\0';  // Null-terminate the output string
+    } else {
+        // Handle error
+        output[0] = '\0';
+    }
 }
 
 /**
@@ -50,11 +59,19 @@ void websocketacceptKey(char* clientKey, char* Output)
 	uint8_t sha1HashBin[20] = { 0 };
 	strcat(clientKey ,"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 
-	SHA1_CTX ctx;
+    // Initialize the SHA-1 context
+    mbedtls_sha1_context ctx;
+    mbedtls_sha1_init(&ctx);
+    mbedtls_sha1_starts_ret(&ctx);
 
-	SHA1Init(&ctx);
-	SHA1Update(&ctx, (const unsigned char*)clientKey, strlen(clientKey));
-	SHA1Final(&sha1HashBin[0], &ctx);
+	// Update the SHA-1 context with the data
+    mbedtls_sha1_update_ret(&ctx, (const unsigned char*)clientKey, strlen(clientKey));
+
+    // Finalize the hashing and get the result
+    mbedtls_sha1_finish_ret(&ctx, &sha1HashBin[0]);
+
+    // Free the SHA-1 context
+    mbedtls_sha1_free(&ctx);
 
 	base64_encode_local(sha1HashBin, 20, Output);
 }
