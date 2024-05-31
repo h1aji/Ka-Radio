@@ -46,11 +46,10 @@ bool VS1053_HW_init() {
 
 	ESP_LOGI(TAG, "Init VS1053 pins");
 
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
 
 	// Set DREQ pin as input
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
 	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_INPUT);
-	//gpio_set_pull_mode(GPIO_NUM_10, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
 
 	// Set DCS pin as output and high
 	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
@@ -86,7 +85,7 @@ void VS1053_SPI_SpeedUp() {
 			((1&SPI_CLKDIV_PRE)<<SPI_CLKDIV_PRE_S)|
 			((3&SPI_CLKCNT_N)<<SPI_CLKCNT_N_S)|
 			((1&SPI_CLKCNT_H)<<SPI_CLKCNT_H_S)|
-			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));	//clear bit 31,set SPI clock div
+			((3&SPI_CLKCNT_L)<<SPI_CLKCNT_L_S));
 }
 
 void VS1053_SPI_SpeedDown() {
