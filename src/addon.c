@@ -16,6 +16,7 @@
 #include "nvs_flash.h"
 
 #include "addon.h"
+#include "flash.h"
 #include "main.h"
 #include "eeprom.h"
 #include "interface.h"
@@ -533,33 +534,18 @@ void customKeyInit()
 	const char *klab[] = {"K_UP","K_LEFT","K_OK","K_RIGHT","K_DOWN","K_0","K_1","K_2","K_3","K_4","K_5","K_6","K_7","K_8","K_9","K_STAR","K_DIESE","K_INFO"};
 
 	memset(&customKey,0,sizeof(uint32_t)*2*KEY_MAX); // clear custom
-
-	// Initialize NVS
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    // Open the NVS partition
-    esp_err_t err = nvs_open("custom_ir_space", NVS_READONLY, &handle);
-    if (err != ESP_OK) {
-        // Handle error
-		ESP_LOGE(TAG,"Error opening NVS handle!\n");
-        return;
-    }
+	if (open_partition(hardware, "custom_ir_space",NVS_READONLY,&handle)!= ESP_OK) return;
 
 	for (index = KEY_UP; index < KEY_MAX;index++)
 	{
 		// get the key in the nvs
-		//isCustomKey |= gpio_get_ir_key(handle,klab[index],(uint32_t*)&(customKey[index][0]),(uint32_t*)&(customKey[index][1]));
+		isCustomKey |= gpio_get_ir_key(handle,klab[index],(uint32_t*)&(customKey[index][0]),(uint32_t*)&(customKey[index][1]));
 		ESP_LOGV(TAG," isCustomKey is %d for %d",isCustomKey,index);
 		taskYIELD();
 	}
 
 	// Closing partition
-    nvs_close(handle);
+	close_partition(handle,hardware);
 }
 
 
