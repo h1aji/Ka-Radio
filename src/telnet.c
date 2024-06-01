@@ -7,10 +7,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Telnet"
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
 #include "esp_system.h"
 #include "lwip/opt.h"
 #include "lwip/sockets.h"

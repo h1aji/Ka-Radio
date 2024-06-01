@@ -7,7 +7,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Webclient"
 
-#include <string.h>
 #include "lwip/sockets.h"
 #include "lwip/api.h"
 #include "lwip/netdb.h"
@@ -952,12 +951,10 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 		if (t1 == NULL) {
 			t1 = strstr(pdata, "301 ");
 		}
-		else
-		{ // moved to a new address
-			if (strcmp(t1,"Found")||strcmp(t1,"Temporarily")||strcmp(t1,"Moved"))
-			{
-				ESP_LOGV(TAG,"Header Len=%d,\n %s",len,pdata);
-				ESP_LOGI(TAG,"Header: Moved");
+		if (t1 != NULL) { // moved to a new address
+			if (strcmp(t1, "Found") == 0 || strcmp(t1, "Temporarily") == 0 || strcmp(t1, "Moved") == 0) {
+				ESP_LOGV(TAG, "Header Len=%d,\n %s", len, pdata);
+				ESP_LOGI(TAG, "Header: Moved");
 				clientDisconnect("C_HDER");
 				clientParsePlaylist(pdata);
 				cstatus = C_PLAYLIST;
@@ -965,6 +962,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 			break;
 		}
 		//no break here
+		/* fall through */
 	case C_HEADER1:  // not ended
 		{
 			int i = 0;

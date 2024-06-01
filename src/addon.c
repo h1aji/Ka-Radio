@@ -7,13 +7,10 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Addon"
 
-#include <stddef.h>
 #include <string.h>
-#include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
 #include "esp_sleep.h"
-#include "nvs_flash.h"
 
 #include "addon.h"
 #include "flash.h"
@@ -28,7 +25,6 @@ static void evtClearScreen();
 // second before time display in stop state
 #define DTIDLE  60
 
-#define isColor (lcd_type&LCD_COLOR)
 const char *stopped = "STOPPED";
 
 char irStr[4];

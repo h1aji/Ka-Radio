@@ -7,7 +7,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Webserver"
 
-#include <string.h>
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "driver/uart.h"
@@ -822,17 +821,16 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 	} else if(strcmp(name, "/hardware") == 0)
 	{
 		bool val = false;
-		uint8_t cout;
 		changed = false;
-		if(data_size > 0) {
+		if (data_size > 0) {
 			char valid[6];
-			if(getSParameterFromResponse(valid,6,"valid=", data, data_size))
-				if (strcmp(valid,"1")==0) val = true;
+			if (getSParameterFromResponse(valid, 6, "valid=", data, data_size)) {
+				if (strcmp(valid, "1") == 0) val = true;
+			}
 			char coutput[6];
-			getSParameterFromResponse(coutput,6,"coutput=", data, data_size);
-			cout = atoi(coutput);
-			if (val)
-			{
+			getSParameterFromResponse(coutput, 6, "coutput=", data, data_size);
+
+			if (val) {
 				changed = true;
 				saveDeviceSettings(g_device);
 			}
@@ -843,9 +841,9 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 			json_length = 15;
 			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"coutput\":\"%d\"}", json_length, g_device->audio_output_mode);
 			*/
-			ESP_LOGV(TAG,"hardware Buf len:%d\n%s",strlen(buf),buf);
+			ESP_LOGV(TAG, "hardware Buf len:%d\n%s", strlen(buf), buf);
 			write(conn, buf, strlen(buf));
-			if (val){
+			if (val) {
 				// set current_ap to the first filled ssid
 //				copyDeviceSettings();
 				vTaskDelay(20);
@@ -853,16 +851,16 @@ static void handlePOST(char* name, char* data, int data_size, int conn)
 			}
 			return;
 		}
-	} else if(strcmp(name, "/wifi") == 0)
+	} else if (strcmp(name, "/wifi") == 0)
 	{
 		bool val = false;
 		bool val2 = false;
 		char tmpip[16],tmpmsk[16],tmpgw[16];
 		char tmpip2[16],tmpmsk2[16],tmpgw2[16],tmptzo[10];
 		changed = false;
-		if(data_size > 0) {
+		if (data_size > 0) {
 			char valid[5];
-			if(getSParameterFromResponse(valid,5,"valid=", data, data_size))
+			if (getSParameterFromResponse(valid, 5, "valid=", data, data_size))
 			{
 				if (strcmp(valid,"1")==0) val = true;
 				if (strcmp(valid,"2")==0) val2 = true;

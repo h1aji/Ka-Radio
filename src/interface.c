@@ -7,10 +7,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Interface"
 
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
-
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"

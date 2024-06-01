@@ -4,11 +4,8 @@
  *
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
 #include <time.h>
+
 #include "eeprom.h"
 
 int8_t applyTZ(struct tm *time)

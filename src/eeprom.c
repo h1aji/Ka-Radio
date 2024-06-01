@@ -5,10 +5,8 @@
  *
 *******************************************************************************/
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#define TAG "Eeprom"
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
 #include <assert.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -23,7 +21,6 @@
 #define NBSTATIONS		255
 #define PARTITIONLEN	4096
 
-const static char *TAG = "eeprom";
 static xSemaphoreHandle muxDevice;
 
 const esp_partition_t * DEVICE;

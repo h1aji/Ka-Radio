@@ -7,7 +7,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "OTA"
 
-#include <string.h>
 #include <sys/socket.h>
 #include "esp_system.h"
 #include "esp_log.h"
