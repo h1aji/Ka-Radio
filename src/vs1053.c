@@ -25,49 +25,37 @@
 
 extern void LoadUserCodes(void);
 
-int vsVersion = -1; // the version of the chip
-// SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
+int vsVersion = -1; // version of the chip
+/* VS_VER is 
+0 for VS1001, 
+1 for VS1011, 
+2 for VS1002, 
+3 for VS1003, 
+4 for VS1053 and VS8053, 
+5 for VS1033, 
+7 for VS1103, 
+6 for VS1063.
+*/
 
 static SemaphoreHandle_t sSPI = NULL;
 
 uint8_t spi_take_semaphore() {
-	if(sSPI)
-		if(xSemaphoreTake(sSPI, portMAX_DELAY))
+	if (sSPI)
+		if (xSemaphoreTake(sSPI, portMAX_DELAY))
 			return 1;
 	return 0;
 }
 
 void spi_give_semaphore() {
-	if(sSPI)
+	if (sSPI)
 		xSemaphoreGive(sSPI);
 }
 
 bool VS1053_HW_init() {
 
-	ESP_LOGI(TAG, "Init VS1053 pins");
-
-	// Enable GPIO 10 and 9
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO9);
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
-
-	// Set DREQ pin as input
-	gpio_set_direction(GPIO_NUM_9, GPIO_MODE_INPUT);
-
-	// Set RST pin as output and high
-	gpio_set_direction(GPIO_NUM_10, GPIO_MODE_OUTPUT);
-	gpio_set_level(GPIO_NUM_10, 1);
-
-	// Set DCS pin as output and high
-	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
-	gpio_set_level(GPIO_NUM_16, 1);
-
-	// Set CS pin as output and high
-	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
-	gpio_set_level(GPIO_NUM_0, 1);
-
 	ESP_LOGI(TAG, "Init VS1053 SPI");
 
-	if(!sSPI) vSemaphoreCreateBinary(sSPI);
+	if (!sSPI) vSemaphoreCreateBinary(sSPI);
 	spi_give_semaphore();
 
 	WRITE_PERI_REG(PERIPHS_IO_MUX,0x105|(0<<9));				//Set bit 9 if 80MHz sysclock required
@@ -82,6 +70,26 @@ bool VS1053_HW_init() {
 	SET_PERI_REG_MASK(SPI_USER(HSPI),SPI_CS_SETUP|SPI_CS_HOLD|SPI_USR_COMMAND);
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_FLASH_MODE);
 
+	ESP_LOGI(TAG, "Init VS1053 pins");
+
+	// Enable GPIO 10 and 9
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO9);
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
+
+	// Set DREQ pin as input
+	gpio_set_direction(GPIO_NUM_9, GPIO_MODE_INPUT);
+
+	// Set RST pin as output and high
+	//gpio_set_direction(GPIO_NUM_10, GPIO_MODE_OUTPUT);
+	//gpio_set_level(GPIO_NUM_10, 1);
+
+	// Set DCS pin as output and high
+	gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
+	gpio_set_level(GPIO_NUM_16, 1);
+
+	// Set CS pin as output and high
+	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
+	gpio_set_level(GPIO_NUM_0, 1);
 	return true;
 }
 
@@ -166,7 +174,7 @@ uint8_t CheckDREQ() {
 
 void WaitDREQ() {
 	uint16_t time_out = 0;
-	while(gpio_get_level(GPIO_NUM_9) == 0 && time_out++ < TMAX)
+	while (gpio_get_level(GPIO_NUM_9) == 0 && time_out++ < TMAX)
 	{
 		taskYIELD();
 	}
@@ -377,20 +385,20 @@ void VS1053_Start() {
 }
 
 int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
-	if(quantity == 0) return 0;
+	if (quantity == 0) return 0;
 	spi_take_semaphore();
 	int o = 0;
 
-	while(CheckDREQ() == 0) vTaskDelay(1);
+	while (CheckDREQ() == 0) vTaskDelay(1);
 
 	VS1053_SPI_SpeedUp();
 	SDI_ChipSelect(SET);
 
-	while(quantity) {
-		if(CheckDREQ()) {
+	while (quantity) {
+		if (CheckDREQ()) {
 			int t = quantity;
 			int k;
-			if(t > CHUNK) t = CHUNK;
+			if (t > CHUNK) t = CHUNK;
 			for (k=o; k < o+t; k++) SPIPutChar(music[k]);
 			o += t;
 			quantity -= t;
@@ -537,7 +545,7 @@ uint16_t VS1053_GetBitrate() {
 	if (ID == 3)
 	{
 		res = 32;
-		while(bitrate>13)
+		while (bitrate>13)
 		{
 			res+=64;
 			bitrate--;
