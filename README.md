@@ -19,13 +19,8 @@ Please note that the wiring is slightly different from the original project
 |12   |D6      |MISO   |SO/SIO1  |        |          |
 |13   |D7      |MOSI   |SI/SIO0  |        |          |
 |15   |D8      |       |CS       |        |          |
-|10   |SDD3    |DREQ   |         |        |          |
-|     |        |RST    |         |        |          |
-
-## Reset circuit
-Please note that the reset circuit for VS1053 is made of 2 signal diodes 1N4148 and 1K Ohm resistor connected to the ground
-
-![reset circuit](./doc/reset.png)
+|09   |SDD3    |DREQ   |         |        |          |
+|10   |SDD2    |RST    |         |        |          |
 
 ## Issues
  - SSL functionality not ported
