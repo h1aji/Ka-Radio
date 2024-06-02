@@ -7,8 +7,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG	"Websocket"
 
-//#include <stddef.h> /* for size_t */
-#include <string.h>
 #include "esp_system.h"
 #include "lwip/api.h"
 #include "lwip/sockets.h"
@@ -28,43 +26,23 @@ client_t webserverclients[NBCLIENT];
 //set of socket descriptors
 fd_set readfds;
 
-void base64_encode_local(uint8_t *data, size_t length, char* output)
-{
-    if (!data || !output) {
-        return; // Handle null pointers appropriately
-    }
-
-    // Calculate the required output size for the base64 encoded data
-    size_t output_size = ((length + 2) / 3) * 4 + 1;
-
-    size_t olen = 0;  // This will store the output length
-    int ret = mbedtls_base64_encode((unsigned char*)output, output_size, &olen, data, length);
-
-    // mbedtls_base64_encode returns 0 on success
-    if (ret == 0) {
-        output[olen] = '\0';  // Null-terminate the output string
-    } else {
-        // Handle error
-        output[0] = '\0';
-    }
-}
 
 /**
  * generate the key for Sec-WebSocket-Accept
  * @param clientKey char*
  * @param Output char*
  */
-void websocketacceptKey(char* clientKey, char* Output)
+void websocketacceptKey(char* clientKey, char* output)
 {
-	uint8_t sha1HashBin[20] = { 0 };
-	strcat(clientKey ,"258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+    uint8_t sha1HashBin[20] = { 0 };
+    strcat(clientKey, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 
     // Initialize the SHA-1 context
     mbedtls_sha1_context ctx;
     mbedtls_sha1_init(&ctx);
     mbedtls_sha1_starts_ret(&ctx);
 
-	// Update the SHA-1 context with the data
+    // Update the SHA-1 context with the data
     mbedtls_sha1_update_ret(&ctx, (const unsigned char*)clientKey, strlen(clientKey));
 
     // Finalize the hashing and get the result
@@ -73,7 +51,24 @@ void websocketacceptKey(char* clientKey, char* Output)
     // Free the SHA-1 context
     mbedtls_sha1_free(&ctx);
 
-	base64_encode_local(sha1HashBin, 20, Output);
+    // Base64 encoding part
+    if (!output) {
+        return; // Handle null pointer appropriately
+    }
+
+    // Calculate the required output size for the base64 encoded data
+    size_t output_size = ((20 + 2) / 3) * 4 + 1;
+
+    size_t olen = 0;  // This will store the output length
+    int ret = mbedtls_base64_encode((unsigned char*)output, output_size, &olen, sha1HashBin, 20);
+
+    // mbedtls_base64_encode returns 0 on success
+    if (ret == 0) {
+        output[olen] = '\0';  // Null-terminate the output string
+    } else {
+        // Handle error
+        output[0] = '\0';
+    }
 }
 
 void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen)
