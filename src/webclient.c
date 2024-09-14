@@ -154,7 +154,7 @@ void Unicode_decoding(char *string) {
 
 	if (strstr(string,"&#") != NULL)
 	{
-		string_rec = kcalloc(strlen(string)+1, sizeof(uint8_t));
+		string_rec = calloc(strlen(string)+1, sizeof(uint8_t));
 		while (strstr(string,"&#") != NULL) {
 		len = strcspn(string, "&#");
 		if(len == 0) {l=1;}

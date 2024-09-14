@@ -108,16 +108,6 @@ IRAM_ATTR void setIvol(uint8_t vol)
 	clientIvol = vol;
 }
 
-void* kmalloc(size_t memorySize)
-{
-	return heap_caps_malloc(memorySize, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-}
-
-void* kcalloc(size_t elementCount, size_t elementSize)
-{
-	return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
-}
-
 void tsocket(const char* lab, uint32_t cnt)
 {
 	char* title = malloc(strlen(lab)+50);
@@ -300,7 +290,6 @@ static void start_wifi()
 
 		if (g_device->current_ap == APMODE)
 		{
-			printf("WIFI GO TO AP MODE\n");
 			wifi_config_t ap_config = {
 				.ap = {
 					.ssid = "WifiKaradio",
@@ -731,6 +720,14 @@ void app_main()
 
 	//initialize mDNS
 	ESP_ERROR_CHECK(mdns_init());
+
+	// Assuming g_device->hostname is a fixed-size character array
+	if (strlen(g_device->hostname) == 0) {
+		// Copy "karadio" into g_device->hostname
+		strncpy(g_device->hostname, "karadio", sizeof(g_device->hostname) - 1);
+		// Ensure null-termination
+		g_device->hostname[sizeof(g_device->hostname) - 1] = '\0'; 
+	}
 
 	//set mDNS hostname (required if you want to advertise services)
 	ESP_ERROR_CHECK(mdns_hostname_set(g_device->hostname));

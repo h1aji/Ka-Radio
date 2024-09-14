@@ -66,9 +66,6 @@ uint8_t getIvol();
 void setIvol( uint8_t vol);
 bool bigSram();
 
-void* kmalloc(size_t memorySize);
-void* kcalloc(size_t elementCount, size_t elementSize);
-
 char* getIp();
 void (*serviceAddon)(void);
 

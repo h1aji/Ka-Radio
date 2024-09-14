@@ -43,9 +43,9 @@ bool ntp_get_time(struct tm **dt)
 	time_t timestamp;
 //	int8_t tz;
 
-	msg = kcalloc(sizeof(ntp_t),1);
+	msg = calloc(sizeof(ntp_t),1);
 	if (msg == NULL){
-		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on kcalloc");
+		ESP_LOGE(TAG,"##SYS.DATE#: ntp fails on calloc");
 		return false;
 	}
 	// build the message to send
