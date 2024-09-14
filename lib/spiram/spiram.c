@@ -31,6 +31,8 @@
 #define SPI 	0
 #define HSPI	1
 
+int spiramEnabled = 0;
+
 //Initialize the SPI port to talk to the chip.
 void spiRamInit() {
 	char dummy[64];
@@ -147,14 +149,13 @@ int spiRamTest() {
 		bb=0xaa^x;
 		if (aa!=a[x]) {
 			err=1;
-//			printf("aa: 0x%x != 0x%x\n", aa, a[x]);
 			ESP_LOGV(TAG,"aa: 0x%x != 0x%x\n", aa, a[x]);
 		}
 		if (bb!=b[x]) {
 			err=1;
-//			printf("bb: 0x%x != 0x%x\n", bb, b[x]);
 			ESP_LOGV(TAG,"bb: 0x%x != 0x%x\n", bb, b[x]); 
 		}
 	}
+	spiramEnabled = !err; // Set the global variable based on the test result
 	return !err;
 }

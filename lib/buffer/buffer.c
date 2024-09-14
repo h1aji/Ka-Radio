@@ -27,22 +27,10 @@
 //Low watermark where we restart the reader thread.
 #define FIFO_LOWMARK (32*1024)
 
-//Comment if external SPI RAM chip is used
-#define FAKE_SPI_BUFF
+// Define SPIRAMSIZE as a variable
+static int SPIRAMSIZE; 
 
-#ifdef FAKE_SPI_BUFF
-//Re-define a bunch of things so we use the internal buffer
-#undef SPIRAMSIZE
-
-//allocate enough for about one mp3 frame
-#define SPIRAMSIZE (16*1024)
-
-static  char fakespiram[SPIRAMSIZE];
-#define spiRamInit() while(0)
-#define spiRamTest() 1
-#define spiRamWrite(pos, buf, n) memcpy(&fakespiram[pos], buf, n)
-#define spiRamRead(pos, buf, n) memcpy(buf, &fakespiram[pos], n)
-#endif
+static char *fakespiram;
 
 static int fifoRpos;
 static int fifoWpos;
@@ -63,7 +51,16 @@ int spiRamFifoInit() {
 	vSemaphoreCreateBinary(semCanWrite);
 	mux=xSemaphoreCreateMutex();
 	spiRamInit();
-	return (spiRamTest());
+	spiramEnabled = spiRamTest();
+
+    if (spiramEnabled) {
+        SPIRAMSIZE = 128 * 1024;
+    } else {
+        SPIRAMSIZE = 16 * 1024;
+        fakespiram = malloc(SPIRAMSIZE);
+    }
+
+    return spiramEnabled;
 }
 
 void spiRamFifoReset() {
@@ -87,14 +84,18 @@ void spiRamFifoRead(char *buff, int len) {
 		if (n>(SPIRAMSIZE-fifoRpos)) n = SPIRAMSIZE - fifoRpos; //don't read past end of buffer
 		xSemaphoreTake(mux, portMAX_DELAY);
 		if (fifoFill < n) {
-//			printf("FIFO empty.\n");
+			//ESP_LOGV("FIFO empty.");
 			//Drat, not enough data in FIFO. Wait till there's some written and try again.
 			fifoUdrCnt++;
 			xSemaphoreGive(mux);
 			if (fifoFill < FIFO_LOWMARK) xSemaphoreTake(semCanRead, portMAX_DELAY);
 		} else {
 			//Read the data.
-			spiRamRead(fifoRpos, buff, n);
+            if (spiramEnabled) {
+                spiRamRead(fifoRpos, buff, n);
+            } else {
+                memcpy(buff, &fakespiram[fifoRpos], n);
+            }
 			buff += n;
 			len -= n;
 			fifoFill -= n;
@@ -122,7 +123,7 @@ void spiRamFifoWrite(char *buff, int buffLen) {
 
 		xSemaphoreTake(mux, portMAX_DELAY);
 		if ((SPIRAMSIZE - fifoFill) < n) {
-			// printf("FIFO full.\n");
+			//ESP_LOGV("FIFO full.");
 			// Drat, not enough free room in FIFO. Wait till there's some read and try again.
 			fifoOvfCnt++;
 			xSemaphoreGive(mux);
@@ -131,7 +132,11 @@ void spiRamFifoWrite(char *buff, int buffLen) {
 			vTaskDelay(1);
 		} else {
 			// Write the data.
-			spiRamWrite(fifoWpos, buff, n);
+            if (spiramEnabled) {
+                spiRamWrite(fifoWpos, buff, n);
+            } else {
+                memcpy(&fakespiram[fifoWpos], buff, n);
+            }
 			buff += n;
 			buffLen -= n;
 			fifoFill += n;
