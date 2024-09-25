@@ -107,8 +107,8 @@ void VS1053_LowPower();
 // normal chip consumption
 void VS1053_HighPower();
 //private functions
-void SPIPutChar(uint8_t outB);
-uint8_t SPIGetChar();
+void VS1053_SPI_PutChar(uint8_t outB);
+uint8_t VS1053_SPI_GetChar();
 void Delay(uint32_t nTime);
 void ControlReset(uint8_t State);
 void SCI_ChipSelect(uint8_t State);

@@ -31,6 +31,9 @@
 #define SPI 	0
 #define HSPI	1
 
+//Macro to quickly access the W-registers of the SPI peripherial
+#define SPI_W(i, j)           (REG_SPI_BASE(i) + 0x40 + ((j)*4))
+
 int spiramEnabled = 0;
 
 //Initialize the SPI port to talk to the chip.
@@ -54,10 +57,6 @@ void spiRamInit() {
 	//Dummy read to clear any weird state the SPI ram chip may be in
 	spiRamRead(0x0, dummy, 64);
 }
-
-//Macro to quickly access the W-registers of the SPI peripherial
-#define SPI_W(i, j)           (REG_SPI_BASE(i) + 0x40 + ((j)*4))
-
 
 //Read bytes from a memory location. The max amount of bytes that can be read is 64.
 void spiRamRead(int addr, char *buff, int len) {
@@ -83,6 +82,7 @@ void spiRamRead(int addr, char *buff, int len) {
 
 	SET_PERI_REG_MASK(SPI_CMD(HSPI),SPI_USR);
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
+
 	//Unaligned dest address. Copy 8bit at a time
 	while (len>0) {
 		d=READ_PERI_REG(SPI_W(HSPI, i));

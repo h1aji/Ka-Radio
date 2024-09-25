@@ -40,23 +40,30 @@ int vsVersion = -1; // version of the chip
 static SemaphoreHandle_t sSPI = NULL;
 
 uint8_t spi_take_semaphore() {
-	if (sSPI)
-		if (xSemaphoreTake(sSPI, portMAX_DELAY))
-			return 1;
-	return 0;
+    if (sSPI) {
+        if (xSemaphoreTake(sSPI, portMAX_DELAY) == pdTRUE) {
+            return 1;
+		}
+    }
+    return 0;
 }
 
 void spi_give_semaphore() {
-	if (sSPI)
-		xSemaphoreGive(sSPI);
+    if (sSPI) {
+        xSemaphoreGive(sSPI);
+	}
 }
 
 bool VS1053_HW_init() {
 
 	ESP_LOGI(TAG, "Init VS1053 SPI");
 
-	if (!sSPI) vSemaphoreCreateBinary(sSPI);
-	spi_give_semaphore();
+	if (!sSPI) {
+		sSPI = xSemaphoreCreateBinary();
+		if (sSPI != NULL) {
+			xSemaphoreGive(sSPI); // Ensure the semaphore is available initially
+		}
+	}
 
 	WRITE_PERI_REG(PERIPHS_IO_MUX,0x105|(0<<9));				//Set bit 9 if 80MHz sysclock required
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U,FUNC_HSPIQ_MISO);		//GPIO12 is HSPI MISO pin (Master Data In)
@@ -115,7 +122,7 @@ int getVsVersion() {
 	return vsVersion;
 }
 
-void SPIPutChar(uint8_t data) {
+void VS1053_SPI_PutChar(uint8_t data) {
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready
 
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
@@ -136,7 +143,7 @@ void SPIPutChar(uint8_t data) {
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);
 }
 
-uint8_t SPIGetChar() {
+uint8_t VS1053_SPI_GetChar() {
 	while(READ_PERI_REG(SPI_CMD(HSPI))&SPI_USR);	//wait for SPI to be ready
 
 	CLEAR_PERI_REG_MASK(SPI_USER(HSPI),SPI_USR_MOSI|SPI_USR_MISO|SPI_USR_COMMAND|SPI_USR_ADDR|SPI_USR_DUMMY);
@@ -186,10 +193,10 @@ void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
-	SPIPutChar(VS_WRITE_COMMAND);
-	SPIPutChar(addressbyte);
-	SPIPutChar(highbyte);
-	SPIPutChar(lowbyte);
+	VS1053_SPI_PutChar(VS_WRITE_COMMAND);
+	VS1053_SPI_PutChar(addressbyte);
+	VS1053_SPI_PutChar(highbyte);
+	VS1053_SPI_PutChar(lowbyte);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
 //	VS1053_SPI_SpeedUp();
@@ -202,10 +209,10 @@ void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value) {
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
-	SPIPutChar(VS_WRITE_COMMAND);
-	SPIPutChar(addressbyte);
-	SPIPutChar((value>>8)&0xff);
-	SPIPutChar(value&0xff);
+	VS1053_SPI_PutChar(VS_WRITE_COMMAND);
+	VS1053_SPI_PutChar(addressbyte);
+	VS1053_SPI_PutChar((value>>8)&0xff);
+	VS1053_SPI_PutChar(value&0xff);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
 //	VS1053_SPI_SpeedUp();
@@ -219,10 +226,10 @@ uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
-	SPIPutChar(VS_READ_COMMAND);
-	SPIPutChar(addressbyte);
-	result = SPIGetChar() << 8;
-	result |= SPIGetChar();
+	VS1053_SPI_PutChar(VS_READ_COMMAND);
+	VS1053_SPI_PutChar(addressbyte);
+	result = VS1053_SPI_GetChar() << 8;
+	result |= VS1053_SPI_GetChar();
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
 //	VS1053_SPI_SpeedUp();
@@ -280,10 +287,11 @@ void VS1053_LowPower() {
 
 // normal chip consumption
 void VS1053_HighPower() {
-	if (vsVersion == 4) // only 1053
+	if (vsVersion == 4) { // only 1053
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
-	else
+	} else {
 		VS1053_WriteRegister16(SPI_CLOCKF,0xb000);
+	}
 }
 
 // patch if GPIO1 is not wired to GND
@@ -298,13 +306,14 @@ void VS1053_GPIO1() {
 
 // First VS10xx configuration after reset
 void VS1053_InitVS() {
-	if (vsVersion == 4) // only 1053b
+	if (vsVersion == 4) { // only 1053b
 //		VS1053_WriteRegister(SPI_CLOCKF,0x78,0x00); // SC_MULT = x3, SC_ADD= x2
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
 //		VS1053_WriteRegister16(SPI_CLOCKF,0x8800); // SC_MULT = x3.5, SC_ADD= x1
 //		VS1053_WriteRegister16(SPI_CLOCKF,0x9000); // SC_MULT = x3.5, SC_ADD= x1.5
-	else
+	} else {
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB000);
+	}
 
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_RESET);
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode
@@ -399,7 +408,7 @@ int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 			int t = quantity;
 			int k;
 			if (t > CHUNK) t = CHUNK;
-			for (k=o; k < o+t; k++) SPIPutChar(music[k]);
+			for (k=o; k < o+t; k++) VS1053_SPI_PutChar(music[k]);
 			o += t;
 			quantity -= t;
 		}
@@ -458,8 +467,9 @@ int8_t VS1053_GetTreble() {
  */
 void VS1053_SetTreble(int8_t xOneAndHalfdB) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
+	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8)) {
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8)|(xOneAndHalfdB << 4), bassReg & 0x00FF);
+	}
 }
 
 /**
@@ -471,8 +481,9 @@ void VS1053_SetTreble(int8_t xOneAndHalfdB) {
  */
 void VS1053_SetTrebleFreq(uint8_t xkHz) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if (xkHz <= 15)
+	if (xkHz <= 15) {
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xF000,8)|xkHz, bassReg & 0x00FF);
+	}
 }
 
 int8_t VS1053_GetTrebleFreq() {
@@ -495,10 +506,11 @@ uint8_t	VS1053_GetBass() {
  */
 void VS1053_SetBass(uint8_t xdB) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if (xdB <= 15)
+	if (xdB <= 15) {
 		VS1053_WriteRegister(SPI_BASS, (bassReg & 0xFF00) >> 8, (bassReg & 0x000F)|(xdB << 4));
-	else
+	} else {
 		VS1053_WriteRegister(SPI_BASS, (bassReg & 0xFF00) >> 8, (bassReg & 0x000F)|0xF0);
+	}
 }
 
 /**
@@ -510,8 +522,9 @@ void VS1053_SetBass(uint8_t xdB) {
  */
 void VS1053_SetBassFreq(uint8_t xTenHz) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if (xTenHz >=2 && xTenHz <= 15)
+	if (xTenHz >=2 && xTenHz <= 15) {
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0)|xTenHz);
+	}
 }
 
 uint8_t	VS1053_GetBassFreq() {
@@ -527,8 +540,7 @@ uint8_t	VS1053_GetSpatial() {
 void VS1053_SetSpatial(uint8_t num) {
 	if (vsVersion != 4) return ;
 	uint16_t spatial = VS1053_ReadRegister(SPI_MODE);
-	if (num <= 3)
-	{
+	if (num <= 3) {
 		num = (((num <<2)&8)|(num&1))<<4;
 		VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F)|num);
 	}
@@ -542,8 +554,7 @@ uint16_t VS1053_GetBitrate() {
 	uint16_t bitrate = (VS1053_ReadRegister(SPI_HDAT0) & 0xf000) >> 12;
 	uint8_t ID = (VS1053_ReadRegister(SPI_HDAT1) & 0x18) >> 3;
 	uint16_t res;
-	if (ID == 3)
-	{
+	if (ID == 3) {
 		res = 32;
 		while (bitrate>13)
 		{
@@ -565,9 +576,7 @@ uint16_t VS1053_GetBitrate() {
 			res+=8;
 			bitrate--;
 		}
-	}
-	else
-	{
+	} else {
 		res = 8;
 		while (bitrate>8)
 		{
