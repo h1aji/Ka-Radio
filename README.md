@@ -28,4 +28,3 @@ Please note that the wiring is slightly different from the original project
 ## Roadmap
  - Implement control via IR (GPIO2)
  - Add support for I2C LCD2004 or SSD1306 (GPIO4 and GPIO5)
- - Spiram auto detect
