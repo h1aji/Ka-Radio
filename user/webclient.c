@@ -13,6 +13,7 @@
 
 #include "freertos/semphr.h"
 
+#include "spilib.h"
 #include "vs1053.h"
 #include "eeprom.h"
 #include "buffer.h"
@@ -1047,7 +1048,7 @@ IRAM_ATTR void vsTask(void *pvParams) {
 	VS1053_SetSpatial(device->spacial);
 	incfree(device,"device");
 	
-	VS1053_SPI_SpeedUp();
+	spi_speed_up();
 	while(1) {
 		if(playing) {			
 			size = bufferRead(b, VSTASKBUF);

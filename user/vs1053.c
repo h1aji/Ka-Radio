@@ -60,7 +60,7 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(void) {
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
 
     // XDCS GPIO16 (RTC GPIO0): output, initial level high
-    WRITE_PERI_REG(RTC_GPIO_OUT,      (READ_PERI_REG(RTC_GPIO_OUT)      & ~1u) | 1u);          // level high first (no glitch)
+    WRITE_PERI_REG(RTC_GPIO_OUT,      (READ_PERI_REG(RTC_GPIO_OUT)      & ~1u) | 1u);           // level high first (no glitch)
     WRITE_PERI_REG(PAD_XPD_DCDC_CONF, (READ_PERI_REG(PAD_XPD_DCDC_CONF) & 0xffffffbcu) | 1u);   // pad mux -> rtc_gpio0
     WRITE_PERI_REG(RTC_GPIO_CONF,      READ_PERI_REG(RTC_GPIO_CONF)     & ~1u);                 // RTC GPIO mux
     WRITE_PERI_REG(RTC_GPIO_ENABLE,    READ_PERI_REG(RTC_GPIO_ENABLE)   | 1u);                  // output enable
@@ -69,16 +69,6 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(void) {
     GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS,    (1<<RST_PIN)|(1<<CS_PIN));
     GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, (1<<RST_PIN)|(1<<CS_PIN));
     GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, (1<<DREQ_PIN));
-}
-
-
-ICACHE_FLASH_ATTR void VS1053_SPI_SpeedUp()
-{
-	spi_speed_up(); //10MHz
-}
-
-ICACHE_FLASH_ATTR void VS1053_SPI_SpeedDown() {
-	spi_speed_down(); //2MHz
 }
 
 ICACHE_FLASH_ATTR void Delay(uint32_t nTime)
@@ -121,7 +111,7 @@ void WaitDREQ() {
 ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte)
 {
 	spi_take_semaphore();
-	VS1053_SPI_SpeedDown();
+	spi_speed_down();
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
@@ -131,14 +121,14 @@ ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyt
 	spi_put_char(lowbyte);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	VS1053_SPI_SpeedUp();
+//	spi_speed_up();
 	spi_give_semaphore();
 }
 
 ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte){
 //    while(!spi_take_semaphore());
 	spi_take_semaphore();
-	VS1053_SPI_SpeedDown();
+	spi_speed_down();
 	uint16_t result;
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
@@ -149,7 +139,7 @@ ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte){
 	result |= spi_get_char();
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	VS1053_SPI_SpeedUp();
+//	spi_speed_up();
 	spi_give_semaphore();
 	return result;
 }
@@ -327,7 +317,7 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 	spi_take_semaphore();
 	int o = 0;
 	while(checkDREQ() == 0) {vTaskDelay(1);}
-	VS1053_SPI_SpeedUp();
+	spi_speed_up();
 	SDI_ChipSelect(SET);
 	while(quantity)
 	{
@@ -345,7 +335,7 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
 		} 
 	}
 	SDI_ChipSelect(RESET);
-	VS1053_SPI_SpeedDown();
+	spi_speed_down();
 	spi_give_semaphore();
 	return o;
 }

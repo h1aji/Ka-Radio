@@ -118,10 +118,7 @@ void VS1053_ResetChip();
 
 uint16_t MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift);
 
-
 void VS1053_regtest();
-void VS1053_SPI_SpeedUp();
-void VS1053_SPI_SpeedDown();
 //void VS1053_PluginLoad();
 
 #endif /* VS1053_H_ */
