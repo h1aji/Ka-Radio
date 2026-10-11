@@ -25,8 +25,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
 static int init_crc_table(void);
 static unsigned int crc32(unsigned int crc, unsigned char * buffer, unsigned int size);
 
-static int ICACHE_FLASH_ATTR
-init_crc_table(void)
+static int ICACHE_FLASH_ATTR init_crc_table(void)
 {
 	unsigned int c;
 	unsigned int i, j;
@@ -49,8 +48,7 @@ init_crc_table(void)
 	return 0;
 }
 
-static unsigned int ICACHE_FLASH_ATTR
-crc32(unsigned int crc,unsigned char *buffer, unsigned int size)
+static unsigned int ICACHE_FLASH_ATTR crc32(unsigned int crc,unsigned char *buffer, unsigned int size)
 {
 	unsigned int i;
 	for (i = 0; i < size; i++) {
@@ -60,8 +58,7 @@ crc32(unsigned int crc,unsigned char *buffer, unsigned int size)
 }
 
 
-static int ICACHE_FLASH_ATTR
-calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
+static int ICACHE_FLASH_ATTR calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 {
 	int fd;
 	int ret;
@@ -72,10 +69,8 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 		printf("malloc crc buf failed\n");
 		free(crc_table);
 		return -1;
-    }
-
+	}
 	unsigned int crc = 0xffffffff; 
-
 	uint16_t sec_block = sumlength / CRC_BLOCK_SIZE ;
 	uint32_t sec_last = sumlength % CRC_BLOCK_SIZE;
 	for (i = 0; i < sec_block; i++) {		
@@ -85,7 +80,7 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 				printf(PSTR("spi_flash_read error %d\n"),error);
 				return -1;
 		}
-		crc = crc32(crc, buf, BUFSIZE);		
+	crc = crc32(crc, buf, BUFSIZE);
 	}
 	if(sec_last > 0 ) {
 		if (0 != (error = spi_flash_read(start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE, (uint32_t *)buf, sec_last))){
@@ -102,8 +97,7 @@ calc_img_crc(unsigned int sumlength,unsigned int *img_crc)
 	return 0;
 }
 
-int ICACHE_FLASH_ATTR
-upgrade_crc_check(uint16_t fw_bin_sec ,unsigned int sumlength)
+int ICACHE_FLASH_ATTR upgrade_crc_check(uint16_t fw_bin_sec ,unsigned int sumlength)
 {
 	int ret;
 	unsigned int img_crc;

@@ -25,7 +25,6 @@
 #include "esp_common.h"
 #include "esp_system.h"
 #include "upgrade.h"
-#include "math.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -33,102 +32,137 @@
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
 #include "interface.h"
+#include "ota.h"
 
-//#define pheadbuffer "Connection: keep-alive\r\n\
-//Cache-Control: no-cache\r\n\
-//User-Agent: Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36 \r\n\
-//Accept: */*\r\n\
-//Accept-Encoding: gzip,deflate,sdch\r\n\
-//\r\n"
+/* ------------------------------------------------------------------------- */
+/*  Configuration                                                            */
+/* ------------------------------------------------------------------------- */
 
-#define pheadbuffer "Connection: keep-alive\r\nCache-Control: no-cache\r\nUser-Agent: Karadio 1.5 \r\nAccept: */*\r\nAccept-Encoding: gzip,deflate,sdch\r\n\r\n"
+#define OTA_HOST          "karadio.karawin.fr"   /* firmware server               */
+#define OTA_PORT          80
+#define OTA_URL_SIZE      512                    /* size of the request buffer    */
+#define OTA_CHECK_TIMES   360000                 /* upgrade check retries         */
 
-#define pheadbuffer1 "Connection: close\r\n\
-Accept: */*\r\n\
-Accept-Encoding: gzip,deflate,sdch\r\n\
-Cache-Control: no-cache\r\n\
-\r\n"
+#define OTA_STR_(x)       #x
+#define OTA_STR(x)        OTA_STR_(x)
 
-const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR  = {\
-"GET /user%d.4096.%s.4.bin HTTP/1.0\r\nHost: karadio.karawin.fr:80\r\n\
-Connection: keep-alive\r\nCache-Control: no-cache\r\nUser-Agent: Karadio 1.5 \r\n\
-Accept: */*\r\nAccept-Encoding: gzip,deflate,sdch\r\n\r\n"};
+/*
+ * HTTP request template, kept in flash.
+ *   %d = image slot to download (1 or 2)
+ *   %s = release name ("new" or "prv")
+ */
+const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR = {
+    "GET /user%d.4096.%s.4.bin HTTP/1.0\r\n"
+    "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
+    "Connection: keep-alive\r\n"
+    "Cache-Control: no-cache\r\n"
+    "User-Agent: Karadio 1.5 \r\n"
+    "Accept: */*\r\n"
+    "Accept-Encoding: gzip,deflate,sdch\r\n"
+    "\r\n"
+};
 
-extern void wsUpgrade(const char* str,int count,int total);
+extern void wsUpgrade(const char *str, int count, int total);
+
+/* ------------------------------------------------------------------------- */
+/*  Upgrade result callback                                                  */
+/* ------------------------------------------------------------------------- */
 
 /******************************************************************************
  * FunctionName : user_esp_upgrade_rsp
  * Description  : upgrade check call back function
- * Parameters   : none
+ * Parameters   : arg - the upgrade_server_info passed to system_upgrade_start()
  * Returns      : none
-*******************************************************************************/
+ *****************************************************************************/
 void user_esp_upgrade_rsp(void *arg)
 {
-	struct upgrade_server_info *server = (struct upgrade_server_info *)arg;
-	if(server->upgrade_flag == true){
-//		kprintf(PSTR("FW upgrade success.%c"),0x0d);
-		wsUpgrade("FW OK Refresh the page" , 0,100);
-		system_upgrade_reboot();
-	} else {
-//		kprintf(PSTR("-ERR: FW upgrade failed.%c"),0x0d);
-		wsUpgrade("FW upgrade failed." , 0,100);
-	}
+    struct upgrade_server_info *server = (struct upgrade_server_info *)arg;
+
+    if (server->upgrade_flag == true) {
+        wsUpgrade("FW OK Refresh the page", 0, 100);
+        system_upgrade_reboot();
+    } else {
+        wsUpgrade("FW upgrade failed.", 0, 100);
+    }
+
+    /* the callback owns the server info and its url buffer */
     free(server->url);
-    server->url = NULL;
     free(server);
-    server = NULL;
 }
+
+/* ------------------------------------------------------------------------- */
+/*  Start an upgrade                                                         */
+/* ------------------------------------------------------------------------- */
 
 /******************************************************************************
  * FunctionName : update_firmware
- * Description  : config remote server param and init bin info
- * Parameters   : none
+ * Description  : configure the remote server and start the download
+ * Parameters   : fname - release to fetch: "new" or "prv"
  * Returns      : none
-*******************************************************************************/
-void update_firmware(char* fname)
+ *****************************************************************************/
+ICACHE_FLASH_ATTR void update_firmware(char *fname)
 {
-    kprintf(PSTR("update  firmware \r%c"),0x0d);
-    uint8_t current_id = system_upgrade_userbin_check();
-//    kprintf(PSTR("current id %d\n"), current_id);
-	clientDisconnect(PSTR("Update"));
-//	char* client_url = "karadio.karawin.fr";
+    struct upgrade_server_info *server;
+    struct hostent *host;
+    char *fmt;
+    size_t fmt_len;
+    uint8_t current_id;
 
-//#define bin_url  "user%d.4096.%s.4.bin"
-	
-    struct upgrade_server_info *server = NULL;
-    server = (struct upgrade_server_info *)malloc(sizeof(struct upgrade_server_info));
-    memset(server, 0, sizeof(struct upgrade_server_info));
-    server->check_cb = user_esp_upgrade_rsp;   //set upgrade check call back function
-    server->check_times = 360000;
-	server->upgrade_flag = true;
-	
-    if (server->url == NULL) {
-        server->url = (uint8_t *)malloc(512);
+    kprintf(PSTR("update  firmware \r%c"), 0x0d);
+
+    current_id = system_upgrade_userbin_check();
+    clientDisconnect(PSTR("Update"));
+
+    kprintf(PSTR("flash size  %d\n"), (int)system_get_flash_size_map());
+
+    /* download into the slot that is NOT running now */
+    current_id = (current_id == 0) ? 2 : 1;
+
+    /* resolve the server first, so nothing is allocated if the lookup fails */
+    host = gethostbyname(OTA_HOST);
+    if (host == NULL || host->h_addr_list[0] == NULL) {
+        kprintf(PSTR("upgrade error: DNS lookup failed%c"), 0x0d);
+        return;
     }
 
-    flash_size_map f_size = system_get_flash_size_map();
-    kprintf(PSTR("flash size  %d\n"),f_size);
-    if (current_id == 0) {
-		 current_id = 2;
-	} else current_id = 1;
+    server = (struct upgrade_server_info *)malloc(sizeof(struct upgrade_server_info));
+    if (server == NULL) {
+        kprintf(PSTR("upgrade error: out of memory%c"), 0x0d);
+        return;
+    }
+    memset(server, 0, sizeof(struct upgrade_server_info));
 
-	char* fmt = malloc(strlen(strupd)+16);
-	flashRead(fmt,(int)strupd,strlen(strupd));
-	fmt[strlen(strupd)] = 0;
-	sprintf(server->url,fmt ,current_id,fname);
-	free(fmt);
+    server->url = (uint8_t *)malloc(OTA_URL_SIZE);
 
-//    sprintf(server->url, "GET /user%d.4096.%s.4.bin HTTP/1.0\r\nHost: %s:80\r\n"pheadbuffer"",current_id,fname, client_url);
-//printf("http_req : %s\n", server->url);
-	
-	struct hostent *serv ;
-	serv =(struct hostent*)gethostbyname("karadio.karawin.fr");
+    /* copy the request template from flash to RAM */
+    fmt_len = strlen(strupd);
+    fmt = (char *)malloc(fmt_len + 1);
+
+    if (server->url == NULL || fmt == NULL) {
+        kprintf(PSTR("upgrade error: out of memory%c"), 0x0d);
+        free(fmt);
+        free(server->url);
+        free(server);
+        return;
+    }
+
+    flashRead(fmt, (int)strupd, fmt_len);
+    fmt[fmt_len] = 0;
+    snprintf((char *)server->url, OTA_URL_SIZE, fmt, current_id, fname);
+    free(fmt);
+
+    server->check_cb      = user_esp_upgrade_rsp;   /* upgrade check call back */
+    server->check_times   = OTA_CHECK_TIMES;
+    server->upgrade_flag  = true;
+
     server->sockaddrin.sin_family = AF_INET;
-    server->sockaddrin.sin_port   = htons(80);
-    server->sockaddrin.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0]))); // remote server ip
-//printf("distant ip: %x   ADDR:%s\n",server->sockaddrin.sin_addr.s_addr,inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0])));
+    server->sockaddrin.sin_port   = htons(OTA_PORT);
+    memcpy(&server->sockaddrin.sin_addr, host->h_addr_list[0], sizeof(struct in_addr));
 
     if (system_upgrade_start(server) == false) {
-        kprintf(PSTR("upgrade error%c"),0x0d);
+        kprintf(PSTR("upgrade error%c"), 0x0d);
+        /* the callback will never run, so release the memory here */
+        free(server->url);
+        free(server);
     }
 }

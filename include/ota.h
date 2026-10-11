@@ -4,5 +4,11 @@
 
 #ifndef OTA_H
 #define OTA_H
-void update_firmware(char* fname);
+
+/*
+ * Start an over-the-air firmware update.
+ *   fname: release to download, "new" (release) or "prv" (prerelease)
+ */
+void update_firmware(char *fname);
+
 #endif
