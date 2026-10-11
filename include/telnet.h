@@ -1,0 +1,45 @@
+/*
+ * Copyright 2016 karawin (http://www.karawin.fr)
+*/
+
+#ifndef __TELNET_H__
+#define __TELNET_H__
+
+#include "lwip/opt.h"
+#include "lwip/arch.h"
+#include "lwip/api.h"
+#include "esp_common.h"
+#include "esp_softap.h"
+#include "esp_wifi.h"
+#include "lwip/sockets.h"
+#include "lwip/dns.h"
+#include "lwip/netdb.h"
+#include "ssl/ssl_crypto.h"
+#include "c_types.h"
+
+#define NBCLIENTT 5
+//#define MAXDATAT 256
+
+//extern const char strtWELCOME[] ;
+extern int telnetclients[NBCLIENTT];
+
+// public:
+// init some data
+void telnetinit(void);
+// a demand received, accept it
+bool telnetAccept(int tsocket);
+// a socket with a telnet . 
+bool telnetnewclient(int socket);
+// a socket with a telnet closed
+void telnetremoveclient(int socket);
+// is socket a telnet?
+bool istelnet( int socket);
+
+//write a txt data
+void telnetWrite(uint32_t len,const char *fmt, ...);
+//broadcast a txt data to all clients
+
+// the telnet server task
+void telnetTask(void* pvParams) ;
+
+#endif
