@@ -99,12 +99,12 @@ uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 
 ICACHE_FLASH_ATTR void initBuffer()
 {
-	 if (spiram == false)
-	 {
-		 BUFFER_SIZE = 20000; // 12960 14080 16000
-		 buffer = malloc(BUFFER_SIZE);
+	if (spiram)
+	{
+		BUFFER_SIZE = SPIRAM_SIZE;
 	} else {
-		 BUFFER_SIZE = SPIRAM_SIZE;
+		BUFFER_SIZE = 20000; // 12960 14080 16000
+		buffer = malloc(BUFFER_SIZE);
 	}
 }
 
@@ -123,7 +123,13 @@ ICACHE_FLASH_ATTR uint32_t getBufferFilled() {
 }
 
 ICACHE_FLASH_ATTR uint32_t bufferWrite(uint8_t *data, uint32_t size) {
-	if (spiram==false){
+	if (spiram) {
+		if(getBufferFree() < size) size = getBufferFree();
+		spiramWrite(size, wptr, data);
+		wptr += size;
+		if(bempty) bempty = 0;
+		if(wptr >= BUFFER_SIZE) wptr -= BUFFER_SIZE;
+	} else {
 		uint32_t i;
 		for(i=0; i<size; i++) {
 			if(getBufferFree() == 0) { return i;}
@@ -132,13 +138,6 @@ ICACHE_FLASH_ATTR uint32_t bufferWrite(uint8_t *data, uint32_t size) {
 			if(wptr == BUFFER_SIZE) wptr = 0;
 		}
 	}
-	else{
-		if(getBufferFree() < size) size = getBufferFree();
-		spiramWrite(size, wptr, data);
-		wptr += size;
-		if(bempty) bempty = 0;
-		if(wptr >= BUFFER_SIZE) wptr -= BUFFER_SIZE;
-	}
 	return size;
 }
 
@@ -146,19 +145,18 @@ ICACHE_FLASH_ATTR uint32_t bufferRead(uint8_t *data, uint32_t size) {
 	uint32_t i = 0;
 	uint32_t bf = getBufferFilled();
 	if(size > bf) size = bf;
-
-	if (spiram==false){
+	if (spiram) {
+		spiramRead(size, rptr, data);
+		rptr += size;
+		if(rptr >= BUFFER_SIZE) rptr -= BUFFER_SIZE;
+		if(rptr == wptr) bempty = 1;
+	} else {
 		for (i = 0; i < size; i++) {
 			if(bf == 0) { return i;}
 			data[i] = buffer[rptr++];
 			if(rptr == BUFFER_SIZE) rptr = 0;
 			if(rptr == wptr) bempty = 1;
 		}
-	} else{
-		spiramRead(size, rptr, data);
-		rptr += size;
-		if(rptr >= BUFFER_SIZE) rptr -= BUFFER_SIZE;
-		if(rptr == wptr) bempty = 1;
 	}
 	return size;
 }
