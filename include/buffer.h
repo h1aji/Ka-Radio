@@ -12,6 +12,7 @@
 extern bool externram;
 extern uint32_t BUFFER_SIZE;
 
+void initBuffer();
 uint32_t getBufferFree();
 bool getBufferEmpty();
 uint32_t getBufferFilled();

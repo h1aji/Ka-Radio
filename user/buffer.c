@@ -14,12 +14,9 @@ ICACHE_FLASH_ATTR void initBuffer()
 {
 	 if (externram == false)
 	 {
-//		 BUFFER_SIZE = 12960;
-//		 BUFFER_SIZE = 14080;
-//		 BUFFER_SIZE = 16000;
-		 BUFFER_SIZE = 20000;
+		 BUFFER_SIZE = 20000; // 12960 14080 16000
 		 buffer = malloc(BUFFER_SIZE);
-	} else{
+	} else {
 		 BUFFER_SIZE = BIGMEMORY;
 	}
 }
