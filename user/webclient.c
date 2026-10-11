@@ -1015,8 +1015,8 @@ if (l > 80) dump(inpdata,len);
 // ---------------			
 		if (!playing )
 		{
-//printf("test memory: %d  on size %d\n",	(BUFFER_SIZE == BIGMEMORY)?(6*BIGMEMORY/10):(BUFFER_SIZE/2),BUFFER_SIZE);		
-			if ( (getBufferFree() < ((BUFFER_SIZE == BIGMEMORY)?(6*BIGMEMORY/10):(BUFFER_SIZE/2))) ||(once ==1)) 
+//printf("test memory: %d  on size %d\n",	(BUFFER_SIZE == SPIRAM_SIZE)?(6*SPIRAM_SIZE/10):(BUFFER_SIZE/2),BUFFER_SIZE);		
+			if ( (getBufferFree() < ((BUFFER_SIZE == SPIRAM_SIZE)?(6*SPIRAM_SIZE/10):(BUFFER_SIZE/2))) ||(once ==1)) 
 			{
 				volume = VS1053_GetVolume();
 				VS1053_SetVolume(0);

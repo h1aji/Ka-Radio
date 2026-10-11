@@ -25,7 +25,6 @@
 #include "webserver.h"
 #include "webclient.h"
 #include "buffer.h"
-#include "extram.h"
 #include "vs1053.h"
 #include "ntp.h"
 #include "telnet.h"
@@ -532,11 +531,11 @@ void user_init(void)
 	uspeed = device->uartspeed;
 	free(device);
 	uspeed = checkUart(uspeed);	
-	uart_div_modify(0, UART_CLK_FREQ / uspeed);//UART_SetBaudrate(0,uspeed);
+	uart_div_modify(0, UART_CLK_FREQ / uspeed); //UART_SetBaudrate(0,uspeed);
 	uart_rx_init();
 	
 	VS1053_HW_init(); // init spi
-	extramInit();
+	spiramInit();
 	printf(PSTR("\nuart speed: %d\n"),uspeed);
 	initBuffer();
 
