@@ -41,11 +41,23 @@ GPIO14    - SCK
 GPIO12    - MISO
 GPIO13    - MOSI
 GPIO16    - DCS
-GPIO09    - DREQ
-GPIO10    - RST
+GPIO10    - DREQ
 GPIO00    - CS
-
 ```
+
+RST has no GPIO of its own. It is the diode-OR of CS and DCS with a 1k pull-down,
+so the VS1053 is in reset only while both CS and DCS are low:
+```
+GPIO00 (CS)  --|>|--+
+                     +-- VS1053 RST --+
+GPIO16 (DCS) --|>|--+                 |
+                                     1k
+                                      |
+                                     GND
+```
+Use Schottky diodes (e.g. BAT54) for a higher RST level. The network loads GPIO00, which
+must read high at power-up for a normal boot: check that GPIO00 still reads high at boot, or
+replace the diodes and resistor with a 74LVC1G32 OR gate.
 
 Optional external RAM 23LCV1024 supported
 

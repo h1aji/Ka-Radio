@@ -13,8 +13,7 @@
 
 #define CS_PIN   0
 #define XDCS_PIN 16
-#define DREQ_PIN 9
-#define RST_PIN  10
+#define DREQ_PIN 10
 
 #define SET   1
 #define RESET 0
