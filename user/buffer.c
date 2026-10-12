@@ -28,6 +28,33 @@ uint8_t bempty = 1;
 /*  SPIRAM access                                                        */
 /* ===================================================================== */
 
+/*
+ * Measure the real SPIRAM capacity. Chips ignore the address bits they do not
+ * implement, so writing at address n aliases back onto address 0 once n reaches the
+ * chip size. Returns 0 when nothing answers on the bus.
+ */
+static uint32_t spiramProbeSize() {
+	uint8_t pa[8] = {0xA5,0x5A,0xC3,0x3C,0x96,0x69,0x0F,0xF0};
+	uint8_t pb[8] = {0x5A,0xA5,0x3C,0xC3,0x69,0x96,0xF0,0x0F};	// pa inverted
+	uint8_t rd[8];
+	uint32_t n;
+
+	spiramWrite(8, 0, pa);
+	spiramRead(8, 0, rd);
+	if (memcmp(rd,pa,8) != 0)
+		return 0;
+	for (n = 256; n < (1UL<<24); n <<= 1) {
+		spiramWrite(8, n, pb);
+		spiramRead(8, 0, rd);
+		if (memcmp(rd,pb,8) == 0)	// address 0 changed: n wrapped onto it
+			return n;
+		spiramRead(8, n, rd);
+		if (memcmp(rd,pb,8) != 0)	// address n does not hold data: stop here
+			return n;
+	}
+	return n;
+}
+
 void spiramInit() {
 	char test[17]   = {"FFFFFFFF"};
 	char testram[17]= {"01234567"};
@@ -41,12 +68,13 @@ void spiramInit() {
 	spi_speed_down(); //2MHz
 	spiramWrite(strlen(test), 0, testram);
 	spiramRead(strlen(test), 0, test);
-	if (memcmp(test,testram,16) == 0)
-		spiram = true;
-	if (spiram)
+	if (memcmp(test,testram,16) == 0) spiram = true;
+	if (spiram) {
 		printf(PSTR("\nSPIRAM detected%c"),0x0d);
-	else
+		printf(PSTR("\nSPIRAM installed size: %d bytes%c"),spiramProbeSize(),0x0d);
+	} else{
 		printf(PSTR("\nSPIRAM not detected%c"),0x0d);
+	}
 }
 
 uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
@@ -125,10 +153,11 @@ ICACHE_FLASH_ATTR uint32_t getBufferFilled() {
 ICACHE_FLASH_ATTR uint32_t bufferWrite(uint8_t *data, uint32_t size) {
 	if (spiram) {
 		if(getBufferFree() < size) size = getBufferFree();
+		uint32_t nw = wptr + size;
 		spiramWrite(size, wptr, data);
-		wptr += size;
+		if(nw >= BUFFER_SIZE) nw -= BUFFER_SIZE;	// wrap before publishing, the reader must never see wptr > BUFFER_SIZE
+		wptr = nw;
 		if(bempty) bempty = 0;
-		if(wptr >= BUFFER_SIZE) wptr -= BUFFER_SIZE;
 	} else {
 		uint32_t i;
 		for(i=0; i<size; i++) {

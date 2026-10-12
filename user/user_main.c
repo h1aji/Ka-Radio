@@ -26,6 +26,7 @@
 #include "webclient.h"
 #include "buffer.h"
 #include "vs1053.h"
+#include "spilib.h"
 #include "ntp.h"
 #include "telnet.h"
 #include "servers.h"
@@ -534,6 +535,7 @@ void user_init(void)
 	uart_div_modify(0, UART_CLK_FREQ / uspeed); //UART_SetBaudrate(0,uspeed);
 	uart_rx_init();
 	
+	spi_init_semaphore(); // HSPI is shared by the VS1053, the SPIRAM and the flash helpers
 	VS1053_HW_init(); // init spi
 	spiramInit();
 	printf(PSTR("\nuart speed: %d\n"),uspeed);

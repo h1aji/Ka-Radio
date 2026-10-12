@@ -27,6 +27,12 @@ xSemaphoreHandle sSPI = NULL;
   while ((READ_PERI_REG(SPI_CMD(SPI_BUS)) & SPI_USR) && (++_g < 1000000)); \
 } while (0)
 
+/* Must run before any task touches the bus. Until then take/give are no-ops and
+ * the VS1053, the SPIRAM and the flash helpers would interleave on the same HSPI. */
+ICACHE_FLASH_ATTR void spi_init_semaphore() {
+  if (!sSPI) sSPI = xSemaphoreCreateMutex();
+}
+
 ICACHE_FLASH_ATTR uint8_t spi_take_semaphore() {
   if (sSPI)
     if (xSemaphoreTake(sSPI, portMAX_DELAY)) return 1;
