@@ -6,15 +6,12 @@
 
 
 #include "esp_common.h"
-#include "esp8266/pin_mux_register.h"
 #include "esp8266/eagle_soc.h"
 #include "esp8266/spi_register.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "freertos/task.h"
 
-#include "c_types.h"
 #include "spilib.h"
 
 xSemaphoreHandle sSPI = NULL;

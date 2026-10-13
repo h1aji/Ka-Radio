@@ -6,12 +6,14 @@
 #include "esp_common.h"
 #include "esp8266/pin_mux_register.h"
 #include "esp8266/eagle_soc.h"
-#include "esp8266/spi_register.h"
+#include "gpio.h"
+
+#include <stdlib.h>
+#include <string.h>
 
 #include "buffer.h"
-#include "gpio.h"
-#include "spilib.h"
 #include "interface.h"
+#include "spilib.h"
 
 /* Direct register access: avoids the SDK's gpio_output_conf(), which is not linked in this project */
 #define SPIRAM_CS_LOW()    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, (1<<SPIRAM_CS))

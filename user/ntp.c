@@ -6,14 +6,18 @@
  *
 *******************************************************************************/
 
+#include "esp_common.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 #include "lwip/sockets.h"
-#include "lwip/api.h"
 #include "lwip/netdb.h"
 
-#include <time.h>
 #include "ntp.h"
-#include "interface.h"
 #include "eeprom.h"
+#include "interface.h"
 
 // list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
 // time.nist.gov

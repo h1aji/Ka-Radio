@@ -4,19 +4,27 @@
 */
 
 #include "esp_common.h"
-#include "mdns.h"
-#include "interface.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
 
-//#include "user_interface.h"
-//#include "osapi.h"
-
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "mdns.h"
+
+#include "interface.h"
 #include "eeprom.h"
+#include "flash.h"
 #include "ntp.h"
 #include "ota.h"
+#include "vs1053.h"
+#include "webclient.h"
+#include "websocket.h"
 
 char parslashquote[] = {"(\""};
 char parquoteslash[] = {"\")"};

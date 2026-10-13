@@ -4,8 +4,11 @@
  *
 *******************************************************************************/
 
-#include "flash.h"
 #include "esp_common.h"
+#include "esp8266/eagle_soc.h"
+#include "spi_flash.h"
+
+#include "flash.h"
 #include "spilib.h"
 
 

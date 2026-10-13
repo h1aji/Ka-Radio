@@ -4,20 +4,19 @@
  *
 *******************************************************************************/
 
-#include "esp8266/pin_mux_register.h"
+#include "c_types.h"
+
 #include "esp8266/eagle_soc.h"
-#include "esp8266/spi_register.h"
+#include "esp_libc.h"
+#include "spi_flash.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "eeprom.h"
-#include "flash.h"
-#include "spilib.h"
-
-#include "stdio.h"
-#include "stdlib.h"
-#include "spi_flash.h"
-#include "esp_libc.h"
-
 #include "interface.h"
+#include "spilib.h"
+#include "webclient.h"
 
 #define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
 #define ICACHE_STORE_ATTR __attribute__((aligned(4)))

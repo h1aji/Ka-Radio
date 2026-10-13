@@ -9,19 +9,24 @@
   ***********************************************************************************************************************
 */
 
+#include "esp_common.h"
 #include "esp8266/pin_mux_register.h"
 #include "esp8266/eagle_soc.h"
 #include "esp8266/spi_register.h"
-
-#include "esp_common.h"
+#include "esp_system.h"
 #include "gpio.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "vs1053.h"
 #include "eeprom.h"
-#include "stdio.h"
-#include "spilib.h"
-#include <math.h>
 #include "interface.h"
+#include "spilib.h"
 
 extern uint8_t clientIvol ;
 

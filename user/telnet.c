@@ -7,10 +7,22 @@
  *
  */
 
-#include "telnet.h"
-#include "interface.h"
-#include <stdio.h>
+#include "esp_common.h"
+
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+#include "lwip/sockets.h"
+
+#include "telnet.h"
+#include "flash.h"
+#include "interface.h"
 
 
 //const char strtMALLOC1[] = {"Telnet %s malloc fails\n"};
@@ -41,8 +53,7 @@ static void telnet_give_semaphore() {
 
 ///////////////////////
 // init some data
-void telnetinit(void)
-{
+void telnetinit(void) {
 	int i;
 	vSemaphoreCreateBinary(sTELNET);
 	
@@ -58,8 +69,7 @@ void telnetinit(void)
 
 /////////////////////////////////////////////////////////////////////
 // a socket with a websocket request. Note it and answer to the client
-bool telnetnewclient(int socket)
-{
+bool telnetnewclient(int socket) {
 	int i ;
 //	printf("ws newclient:%d\n",socket);
 	for (i = 0;i<NBCLIENTT;i++) if (telnetclients[i] == socket) return true;
@@ -71,10 +81,10 @@ bool telnetnewclient(int socket)
 	}	
 	return false; // no more room
 }
+
 /////////////////////////////////////////////////////////////////////
 // remove the client in the list of clients
-void telnetremoveclient(int socket)
-{
+void telnetremoveclient(int socket) {
 	int i ;
 //	printf("ws removeclient:%d\n",socket);
 	for (i = 0;i<NBCLIENTT;i++) 
@@ -86,10 +96,10 @@ void telnetremoveclient(int socket)
 			return;
 		}
 }
-////////////////////////
+
+/////////////////////////////////////////////////////////////////////
 // is socket a telnet one?
-bool istelnet( int socket)
-{
+bool istelnet( int socket) {
 	int i ;
 	for (i = 0;i<NBCLIENTT;i++) 
 		if ((telnetclients[i]!= -1)&&(telnetclients[i] == socket)) return true;
@@ -97,8 +107,7 @@ bool istelnet( int socket)
 }
 
 
-ICACHE_FLASH_ATTR bool telnetAccept(int tsocket)
-{
+ICACHE_FLASH_ATTR bool telnetAccept(int tsocket) {
 int32_t recbytes = 0;
 
 	if ((!istelnet(tsocket ))&&(telnetnewclient(tsocket))) 
@@ -106,7 +115,7 @@ int32_t recbytes = 0;
 		char * fmt = malloc(strlen(strtWELCOME)+16);
 		if (fmt != NULL)
 		{			
-			flashRead(fmt,strtWELCOME,strlen(strtWELCOME));
+			flashRead(fmt,(uint32_t)strtWELCOME,strlen(strtWELCOME));
 			fmt[strlen(strtWELCOME)] = 0;
 //			printf("telnet write accept\n");
 			write(tsocket, fmt, strlen(strtWELCOME));  // reply to accept	
@@ -119,8 +128,7 @@ int32_t recbytes = 0;
 
 
 //broadcast a txt data to all clients
-void telnetWrite(uint32_t lenb,const char *fmt, ...)
-{
+void telnetWrite(uint32_t lenb,const char *fmt, ...) {
 	int i ;
 	char *buf = NULL;
 	char* lfmt;
@@ -140,7 +148,7 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...)
 		lfmt = (char *)malloc(len+16);
 		if (lfmt!=NULL)
 		{
-			flashRead( lfmt, fmt, len );
+			flashRead(lfmt, (uint32_t)fmt, len);
 			lfmt[len] = 0; // if aligned, trunkate
 //			printf("lfmt: %s\n",lfmt);
 			rlen = vsprintf(buf,lfmt, ap);
@@ -175,8 +183,7 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...)
 //printf("telnet write exit lenb:%d\n--------------------------\n",lenb);
 }
 
-ICACHE_FLASH_ATTR int telnetNego(int tsocket)
-{
+ICACHE_FLASH_ATTR int telnetNego(int tsocket) {
 	const uint8_t NONEG[2] = {0xFF,0xFC}; // WON't
 
 	if (iiac == 2)
@@ -190,8 +197,7 @@ ICACHE_FLASH_ATTR int telnetNego(int tsocket)
 	}
 }
 	
-ICACHE_FLASH_ATTR int telnetCommand(int tsocket)
-{
+ICACHE_FLASH_ATTR int telnetCommand(int tsocket) {
 	if (irec == 0) return;
 //printf(PSTR("%sHEAPd0: %d #\n"),"##SYS.",xPortGetFreeHeapSize( ));	
 	brec[irec] = 0x0;
@@ -204,8 +210,7 @@ ICACHE_FLASH_ATTR int telnetCommand(int tsocket)
 	irec = 0;
 }
 
-ICACHE_FLASH_ATTR int telnetRead(int tsocket)
-{
+ICACHE_FLASH_ATTR int telnetRead(int tsocket) {
 	char *buf ;
 	int32_t recbytes ;
 	int i;	

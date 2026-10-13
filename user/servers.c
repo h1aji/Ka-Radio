@@ -6,12 +6,24 @@
  *
 */
 
-#include "telnet.h"
-#include "websocket.h"
-#include "webserver.h"
-#include "interface.h"
+#include "esp_common.h"
+#include "esp_timer.h"
+
 #include <stdio.h>
-#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+#include "lwip/sockets.h"
+
+#include "servers.h"
+#include "interface.h"
+#include "telnet.h"
+#include "webserver.h"
+#include "websocket.h"
 
 #define stack  500
 

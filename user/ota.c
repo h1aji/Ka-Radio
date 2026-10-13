@@ -35,19 +35,30 @@
  */
 
 #include "esp_common.h"
+#include "esp8266/eagle_soc.h"
 #include "esp_system.h"
+#include "esp_timer.h"
+#include "esp_wifi.h"
+#include "spi_flash.h"
 #include "upgrade.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "lwip/mem.h"
 #include "lwip/sockets.h"
 #include "lwip/inet.h"
-#include "lwip/dns.h"
 #include "lwip/netdb.h"
-#include "interface.h"
-#include "websocket.h"
+
 #include "ota.h"
+#include "flash.h"
+#include "interface.h"
+#include "webclient.h"
+#include "websocket.h"
 
 /* ------------------------------------------------------------------------- */
 /*  Configuration                                                            */

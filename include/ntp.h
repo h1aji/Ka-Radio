@@ -4,7 +4,10 @@
 
 #ifndef __NTP_H__
 #define __NTP_H__
+
 #include <time.h>
+
+#include "c_types.h"
 
 typedef struct {
 	uint8_t options;

@@ -6,11 +6,12 @@
 ** Description  : CRC32 Checking
 ******************************************************/
 #include "esp_common.h"
+#include "spi_flash.h"
 
-#include "lwip/err.h"
-#include "lwip/ip_addr.h"
-#include "lwip/mem.h"
 #include <stdlib.h>
+
+#include "lwip/mem.h"
+
 #include "interface.h"
 
 #define BUFSIZE     512

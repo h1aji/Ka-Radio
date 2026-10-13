@@ -1,10 +1,12 @@
 /* User application code loading tables for VS10xx */
 
 #include "c_types.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "vs1053.h"
 #include "flash.h"
-#include "stdio.h"
-#include "stdlib.h"
 #include "interface.h"
 
 #define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))

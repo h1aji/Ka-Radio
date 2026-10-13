@@ -4,6 +4,10 @@
  *
 *******************************************************************************/
 
+#include "esp_common.h"
+#include "esp8266/eagle_soc.h"
+#include "esp_system.h"
+
 #include "el_uart.h"
 
 //#define DBG kprintf

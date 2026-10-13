@@ -5,16 +5,6 @@
 #ifndef __TELNET_H__
 #define __TELNET_H__
 
-#include "lwip/opt.h"
-#include "lwip/arch.h"
-#include "lwip/api.h"
-#include "esp_common.h"
-#include "esp_softap.h"
-#include "esp_wifi.h"
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "ssl/ssl_crypto.h"
 #include "c_types.h"
 
 #define NBCLIENTT 5

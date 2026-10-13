@@ -5,6 +5,11 @@
 #ifndef __INTERFACE_H__
 #define __INTERFACE_H__
 
+#include <stdio.h>
+
+#include "c_types.h"
+
+#include "telnet.h"
 
 #undef PSTR
 #undef PROGMEM

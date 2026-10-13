@@ -3,11 +3,32 @@
 */
 
 
+#include "esp_common.h"
+#include "esp_system.h"
+#include "esp_timer.h"
+#include "esp_wifi.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+
+#include "lwip/err.h"
+#include "lwip/inet.h"
+#include "lwip/sockets.h"
+
 #include "webserver.h"
-#include "serv-fs.h"
+#include "eeprom.h"
+#include "flash.h"
 #include "interface.h"
-#include "servers.h"
 #include "ota.h"
+#include "serv-fs.h"
+#include "vs1053.h"
+#include "webclient.h"
+#include "websocket.h"
 
 static char apMode[]= {"*Hidden*"};
 xSemaphoreHandle semfile = NULL ;

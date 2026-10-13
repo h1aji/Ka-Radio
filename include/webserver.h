@@ -8,23 +8,11 @@
 #define __WEBSERVER_H__
 
 
-#include "webclient.h"
-#include "vs1053.h"
-
-#include "lwip/opt.h"
-#include "lwip/arch.h"
-#include "lwip/api.h"
 #include "esp_common.h"
-#include "esp_softap.h"
 #include "esp_timer.h"
-#include "esp_wifi.h"
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "flash.h"
-#include "eeprom.h"
-#include "interface.h"
-#include "websocket.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 extern os_timer_t sleepTimer;
 extern uint32_t sleepDelay;

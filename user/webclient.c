@@ -2,22 +2,27 @@
  * Copyright 2016 karawin (http://www.karawin.fr)
 */
 
-#include "webclient.h"
-#include "webserver.h"
-
-#include "lwip/sockets.h"
-#include "lwip/api.h"
-#include "lwip/netdb.h"
-
 #include "esp_common.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "freertos/semphr.h"
 
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+
+#include "webclient.h"
+#include "buffer.h"
+#include "eeprom.h"
+#include "flash.h"
+#include "interface.h"
 #include "spilib.h"
 #include "vs1053.h"
-#include "eeprom.h"
-#include "buffer.h"
-#include "interface.h"
+#include "websocket.h"
 
 enum clientStatus cstatus;
 //static uint32_t metacount = 0;

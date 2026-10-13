@@ -6,6 +6,18 @@
  * minimal implementaion for short data messages
 */
 
+#include "esp_common.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "lwip/sockets.h"
+#include "ssl/ssl_crypto.h"
+
 #include "websocket.h"
 #include "interface.h"
 

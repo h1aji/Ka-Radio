@@ -9,32 +9,30 @@
 
 #include "esp_common.h"
 #include "esp_softap.h"
-#include "esp_wifi.h"
 #include "esp_system.h"
+#include "esp_timer.h"
+#include "esp_wifi.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
 
-#include "el_uart.h"
+#include "lwip/ip_addr.h"
 
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
 #include "mdns.h"
 
-#include "webserver.h"
-#include "webclient.h"
 #include "buffer.h"
-#include "vs1053.h"
-#include "spilib.h"
-#include "ntp.h"
-#include "telnet.h"
-#include "servers.h"
-
-//#include "eeprom.h"
-//#include <time.h>
-
+#include "eeprom.h"
+#include "el_uart.h"
 #include "interface.h"
+#include "servers.h"
+#include "spilib.h"
+#include "vs1053.h"
+#include "webclient.h"
+#include "webserver.h"
 
 const char striDEF0[] ICACHE_RODATA_ATTR STORE_ATTR  = {"The default AP is  WifiKaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.%c"};
 const char striDEF1[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Erase the database and set ssid, password and ip's field%c"};
