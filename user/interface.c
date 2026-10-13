@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include "eeprom.h"
 #include "ntp.h"
+#include "ota.h"
 
 char parslashquote[] = {"(\""};
 char parquoteslash[] = {"\")"};

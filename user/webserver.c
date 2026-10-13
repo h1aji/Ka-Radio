@@ -7,6 +7,7 @@
 #include "serv-fs.h"
 #include "interface.h"
 #include "servers.h"
+#include "ota.h"
 
 static char apMode[]= {"*Hidden*"};
 xSemaphoreHandle semfile = NULL ;
