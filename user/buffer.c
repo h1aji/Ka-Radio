@@ -68,11 +68,11 @@ void spiramInit() {
 	spi_speed_down(); //2MHz
 	spiramWrite(strlen(test), 0, testram);
 	spiramRead(strlen(test), 0, test);
-	if (memcmp(test,testram,16) == 0) spiram = true;
-	if (spiram) {
+	if (memcmp(test,testram,16) == 0) {
+		spiram = true;
 		printf(PSTR("\nSPIRAM detected%c"),0x0d);
 		printf(PSTR("\nSPIRAM installed size: %d bytes%c"),spiramProbeSize(),0x0d);
-	} else{
+	} else {
 		printf(PSTR("\nSPIRAM not detected%c"),0x0d);
 	}
 }
@@ -137,7 +137,7 @@ ICACHE_FLASH_ATTR void initBuffer()
 }
 
 ICACHE_FLASH_ATTR uint32_t getBufferFree() {
-	if(wptr > rptr ) return BUFFER_SIZE - wptr + rptr;
+	if(wptr > rptr) return BUFFER_SIZE - wptr + rptr;
 	else if(wptr < rptr) return rptr - wptr;
 	else if(bempty) return BUFFER_SIZE; else return 0;
 }

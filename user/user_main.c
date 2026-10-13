@@ -208,9 +208,9 @@ void initWifi()
 		IP4_ADDR(&(info->ip), 192, 168, 1, 254);
 		IP4_ADDR(&(info->netmask), 0xFF, 0xFF,0xFF, 0);
 		IP4_ADDR(&(info->gw), 192, 168, 1, 254);
-		IPADDR2_COPY(&device->ipAddr, &info->ip);
-		IPADDR2_COPY(&device->mask, &info->netmask);
-		IPADDR2_COPY(&device->gate, &info->gw);
+		memcpy(&device->ipAddr, &info->ip, sizeof(ip_addr_t));
+		memcpy(&device->mask, &info->netmask, sizeof(ip_addr_t));
+		memcpy(&device->gate, &info->gw, sizeof(ip_addr_t));
 		strcpy(device->ssid,config->ssid);
 		strcpy(device->pass,config->password);
 		device->dhcpEn = true;
@@ -310,9 +310,9 @@ void initWifi()
 	else wifi_get_ip_info(STATION_IF, info); // ip netmask gw
 	wifi_station_get_config(config);
 
-	IPADDR2_COPY(&device->ipAddr, &info->ip);
-	IPADDR2_COPY(&device->mask, &info->netmask);
-	IPADDR2_COPY(&device->gate, &info->gw);
+	memcpy(&device->ipAddr, &info->ip, sizeof(ip_addr_t));
+	memcpy(&device->mask, &info->netmask, sizeof(ip_addr_t));
+	memcpy(&device->gate, &info->gw, sizeof(ip_addr_t));
 	saveDeviceSettings(device);	
 
 	printf(striSTA1,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
@@ -538,7 +538,7 @@ void user_init(void)
 	spi_init_semaphore(); // HSPI is shared by the VS1053, the SPIRAM and the flash helpers
 	VS1053_HW_init(); // init spi
 	spiramInit();
-	printf(PSTR("\nuart speed: %d\n"),uspeed);
+	printf(PSTR("\nUART speed: %d\n"),uspeed);
 	initBuffer();
 
 	
