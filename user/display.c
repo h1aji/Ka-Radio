@@ -1,6 +1,5 @@
 /*
  * OLED/LCD status display - see include/display.h for the overall design
- * note (native port of ssd1306/ssd1306.arduino's u8glib status screen).
  */
 
 #include "esp_common.h"
@@ -138,6 +137,9 @@ static void displaySplitTitle(const char *meta, char *out1, size_t sz1, char *ou
 	char *sep;
 	size_t l;
 
+	if (meta == NULL)	// getMeta() is NULL until the first metadata arrives
+		meta = "";
+
 	strncpy(buf, meta, sizeof(buf) - 1);
 	buf[sizeof(buf) - 1] = 0;
 
@@ -173,6 +175,8 @@ static void displayRefreshStationName(void)
 	si = getStation(currentStation);
 	strncpy(localStationName, (si != NULL) ? si->name : "", sizeof(localStationName) - 1);
 	localStationName[sizeof(localStationName) - 1] = 0;
+	if (si != NULL)
+		free(si);	// getStation() returns a malloc'ed copy
 	cachedStationIdx = currentStation;
 }
 

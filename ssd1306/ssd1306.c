@@ -50,13 +50,13 @@ static bool SSD1306_I2C_Write(uint8_t control, const uint8_t *data, uint16_t len
 }
 
 uint8_t SSD1306_Init(void) {
-	/* Init I2C bus (SDA=GPIO5, SCL=GPIO4, see ssd1306_i2c.h) */
+	/* Init I2C bus (SDA=GPIO4, SCL=GPIO5, see ssd1306_i2c.h) */
 	ssd1306_i2c_master_gpio_init();
 
 	/* Init LCD */
 	SSD1306_WRITECOMMAND(0xAE); //display off
 	SSD1306_WRITECOMMAND(0x20); //Set Memory Addressing Mode
-	SSD1306_WRITECOMMAND(0x10); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
+	SSD1306_WRITECOMMAND(0x02); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
 	SSD1306_WRITECOMMAND(0xB0); //Set Page Start Address for Page Addressing Mode,0-7
 	SSD1306_WRITECOMMAND(0xC8); //Set COM Output Scan DirectionSSD1306_WRITECOMMAND(command)
 	SSD1306_WRITECOMMAND(0x00); //---set low column address
