@@ -28,6 +28,7 @@
 #include "eeprom.h"
 #include "el_uart.h"
 #include "interface.h"
+#include "ir.h"
 #include "servers.h"
 #include "spilib.h"
 #include "vs1053.h"
@@ -317,8 +318,9 @@ void initWifi()
 	
 	kasprintf(localIp,PSTR("%d.%d.%d.%d"),(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));	
 	
-	// set modem sleep per default
-	wifi_set_sleep_type(MODEM_SLEEP_T);
+	// modem sleep makes the AP hold the packets until the next DTIM beacon, which stalls a stream:
+	// keep the radio awake. MODEM_SLEEP_T saves power if the stall is not caused by it.
+	wifi_set_sleep_type(NONE_SLEEP_T);
 	if ((strlen(device1->hostname) >= HOSTLEN) ||
 		(strlen(device1->hostname) == 0) || (device1->hostname[0] ==  0xff))
 	{
@@ -561,6 +563,7 @@ void user_init(void)
 	printf(striTASK,"t3",pxCreatedTask);	
 	xTaskCreate(serversTask, "t4", 370, NULL, 4, &pxCreatedTask); //380
 	printf(striTASK,"t4",pxCreatedTask);
+	irInit(); // infrared remote on GPIO2
 
 	printf (striHEAP,xPortGetFreeHeapSize( ));
 }

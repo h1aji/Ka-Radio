@@ -1,6 +1,6 @@
 # ESP8266 Web Radio
 
-Karadio is a WiFi shoutcast player based on esp8266 nodemcu and vs1053b chips
+Karadio is a WiFi shoutcast player based on esp8266 nodemcu and vs1053b chips.
 This repo is a fork of [Ka-Radio](https://github.com/karawin/Ka-Radio)
 I try to adjust the code and add extra functionality.
 
@@ -17,21 +17,13 @@ sudo pip3 install rjsmin
 sudo pip3 install rcsmin
 ```
 
-Clone karadio repository next to esp-open-rtos dir and run make.
-
-```sh
-cd ~/esp/
-git clone https://github.com/h1aji/karadio.git
-cd karadio
-make
-```
 
 Flash new image
 
 ```sh
 ./flash.sh
 ```
-* flash options can be edited in local.mk file
+
 
 ### Wiring
 ```
@@ -55,9 +47,7 @@ GPIO16 (DCS) --|>|--+                 |
                                       |
                                      GND
 ```
-Use Schottky diodes (e.g. BAT54) for a higher RST level. The network loads GPIO00, which
-must read high at power-up for a normal boot: check that GPIO00 still reads high at boot, or
-replace the diodes and resistor with a 74LVC1G32 OR gate.
+Use signal diodes (e.g. 1N4148) for a higher RST level.
 
 Optional external RAM 23LCV1024 supported
 
@@ -85,6 +75,24 @@ Infra-red sensor
 GPIO02  - OUT
 ```
 
+A NEC receiver module (TSOP, VS1838...) powered from 3.3V. The pin must be high at power-up,
+which the idle level of the module gives. The remote is the one of `ir.arduino`:
+
+```
+Key       Command
+------------------------------------------------------
+0..9      type a station number (up to 3 digits), played 1.5 s after the last digit
+|<<       cli.previous
+>>|       cli.next
+PLAY      cli.start (nothing when already playing)
+STOP      cli.stop
++         cli.vol+   (repeats while held)
+-         cli.vol-   (repeats while held)
+MUTE      mute / restore the volume
+```
+
+An unknown key prints `##IR.KEY#: <code>`, to add a key of another remote.
+
 LCD
 
 ```
@@ -95,7 +103,6 @@ GPIO05  - SCL
 ### Roadmap
 
  - Add I2C SSD1306 support
- - Add IR support
 
 License
 ----
