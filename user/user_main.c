@@ -25,6 +25,7 @@
 #include "mdns.h"
 
 #include "buffer.h"
+#include "display.h"
 #include "eeprom.h"
 #include "el_uart.h"
 #include "interface.h"
@@ -267,7 +268,6 @@ void initWifi()
 				} 					
 				wifi_station_connect();
 				printf(striSTA2,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));	
-//----------------				
 				ap++;
 			}
 			else i = 10; // go to SOFTAP_MODE
@@ -338,6 +338,7 @@ void initWifi()
 	free(config);
 
 }
+
 void uartInterfaceTask(void *pvParameters) {
 	char tmp[255];
 	struct device_settings *device;
@@ -512,6 +513,8 @@ uint32_t checkUart(uint32_t speed)
 	}
 	return 115200; // default
 }
+
+
 /******************************************************************************
  * FunctionName : user_init
  * Description  : entry of user application, init user function here
@@ -540,7 +543,6 @@ void user_init(void)
 	spiramInit();
 	printf(PSTR("\nUART speed: %d\n"),uspeed);
 	initBuffer();
-
 	
 	printf(PSTR("Release %s, Revision %s\n"),RELEASE,REVISION);
 	printf(PSTR("SDK %s\n"),system_get_sdk_version());
@@ -564,7 +566,7 @@ void user_init(void)
 	xTaskCreate(serversTask, "t4", 370, NULL, 4, &pxCreatedTask); //380
 	printf(striTASK,"t4",pxCreatedTask);
 	irInit(); // infrared remote on GPIO2
+	displayInit(); // SSD1306 status OLED
 
 	printf (striHEAP,xPortGetFreeHeapSize( ));
 }
-
