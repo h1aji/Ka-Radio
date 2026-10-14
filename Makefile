@@ -24,6 +24,7 @@ SPECIAL_MKTARGETS=$(APP_MKTARGETS)
 
 SUBDIRS= \
      mdns \
+     ssd1306 \
      user
 
 endif # } PDIR
@@ -49,7 +50,8 @@ endif
 
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a \
-	mdns/libmdns.a
+	mdns/libmdns.a \
+	ssd1306/libssd1306.a
 
 
 LINKFLAGS_eagle.app.v6 = \
@@ -108,7 +110,7 @@ DDEFINES +=				\
 # Recursion Magic - Don't touch this!!
 #############################################################
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)mdns/include
+INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)mdns/include -I $(PDIR)ssd1306/include
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile
 
