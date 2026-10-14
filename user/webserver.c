@@ -912,7 +912,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 					if (strcmp(pasw,apMode)!=0) strcpy(device->pass,pasw);
 				}
 				if (pasw2 != NULL){
-					if (strcmp(pasw2,apMode)!=0) strcpy(device->pass2,pasw2);
+					if (strcmp(pasw2,apMode)!=0) strcpy(device1->pass2,pasw2);					
 				}						
 
 				infree(ssid);infree(pasw);infree(ssid2); infree(pasw2);

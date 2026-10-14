@@ -542,7 +542,7 @@ void user_init(void)
 	VS1053_HW_init(); // init spi
 	spiramInit();
 	printf(PSTR("\nUART speed: %d\n"),uspeed);
-	initBuffer();
+	bufferInit();
 	
 	printf(PSTR("Release %s, Revision %s\n"),RELEASE,REVISION);
 	printf(PSTR("SDK %s\n"),system_get_sdk_version());

@@ -22,7 +22,7 @@ uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst);
 uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data);
 
 /* ring buffer */
-void initBuffer();
+void bufferInit();
 uint32_t getBufferFree();
 bool getBufferEmpty();
 uint32_t getBufferFilled();

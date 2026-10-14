@@ -127,7 +127,7 @@ uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 /*  Ring buffer (internal RAM, or SPIRAM when detected)                  */
 /* ===================================================================== */
 
-ICACHE_FLASH_ATTR void initBuffer()
+ICACHE_FLASH_ATTR void bufferInit()
 {
 	if (spiram)
 	{
