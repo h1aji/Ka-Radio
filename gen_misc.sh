@@ -1,7 +1,18 @@
 #!/bin/bash
 
-export SDK_PATH=$HOME/esp/ESP8266_RTOS_SDK
-export BIN_PATH=./bin
+# ---- configuration ----
+APP_ENV=${APP_ENV:-./app.env}
+if [ ! -f "$APP_ENV" ]; then
+    echo "Config file not found: $APP_ENV"
+    exit 1
+fi
+set -a
+# shellcheck disable=SC1090
+. "$APP_ENV"
+set +a
+
+: "${SDK_PATH:?SDK_PATH is not set in $APP_ENV}"
+: "${BIN_PATH:?BIN_PATH is not set in $APP_ENV}"
 
 
 echo "gen_misc.sh version 20150911"
