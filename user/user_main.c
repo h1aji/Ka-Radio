@@ -39,8 +39,8 @@
 const char striDEF0[] ICACHE_RODATA_ATTR STORE_ATTR  = {"The default AP is  WifiKaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.%c"};
 const char striDEF1[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Erase the database and set ssid, password and ip's field%c"};
 const char striAP[] ICACHE_RODATA_ATTR STORE_ATTR  = {"AP1: %s, AP2: %s\n"};
-const char striSTA1[] ICACHE_RODATA_ATTR STORE_ATTR  = {" AP1:Station Ip: %d.%d.%d.%d\n"};
-const char striSTA2[] ICACHE_RODATA_ATTR STORE_ATTR  = {" AP2:Station Ip: %d.%d.%d.%d\n"};
+const char striSTA1[] ICACHE_RODATA_ATTR STORE_ATTR  = {" AP1:Station IP: %d.%d.%d.%d\n"};
+const char striSTA2[] ICACHE_RODATA_ATTR STORE_ATTR  = {" AP2:Station IP: %d.%d.%d.%d\n"};
 const char striTRY[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Trying AP%d %s ,  I: %d status: %d\n"};
 const char striTASK[] ICACHE_RODATA_ATTR STORE_ATTR  = {"%s task: %x\n"};
 const char striHEAP[] ICACHE_RODATA_ATTR STORE_ATTR  = {"Heap size: %d\n"};
@@ -237,7 +237,7 @@ void initWifi()
 //----------------
 	
 	
-//	printf("DHCP: 0x%x\n Device: Ip: %d.%d.%d.%d\n",device->dhcpEn,device->ipAddr[0], device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]);
+//	printf("DHCP: 0x%x\n Device: IP: %d.%d.%d.%d\n",device->dhcpEn,device->ipAddr[0], device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]);
 //	printf("\nI: %d status: %d\n",i,wifi_station_get_connect_status());
 
 	i = 0;

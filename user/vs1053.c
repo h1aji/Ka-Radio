@@ -30,9 +30,10 @@
 
 extern uint8_t clientIvol ;
 
-	int vsVersion ; // the version of the chip
-//	SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
-//char strvMODE[] ICACHE_RODATA_ATTR STORE_ATTR  = {"SCI_Mode (0x4800) = 0x%X\n"};
+int vsVersion ; // Chip version
+
+// SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
+//    char strvMODE[] ICACHE_RODATA_ATTR STORE_ATTR  = {"SCI_Mode (0x4800) = 0x%X\n"};
 const char strvSTATUS[] ICACHE_RODATA_ATTR STORE_ATTR  = {"SCI_Status (0x48) = 0x%X\n"};
 const char strvVERSION[] ICACHE_RODATA_ATTR STORE_ATTR  = {"VS Version (VS1053 is 4) = %d\n"};
 const char strvCLOCK[] ICACHE_RODATA_ATTR STORE_ATTR  = {"SCI_ClockF = 0x%X\n"};
@@ -74,8 +75,7 @@ ICACHE_FLASH_ATTR void VS1053_HW_init(void) {
     GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, (1<<DREQ_PIN));
 }
 
-ICACHE_FLASH_ATTR void Delay(uint32_t nTime)
-{
+ICACHE_FLASH_ATTR void Delay(uint32_t nTime) {
 	unsigned int i;
 	unsigned long j;
 	for(i = nTime;i > 0;i--)
@@ -122,8 +122,7 @@ void WaitDREQ() {
 	}
 }
 
-ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte)
-{
+ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte) {
 	spi_take_semaphore();
 	spi_speed_down();
 	SDI_ChipSelect(RESET);
@@ -140,7 +139,7 @@ ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyt
 }
 
 ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
-//    while(!spi_take_semaphore());
+//  while(!spi_take_semaphore());
 	spi_take_semaphore();
 	spi_speed_down();
 	uint16_t result;
@@ -158,8 +157,7 @@ ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	return result;
 }
 
-ICACHE_FLASH_ATTR void WriteVS10xxRegister(unsigned short addr,unsigned short val)
-{
+ICACHE_FLASH_ATTR void WriteVS10xxRegister(unsigned short addr,unsigned short val) {
 	VS1053_WriteRegister((uint8_t)addr&0xff, (uint8_t)((val&0xFF00)>>8), (uint8_t)(val&0xFF));
 }
 
@@ -184,14 +182,17 @@ ICACHE_FLASH_ATTR void VS1053_regtest() {
 	int MP3Status = VS1053_ReadRegister(SPI_STATUS);
 	int MP3Mode = VS1053_ReadRegister(SPI_MODE);
 	int MP3Clock = VS1053_ReadRegister(SPI_CLOCKF);
+
 	printf(PSTR("SCI_Mode (0x4800) = 0x%X\n"),MP3Mode);
 	printf(strvSTATUS,MP3Status);
 
 	vsVersion = (MP3Status >> 4) & 0x000F; //Mask out only the four version bits
 	printf(strvVERSION,vsVersion);
+
 	//The VS1053B should respond with 4. VS1001 = 0, VS1011 = 1, VS1002 = 2, VS1003 = 3, VS1054 = 4
 	printf(strvCLOCK,MP3Clock);
 }
+
 /*
 void VS1053_PluginLoad()
 {
@@ -223,6 +224,7 @@ ICACHE_FLASH_ATTR void VS1053_DisableAnalog(){
 void VS1053_LowPower() {
 	VS1053_WriteRegister(SPI_CLOCKF,0x00,0x00); // 
 }
+
 // normal chip consumption
 void VS1053_HighPower() {
    if (vsVersion == 4) // only 1053  	
@@ -258,7 +260,7 @@ ICACHE_FLASH_ATTR void VS1053_InitVS() {
 	WaitDREQ();
 	
 	VS1053_regtest();
-// enable I2C dac output
+// enable I2S dac output
    if (vsVersion == 4) // only 1053
    {
 		VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x17);
@@ -376,7 +378,7 @@ ICACHE_FLASH_ATTR uint8_t VS1053_GetVolume() {
 	{
 		j = (log10(255/((float)i+1)) * 105.54571334);
 //		printf("i=%d  j=%d value=%d\n",i,j,value);
-		if (value == j ){  return i;}
+		if (value == j) return i;
 	}	
 	return 127;
 }
@@ -405,7 +407,7 @@ ICACHE_FLASH_ATTR void VS1053_SetVolume(uint8_t xMinusHalfdB) {
  */
 ICACHE_FLASH_ATTR int8_t	VS1053_GetTreble() {
 	int8_t  treble = (VS1053_ReadRegister(SPI_BASS) & 0xF000) >> 12;
-	if ( (treble&0x08)) treble |= 0xF0; // negative value
+	if ((treble&0x08)) treble |= 0xF0; // negative value
 	return (treble);
 }
 
@@ -419,7 +421,7 @@ ICACHE_FLASH_ATTR int8_t	VS1053_GetTreble() {
  */
 ICACHE_FLASH_ATTR void VS1053_SetTreble(int8_t xOneAndHalfdB) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
+	if ((xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
 		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF );
 }
 
@@ -432,12 +434,12 @@ ICACHE_FLASH_ATTR void VS1053_SetTreble(int8_t xOneAndHalfdB) {
  */
 ICACHE_FLASH_ATTR void VS1053_SetTrebleFreq(uint8_t xkHz) {
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
-	if ( xkHz <= 15 )
+	if (xkHz <= 15)
 		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0xF000,8) | xkHz, bassReg & 0x00FF );
 }
 
 ICACHE_FLASH_ATTR int8_t VS1053_GetTrebleFreq() {
-	return ( (VS1053_ReadRegister(SPI_BASS) & 0x0F00) >> 8);
+	return ((VS1053_ReadRegister(SPI_BASS) & 0x0F00) >> 8);
 }
 
 /**
@@ -445,7 +447,7 @@ ICACHE_FLASH_ATTR int8_t VS1053_GetTrebleFreq() {
  * @return Value of bass enhancement from 0 (off) to 15(dB).
  */
 ICACHE_FLASH_ATTR uint8_t VS1053_GetBass() {
-	return ( (VS1053_ReadRegister(SPI_BASS) & 0x00F0) >> 4);
+	return ((VS1053_ReadRegister(SPI_BASS) & 0x00F0) >> 4);
 }
 
 /**
@@ -476,7 +478,7 @@ ICACHE_FLASH_ATTR void VS1053_SetBassFreq(uint8_t xTenHz) {
 }
 
 ICACHE_FLASH_ATTR uint8_t	VS1053_GetBassFreq() {
-	return ( (VS1053_ReadRegister(SPI_BASS) & 0x000F) );
+	return ((VS1053_ReadRegister(SPI_BASS) & 0x000F));
 }
 
 ICACHE_FLASH_ATTR uint8_t	VS1053_GetSpatial() {
@@ -487,7 +489,7 @@ ICACHE_FLASH_ATTR uint8_t	VS1053_GetSpatial() {
 }
 
 ICACHE_FLASH_ATTR void VS1053_SetSpatial(uint8_t num) {
-	if (vsVersion != 4) return ;
+	if (vsVersion != 4) return;
 	uint16_t spatial = VS1053_ReadRegister(SPI_MODE);
 	if (num >=0 && num <= 3)
 	{	
@@ -555,7 +557,7 @@ ICACHE_FLASH_ATTR void VS1053_flush_cancel() {
 	uint8_t buf[33];	
 	// set spimode with SM_CANCEL
 	uint16_t spimode = VS1053_ReadRegister(SPI_MODE)| SM_CANCEL;
-  // set CANCEL
+	// set CANCEL
 	VS1053_WriteRegister(SPI_MODE,MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
 	// wait CANCEL
 	VS1053_WriteRegister(SPI_WRAMADDR, MaskAndShiftRight(para_endFillByte,0xFF00,8), (para_endFillByte & 0x00FF));
@@ -564,7 +566,7 @@ ICACHE_FLASH_ATTR void VS1053_flush_cancel() {
 	y = 0;
 	while (VS1053_ReadRegister(SPI_MODE)& SM_CANCEL)
 	{	  
-		VS1053_SendMusicBytes( buf, 32); 
+		VS1053_SendMusicBytes(buf, 32); 
 		if (y++ > 64) 
 		{
 			printf("VS1053 Reset\n");
@@ -574,5 +576,5 @@ ICACHE_FLASH_ATTR void VS1053_flush_cancel() {
 	}	
 
 	for (y = 0; y < 64; y++) 
-		VS1053_SendMusicBytes( buf, 32); //2080 bytes  
+		VS1053_SendMusicBytes(buf, 32); //2080 bytes  
 }
