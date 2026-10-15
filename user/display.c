@@ -233,7 +233,7 @@ static void displayTick(void)
 		struct tm *dt;
 
 		secTick = 0;
-		if (ntp_get_time(&dt)) {
+		if (ntp_get_time_cached(&dt)) {
 			char timeStr[24];
 
 			snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d",

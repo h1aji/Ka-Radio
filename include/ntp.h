@@ -23,10 +23,16 @@ typedef struct {
 	uint8_t trans_time[8];
 } ntp_t;
 
-//void ntpTask(void *pvParams);
+// Does a live NTP network query. For an on-demand "check right now" call
+// (e.g. the "date" console command).
+bool ntp_get_time(struct tm **dt);
+
+// Returns the current UTC time, re-syncing over the network at most once
+// an hour. Use this instead of ntp_get_time() for anything that needs the
+// time regularly (e.g. a clock display).
+bool ntp_get_time_cached(struct tm **dt);
 
 // print locale date time in ISO-8601 local time
-bool ntp_get_time(struct tm **dt);
 void ntp_print_time();
 
 #endif

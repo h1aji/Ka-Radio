@@ -1,16 +1,20 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2016 karawin (http://www.karawin.fr)
  *
  * Simple NTP client for ESP8266 RTOS SDK
- *
-*******************************************************************************/
+ * list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
+ * time.nist.gov
+ ******************************************************************************/
 
 #include "esp_common.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
@@ -19,41 +23,30 @@
 #include "eeprom.h"
 #include "interface.h"
 
-// list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
-// time.nist.gov
+#define NTP_RESYNC_SEC 3600U // re-sync with the server at most this often
 
-/*
-// A task if needed
-ICACHE_FLASH_ATTR void ntpTask(void *pvParams) {
-
-	while (1)
-	{
-		vTaskDelay(60000);
-		ntp_get_time();
-	}	
-}
-*/
-
-ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time) {
+ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time)
+{
 	bool dst = false;
 	struct device_settings *device;
-	device = getDeviceSettings();
 	int8_t tzo = 0;
-	if (device != NULL)	 {
+
+	device = getDeviceSettings();
+	if (device != NULL) {
 		tzo = device->tzoffset;
 		free(device);
-	} 
-	
+	}
+
 	// apply base timezone offset
-//	time->tm_hour += 1; // e.g. central europe
 	time->tm_hour += tzo;
 
-	// call mktime to fix up (needed if applying offset has rolled the date back/forward a day)
-	// also sets yday and fixes wday (if it was wrong from the rtc)
+	// call mktime to fix up (needed if applying the offset rolled the date
+	// back/forward a day); also sets yday and fixes wday if it was wrong
+	// from the rtc
 	mktime(time);
 
 	// work out if we should apply dst, modify according to your local rules
-    if (time->tm_mon < 2 || time->tm_mon > 9) {
+	if (time->tm_mon < 2 || time->tm_mon > 9) {
 		// these months are completely out of DST
 	} else if (time->tm_mon > 2 && time->tm_mon < 9) {
 		// these months are completely in DST
@@ -62,6 +55,7 @@ ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time) {
 		// else we must be in one of the change months
 		// work out when the last sunday was (could be today)
 		int previousSunday = time->tm_mday - time->tm_wday;
+
 		if (time->tm_mon == 2) { // march
 			// was last sunday (which could be today) the last sunday in march
 			if (previousSunday >= 25) {
@@ -69,7 +63,8 @@ ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time) {
 				if (time->tm_wday == 0) {
 					// if so are we at/past 2am gmt
 					int s = (time->tm_hour * 3600) + (time->tm_min * 60) + time->tm_sec;
-					if (s >= 7200) dst = true;
+					if (s >= 7200)
+						dst = true;
 				} else {
 					dst = true;
 				}
@@ -81,7 +76,8 @@ ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time) {
 				if (time->tm_wday == 0) {
 					// change day, so are we before 1am gmt (2am localtime)
 					int s = (time->tm_hour * 3600) + (time->tm_min * 60) + time->tm_sec;
-					if (s < 3600) dst = true;
+					if (s < 3600)
+						dst = true;
 				}
 			} else {
 				// not reached the last sunday yet
@@ -103,96 +99,186 @@ ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time) {
 	return tzo;
 }
 
-// get ntp time and return an allocated tm struct (UTC)
-bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt) {
-	struct timeval timeout; 
-	timeout.tv_usec = 0;
-	timeout.tv_sec = 5000;  // bug *1000 for seconds
-	int sockfd;
-	ntp_t* ntp;
+// Does one live NTP network round trip and returns the result as a raw
+// UTC Unix timestamp in *out. ntp_get_time() and ntp_get_time_cached()
+// both build on this - it's the only place that actually talks to the
+// network.
+static bool ntp_fetch(time_t *out)
+{
+	struct timeval timeout;
+	int sockfd = -1;
+	ntp_t *ntp;
 	char *msg;
 	int rv;
-	char service[] = {"123"}; //ntp port
-	char node[] = {"pool.ntp.org"}; // this one is universel
-	char msp[] = {"##SYS.DATE#: ntp fails on %s %d\n"};
+	char service[] = {"123"};       // ntp port
+	char node[] = {"pool.ntp.org"}; // this one is universal
 	struct addrinfo hints, *servinfo = NULL, *p = NULL;
-//	struct tm *dt;
-	time_t timestamp;
-//	int8_t tz;
+	struct sockaddr_in servaddr; // address actually used to send the request
+	struct sockaddr_in fromaddr; // address the reply claims to be from
+	socklen_t fromlen;
+	uint32_t secs1900;
+
+	timeout.tv_usec = 0;
+	timeout.tv_sec = 5; // recvfrom() timeout, in seconds
+
 	msg = zalloc(sizeof(ntp_t));
-	if (msg == NULL){
-		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"msg",0);
+	if (msg == NULL) {
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "msg", 0);
 		return false;
-	} 
+	}
+
 	// build the message to send
-	ntp = (ntp_t*)msg;
-	ntp->options = 0x1B; //3 first flags set in binary: 00 001 011  LI=0 VN=3 MODE=CLIENT
+	ntp = (ntp_t *)msg;
+	ntp->options = 0x1B; // 3 first flags set in binary: 00 001 011  LI=0 VN=3 MODE=CLIENT
 	ntp->stratum = 0;
 	ntp->poll = 6;
 	ntp->precision = 1;
-//	ntp->ref_id = 0x4C4F434C; // LOCL
+	// ntp->ref_id = 0x4C4F434C; // LOCL
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = AF_INET; // this SDK's lwIP is IPv4 only, same as the rest of this project
 	hints.ai_socktype = SOCK_DGRAM; // Use UDP
 	if ((rv = getaddrinfo(node, service, &hints, &servinfo)) != 0) {
-		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"getaddrinfo",rv);free (msg);
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "getaddrinfo", rv);
+		free(msg);
 		return false;
-	} 		
-// loop in result socket
+	}
+
+	// loop in result socket
 	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol)) == -1) {
-			kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"sockfd",sockfd);
+		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+			kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "sockfd", sockfd);
 			continue;
 		}
 		break;
 	}
-// set a timeout for recvfrom
-	if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0){
-		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"setsockopt",0);	free (msg);freeaddrinfo(servinfo);	close(sockfd);
+	if (p == NULL) {
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "sockfd", -1);
+		free(msg);
+		freeaddrinfo(servinfo);
 		return false;
-	} 	
-//send the request	
-	if ((rv = sendto(sockfd, msg, sizeof(ntp_t), 0,p->ai_addr, p->ai_addrlen)) == -1) {
-		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"sendto",rv); free (msg);freeaddrinfo(servinfo);	close(sockfd);
-		return false;					
 	}
-	freeaddrinfo(servinfo);	
- 	if ((rv = recvfrom(sockfd, msg, sizeof(ntp_t) , 0,NULL, NULL)) <=0) {
-		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"),"recvfrom",rv);free(msg);close(sockfd);
-		return false;	
-	}	
-			
-	//extract time
-	ntp = (ntp_t*)msg;	
-	timestamp = ntp->trans_time[0] << 24 | ntp->trans_time[1] << 16 |ntp->trans_time[2] << 8 | ntp->trans_time[3];
-	// convert to unix time
-	timestamp -= 2208988800UL;
-	// create tm struct
-	*dt = gmtime(&timestamp);
-	if (msg) free(msg);
+
+	// remember who we asked: recvfrom() below doesn't filter by sender on
+	// its own, so any reply has to be checked against this before it's trusted
+	memset(&servaddr, 0, sizeof(servaddr));
+	memcpy(&servaddr, p->ai_addr, p->ai_addrlen);
+
+	// set a timeout for recvfrom
+	if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "setsockopt", 0);
+		free(msg);
+		freeaddrinfo(servinfo);
+		close(sockfd);
+		return false;
+	}
+
+	// send the request
+	if ((rv = sendto(sockfd, msg, sizeof(ntp_t), 0, p->ai_addr, p->ai_addrlen)) == -1) {
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "sendto", rv);
+		free(msg);
+		freeaddrinfo(servinfo);
+		close(sockfd);
+		return false;
+	}
+	freeaddrinfo(servinfo);
+
+	fromlen = sizeof(fromaddr);
+	if ((rv = recvfrom(sockfd, msg, sizeof(ntp_t), 0, (struct sockaddr *)&fromaddr, &fromlen)) <= 0) {
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "recvfrom", rv);
+		free(msg);
+		close(sockfd);
+		return false;
+	}
+	if (rv != sizeof(ntp_t)) { // truncated/garbage reply
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "short reply", rv);
+		free(msg);
+		close(sockfd);
+		return false;
+	}
+	if (fromaddr.sin_addr.s_addr != servaddr.sin_addr.s_addr) { // not from the server we asked
+		kprintf(PSTR("##SYS.DATE#: ntp fails on %s %d\n"), "wrong sender", 0);
+		free(msg);
+		close(sockfd);
+		return false;
+	}
 	close(sockfd);
+
+	// extract time
+	ntp = (ntp_t *)msg;
+	// cast to uint32_t before shifting: trans_time[0] << 24 overflows a
+	// signed int for every timestamp since 1968, which is undefined behavior
+	secs1900 = (uint32_t)ntp->trans_time[0] << 24 | (uint32_t)ntp->trans_time[1] << 16
+		 | (uint32_t)ntp->trans_time[2] << 8 | (uint32_t)ntp->trans_time[3];
+	// convert to unix time (secs1900 is always well above 2208988800 for any real date)
+	*out = (time_t)(secs1900 - 2208988800UL);
+	free(msg);
 	return true;
 }
 
-// print  date time in ISO-8601 local time format
-void ICACHE_FLASH_ATTR ntp_print_time() {
-	struct tm* dt;
-	int8_t tz;	
-	char msg[30];
-	
-	if (ntp_get_time(&dt) )
-	{
-		tz =applyTZ(dt);
-//	os_printf("##Time: isdst: %d %02d:%02d:%02d\n",dt->tm_isdst, dt->tm_hour, dt->tm_min, dt->tm_sec);		
-//	os_printf("##Date: %02d-%02d-%04d\n", dt->tm_mday, dt->tm_mon+1, dt->tm_year+1900);	
-		strftime(msg, 48, "%Y-%m-%dT%H:%M:%S", dt);
-//	ISO-8601 local time   https://www.w3.org/TR/NOTE-datetime
-//  YYYY-MM-DDThh:mm:ssTZD (eg 1997-07-16T19:20:30+01:00)
-		if (tz >=0)
-			kprintf(PSTR("##SYS.DATE#: %s+%02d:00\n"),msg,tz);
-		else
-			kprintf(PSTR("##SYS.DATE#: %s%03d:00\n"),msg,tz);
+// Gets the time from the NTP server and returns an allocated tm struct
+// (UTC). Always does a live network round trip - use this for an
+// on-demand "check right now" query (e.g. the "date" console command).
+// For anything that needs the time regularly, call ntp_get_time_cached()
+// instead so the network isn't hit on every call.
+bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt)
+{
+	time_t t;
+
+	if (!ntp_fetch(&t))
+		return false;
+	*dt = gmtime(&t);
+	return true;
+}
+
+// Returns the current UTC time, re-syncing with the NTP server at most
+// once every NTP_RESYNC_SEC (1 hour, including after a failed attempt -
+// it won't retry on every call just because the last one failed); between
+// syncs the clock is advanced locally from the FreeRTOS tick counter.
+// Meant for frequent/periodic callers such as a clock display.
+bool ICACHE_FLASH_ATTR ntp_get_time_cached(struct tm **dt)
+{
+	static time_t syncedTime = 0;     // UTC time at the last successful sync, 0 = never synced
+	static TickType_t syncedTick = 0; // tick count at that sync
+	static TickType_t lastAttemptTick = 0;
+	static bool everAttempted = false;
+	TickType_t now = xTaskGetTickCount();
+	time_t result;
+
+	if (!everAttempted || (now - lastAttemptTick) >= (NTP_RESYNC_SEC * 1000 / portTICK_RATE_MS)) {
+		time_t fresh;
+
+		everAttempted = true;
+		lastAttemptTick = now;
+		if (ntp_fetch(&fresh)) {
+			syncedTime = fresh;
+			syncedTick = now;
+		}
 	}
-		
+
+	if (syncedTime == 0)
+		return false; // never had a successful sync yet
+
+	result = syncedTime + (time_t)((now - syncedTick) * portTICK_RATE_MS / 1000);
+	*dt = gmtime(&result);
+	return true;
+}
+
+// print date time in ISO-8601 local time format
+void ICACHE_FLASH_ATTR ntp_print_time()
+{
+	struct tm *dt;
+	int8_t tz;
+	char msg[30];
+
+	if (ntp_get_time(&dt)) {
+		tz = applyTZ(dt);
+		strftime(msg, sizeof(msg), "%Y-%m-%dT%H:%M:%S", dt);
+		// ISO-8601 local time   https://www.w3.org/TR/NOTE-datetime
+		// YYYY-MM-DDThh:mm:ssTZD (eg 1997-07-16T19:20:30+01:00)
+		if (tz >= 0)
+			kprintf(PSTR("##SYS.DATE#: %s+%02d:00\n"), msg, tz);
+		else
+			kprintf(PSTR("##SYS.DATE#: %s%03d:00\n"), msg, tz);
+	}
 }
