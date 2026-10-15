@@ -67,7 +67,7 @@ void spiramInit() {
 	GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, (1<<SPIRAM_CS));   // enable output driver
 
 	spiram = false;
-	spi_speed_down(); //2MHz
+	spi_speed_2mhz(); //2MHz
 	spiramWrite(strlen(test), 0, testram);
 	spiramRead(strlen(test), 0, test);
 	if (memcmp(test,testram,16) == 0) {
@@ -82,7 +82,7 @@ void spiramInit() {
 uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
 	uint32_t i = 0;
 	spi_take_semaphore();
-	spi_speed_up(); //13MHz
+	spi_speed_16mhz(); //16MHz
 
 	SPIRAM_CS_LOW();
 
@@ -96,7 +96,7 @@ uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
 
 	SPIRAM_CS_HIGH();
 
-//	spi_speed_down(); //2MHz
+//	spi_speed_2mhz(); //2MHz
 	spi_give_semaphore();
 	return i;
 }
@@ -104,7 +104,7 @@ uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
 uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 	uint32_t i = 0;
 	spi_take_semaphore();
-	spi_speed_up(); //13MHz
+	spi_speed_16mhz(); //16MHz
 
 	SPIRAM_CS_LOW();
 
@@ -118,7 +118,7 @@ uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 
 	SPIRAM_CS_HIGH();
 
-//	spi_speed_down(); //2MHz
+//	spi_speed_2mhz(); //2MHz
 	spi_give_semaphore();
 	return i;
 }

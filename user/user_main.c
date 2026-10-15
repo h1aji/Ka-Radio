@@ -528,7 +528,7 @@ void user_init(void)
 	uint32_t uspeed;
 //	REG_SET_BIT(0x3ff00014, BIT(0));
 //	system_update_cpu_freq(SYS_CPU_160MHZ);
-//	system_update_cpu_freq(160); //- See more at: http://www.esp8266.com/viewtopic.php?p=8107#p8107
+
 	xTaskHandle pxCreatedTask;
     Delay(100);
 	getFlashChipRealSize();
@@ -548,12 +548,12 @@ void user_init(void)
 	printf(PSTR("Release %s, Revision %s\n"),RELEASE,REVISION);
 	printf(PSTR("SDK %s\n"),system_get_sdk_version());
 	system_print_meminfo();
-	printf (PSTR("Heap size: %d\n"),xPortGetFreeHeapSize( ));
+	printf(PSTR("Heap size: %d\n"),xPortGetFreeHeapSize( ));
 	clientInit();
 //	Delay(10);	
 	
     flash_size_map size_map = system_get_flash_size_map();
-	printf (PSTR("size_map: %d\n"),size_map);
+	printf(PSTR("size_map: %d\n"),size_map);
 	printf(PSTR("Flash size: %d\n"),getFlashChipRealSize());
 
 	xTaskCreate(testtask, "t0", 140, NULL, 1, &pxCreatedTask); // DEBUG/TEST 130

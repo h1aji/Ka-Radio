@@ -11,5 +11,6 @@ uint8_t spi_take_semaphore();
 void spi_give_semaphore();
 void spi_put_char(uint8_t outB);
 uint8_t spi_get_char();
-void spi_speed_up();
-void spi_speed_down();
+void spi_speed_16mhz();
+void spi_speed_10mhz();
+void spi_speed_2mhz();

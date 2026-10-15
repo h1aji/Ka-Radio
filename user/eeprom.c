@@ -74,27 +74,28 @@ uint16_t i = 0;
 if (eebuf != NULL)
 {
 	while(1) {
-		
 		uint32_t sector = (eeprom + address) & 0xFFF000;
 		uint8_t* eebuf8 = (uint8_t*)eebuf;
 		uint16_t startaddr = address & 0xFFF;
 		uint16_t maxsize = 4096 - startaddr;
-//printf("set1 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
-//		spi_speed_down(); //2MHz
-//		WRITE_PERI_REG(0x60000914, 0x73); //WDT clear
+		// printf("set1 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
+		// spi_speed_2mhz(); //2MHz
+		// WRITE_PERI_REG(0x60000914, 0x73); //WDT clear
+
 		spi_flash_read(sector, (uint32_t *)eebuf, 4096);
 		vTaskDelay(1);
 		spi_flash_erase_sector(sector >> 12);		
 		
-//printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
+		// printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
 		for(i=0; (i<size && i<maxsize); i++) eebuf8[i+startaddr] = inbuf[i];
 		result = spi_flash_write(sector, (uint32_t *)eebuf, 4096);
-//printf("set3 startaddr: %x, size:%x, maxsize: %x, result:%x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,result,sector,eebuf);
+
+		// printf("set3 startaddr: %x, size:%x, maxsize: %x, result:%x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,result,sector,eebuf);
 		if(maxsize >= size) break;		
 		address += i;
 		inbuf += i;
 		size -= i;
-//printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
+		// printf("set2 startaddr: %x, size:%x, maxsize: %x, sector: %x, eebuf: %x\n",startaddr,size,maxsize,sector,eebuf);
 	}
 	free (eebuf);
 } else 
@@ -114,7 +115,7 @@ ICACHE_FLASH_ATTR bool  eeSetData1(int address, void* buffer, int size) { // add
 
 ICACHE_FLASH_ATTR void eeSetClear(int address,uint8_t* eebuf) { // address, size in BYTES !!!!
 		int i;
-		spi_speed_down(); //2MHz
+		spi_speed_2mhz(); //2MHz
 		WRITE_PERI_REG(0x60000914, 0x73); //WDT clear
 		uint32_t sector = (Eeprom_start + address) & 0xFFF000;
 		spi_flash_erase_sector(sector >> 12);
@@ -124,7 +125,7 @@ ICACHE_FLASH_ATTR void eeSetClear(int address,uint8_t* eebuf) { // address, size
 
 ICACHE_FLASH_ATTR void eeSetClear1(int address,uint8_t* eebuf) { // address, size in BYTES !!!!
 		int i;
-		spi_speed_down(); //2MHz
+		spi_speed_2mhz(); //2MHz
 		WRITE_PERI_REG(0x60000914, 0x73); //WDT clear
 		uint32_t sector = (Eeprom_start1 + address) & 0xFFF000;
 		spi_flash_erase_sector(sector >> 12);

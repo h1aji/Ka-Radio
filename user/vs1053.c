@@ -131,7 +131,7 @@ void WaitDREQ() {
 
 ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte) {
 	spi_take_semaphore();
-	spi_speed_down();
+	spi_speed_2mhz();
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
 	SCI_ChipSelect(SET);
@@ -141,14 +141,14 @@ ICACHE_FLASH_ATTR void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyt
 	spi_put_char(lowbyte);
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_speed_up();
+//	spi_speed_10mhz();
 	spi_give_semaphore();
 }
 
 ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 //  while(!spi_take_semaphore());
 	spi_take_semaphore();
-	spi_speed_down();
+	spi_speed_2mhz();
 	uint16_t result;
 	SDI_ChipSelect(RESET);
 	WaitDREQ();
@@ -159,7 +159,7 @@ ICACHE_FLASH_ATTR uint16_t VS1053_ReadRegister(uint8_t addressbyte) {
 	result |= spi_get_char();
 	WaitDREQ();
 	SCI_ChipSelect(RESET);
-//	spi_speed_up();
+//	spi_speed_10mhz();
 	spi_give_semaphore();
 	return result;
 }
@@ -341,14 +341,14 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity) {
 		if(t > 32) t = 32;
 		while(checkDREQ() == 0) {vTaskDelay(1);}
 		spi_take_semaphore();
-		spi_speed_up();
+		spi_speed_10mhz();
 		SDI_ChipSelect(SET);
 		for (k=o; k < o+t; k++)
 		{
 			spi_put_char(music[k]);
 		}
 		SDI_ChipSelect(RESET);
-		spi_speed_down();
+		spi_speed_2mhz();
 		spi_give_semaphore();
 		o += t;
 		quantity -= t;

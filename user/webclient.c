@@ -1056,7 +1056,7 @@ IRAM_ATTR void vsTask(void *pvParams) {
 	VS1053_SetSpatial(device->spacial);
 	incfree(device,"device");
 	
-	spi_speed_up();
+	spi_speed_10mhz();
 	while(1) {
 		if(playing) {			
 			size = bufferRead(b, VSTASKBUF);
