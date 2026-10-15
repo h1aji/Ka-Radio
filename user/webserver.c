@@ -26,6 +26,7 @@
 #include "interface.h"
 #include "ota.h"
 #include "serv-fs.h"
+#include "user_config.h"
 #include "vs1053.h"
 #include "webclient.h"
 #include "websocket.h"

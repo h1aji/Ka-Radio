@@ -22,6 +22,7 @@
 #include "flash.h"
 #include "ntp.h"
 #include "ota.h"
+#include "user_config.h"
 #include "vs1053.h"
 #include "webclient.h"
 #include "websocket.h"
@@ -46,9 +47,9 @@ wifi.con(\"ssid\",\"password\"): Record the given AP ssid with password in AP1 f
 wifi.discon: disconnect the current ssid\n\
 wifi.station: the current ssid and password\n\
 wifi.status: give #WIFI.STATUS#\n\n\
-//////////////////\n\
+//////////////////////////\n\
   Station Client commands\n\
-//////////////////\n\
+//////////////////////////\n\
 cli.url(\"url\"): the name or ip of the station to instant play\n\
 cli.path(\"/path\"): the path of the station to instant play\n\
 cli.port(\"xxxx\"): the port number of the station to instant play\n\
@@ -86,9 +87,6 @@ sys.boot: reboot the webradio.\n\
 sys.patch(\"x\"): Change the status of the vs1053 patch at power on.\n\
 0 = Patch will not be loaded, 1 or up = Patch will be loaded (default) at power On \n\
 sys.patch: Display the vs1053 patch status\n\
-sys.led(\"x\"): Change the led indication:\n\
-0 = Led is in Play mode (lighted when a station is playing), 1 or up = Led is in Blink mode (default)\n\
-sys.led: Display the led indication status\n\
 sys.version: Display the Release and Revision numbers\n\
 sys.tzo(\"xx\"): Set the timezone offset of your country.%c"\
 };

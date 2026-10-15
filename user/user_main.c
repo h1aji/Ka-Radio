@@ -32,6 +32,7 @@
 #include "ir.h"
 #include "servers.h"
 #include "spilib.h"
+#include "user_config.h"
 #include "vs1053.h"
 #include "webclient.h"
 #include "webserver.h"
