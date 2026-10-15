@@ -261,8 +261,8 @@ ICACHE_FLASH_ATTR void VS1053_InitVS() {
 // enable I2C dac output
    if (vsVersion == 4) // only 1053
    {
-		VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x17); //
-		VS1053_WriteRegister(SPI_WRAM, 0x00,0xF0); //
+		VS1053_WriteRegister(SPI_WRAMADDR, 0xc0,0x17);
+		VS1053_WriteRegister(SPI_WRAM, 0x00,0xF0);
 		VS1053_I2SRate(0);	
    }	
 }
@@ -283,9 +283,9 @@ ICACHE_FLASH_ATTR void VS1053_Start() {
 	printf(PSTR("device: %x\n"),device);
 	if (device != NULL) {
 		if ((vsVersion == 4) && ((device->options&T_PATCH)==0)) {
-			/*The patch must be re-loaded after each
-hardware or software reset. If you replace software reset by writing 0x50 to AIADDR,
-you do not need to reload the patch.*/
+			/*  The patch must be re-loaded after each
+				hardware or software reset. If you replace software reset by writing 0x50 to AIADDR,
+				you do not need to reload the patch.  */
 			LoadUserCodes() ;	// vs1053b patch and admix			
 			printf("SPI_AUDATA2= %x\n",VS1053_ReadRegister(SPI_AUDATA));
 			if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) //midi mode?
@@ -353,11 +353,12 @@ ICACHE_FLASH_ATTR void VS1053_SoftwareReset() {
 }
 
 // Set the volume of the line1 (for admix plugin) // -31 to -3
-ICACHE_FLASH_ATTR void VS1053_SetVolumeLine(int16_t vol){
+ICACHE_FLASH_ATTR void VS1053_SetVolumeLine(int16_t vol) {
 	if (vol > -3) vol = -3;
 	if (vol < -31) vol = -31;
 	VS1053_WriteRegister(SPI_AICTRL0,(vol&0xFF00)>>8,vol&0xFF);
 }
+
 // activate or stop admix plugin (true = activate)
 ICACHE_FLASH_ATTR void VS1053_Admix(bool val) {
 	uint16_t Mode = VS1053_ReadRegister(SPI_MODE);

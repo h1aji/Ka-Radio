@@ -23,7 +23,8 @@
 #include "eeprom.h"
 #include "interface.h"
 
-#define NTP_RESYNC_SEC 3600U // re-sync with the server at most this often
+#define NTP_RESYNC_SEC 3600U // re-sync with the server this often once the clock is set
+#define NTP_RETRY_SEC  30U   // retry interval while the sync keeps failing
 
 ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time)
 {
@@ -119,7 +120,7 @@ static bool ntp_fetch(time_t *out)
 	uint32_t secs1900;
 
 	timeout.tv_usec = 0;
-	timeout.tv_sec = 5; // recvfrom() timeout, in seconds
+	timeout.tv_sec = 5000; // recvfrom() timeout: this SDK's lwIP reads tv_sec as milliseconds ("bug *1000"), so 5000 = 5 s
 
 	msg = zalloc(sizeof(ntp_t));
 	if (msg == NULL) {
@@ -231,35 +232,42 @@ bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt)
 	return true;
 }
 
-// Returns the current UTC time, re-syncing with the NTP server at most
-// once every NTP_RESYNC_SEC (1 hour, including after a failed attempt -
-// it won't retry on every call just because the last one failed); between
-// syncs the clock is advanced locally from the FreeRTOS tick counter.
-// Meant for frequent/periodic callers such as a clock display.
+// Returns the current UTC time without hitting the network on every call.
+// The NTP server is queried right away the first time (as soon as the station has
+// an IP address), then every NTP_RESYNC_SEC after a success, or every NTP_RETRY_SEC
+// while the sync keeps failing. Between syncs the clock is advanced locally from the
+// FreeRTOS tick counter. Meant for frequent/periodic callers such as a clock display.
 bool ICACHE_FLASH_ATTR ntp_get_time_cached(struct tm **dt)
 {
-	static time_t syncedTime = 0;     // UTC time at the last successful sync, 0 = never synced
-	static TickType_t syncedTick = 0; // tick count at that sync
-	static TickType_t lastAttemptTick = 0;
+	static time_t syncedTime = 0;          // UTC time at the last successful sync, 0 = never synced
+	static portTickType syncedTick = 0;    // tick count at that sync
+	static portTickType lastAttemptTick = 0;
+	static portTickType waitTicks = 0;     // how long to wait before the next attempt
 	static bool everAttempted = false;
-	TickType_t now = xTaskGetTickCount();
+	const portTickType ticksPerSec = 1000 / portTICK_RATE_MS;
+	portTickType now = xTaskGetTickCount();
 	time_t result;
 
-	if (!everAttempted || (now - lastAttemptTick) >= (NTP_RESYNC_SEC * 1000 / portTICK_RATE_MS)) {
+	if ((!everAttempted || (now - lastAttemptTick) >= waitTicks)
+			&& wifi_station_get_connect_status() == STATION_GOT_IP) {
 		time_t fresh;
 
 		everAttempted = true;
 		lastAttemptTick = now;
 		if (ntp_fetch(&fresh)) {
 			syncedTime = fresh;
-			syncedTick = now;
+			syncedTick = xTaskGetTickCount(); // the fetch can take seconds
+			waitTicks = NTP_RESYNC_SEC * ticksPerSec;
+		} else {
+			waitTicks = NTP_RETRY_SEC * ticksPerSec;
 		}
+		now = xTaskGetTickCount();
 	}
 
 	if (syncedTime == 0)
 		return false; // never had a successful sync yet
 
-	result = syncedTime + (time_t)((now - syncedTick) * portTICK_RATE_MS / 1000);
+	result = syncedTime + (time_t)((now - syncedTick) / ticksPerSec);
 	*dt = gmtime(&result);
 	return true;
 }

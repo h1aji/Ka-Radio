@@ -6,7 +6,12 @@
 
 #include "c_types.h"
 
+#define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
+#define ICACHE_STORE_ATTR __attribute__((aligned(4)))
+#define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
+
 #define HOSTLEN		24
+
 //define for bit array in theme
 #define T_THEME 	1
 #define NT_THEME	0xFE
@@ -21,7 +26,6 @@
 #define T_PROTECT	0x20
 #define NT_PROTECT	0xDF
 
-
 #define APMODE		0
 #define STA1		1
 #define STA2		2
@@ -29,6 +33,7 @@
 #define PASSLEN		64
 #define HOSTLEN		24
 #define USERAGLEN	39
+
 struct device_settings {
 	uint8_t dhcpEn;
 	uint8_t ipAddr[4];
