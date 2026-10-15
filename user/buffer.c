@@ -163,7 +163,7 @@ ICACHE_FLASH_ATTR uint32_t bufferWrite(uint8_t *data, uint32_t size) {
 	} else {
 		uint32_t i;
 		for(i=0; i<size; i++) {
-			if(getBufferFree() == 0) { return i;}
+			if(getBufferFree() == 0) return i;
 			buffer[wptr++] = data[i];
 			if(bempty) bempty = 0;
 			if(wptr == BUFFER_SIZE) wptr = 0;
@@ -183,7 +183,7 @@ ICACHE_FLASH_ATTR uint32_t bufferRead(uint8_t *data, uint32_t size) {
 		if(rptr == wptr) bempty = 1;
 	} else {
 		for (i = 0; i < size; i++) {
-			if(bf == 0) { return i;}
+			if(bf == 0) return i;
 			data[i] = buffer[rptr++];
 			if(rptr == BUFFER_SIZE) rptr = 0;
 			if(rptr == wptr) bempty = 1;

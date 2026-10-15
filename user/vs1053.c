@@ -22,6 +22,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 #include "vs1053.h"
 #include "eeprom.h"
@@ -29,6 +30,7 @@
 #include "spilib.h"
 
 extern uint8_t clientIvol ;
+extern xSemaphoreHandle sSPI;   // SPI bus lock, defined in spilib.c
 
 int vsVersion ; // Chip version
 
@@ -41,6 +43,11 @@ const char strvI2S[] ICACHE_RODATA_ATTR STORE_ATTR  = {"I2S Speed: %d\n"};
 
 ICACHE_FLASH_ATTR void VS1053_HW_init(void) {
     printf(PSTR("\nHSPI init%c"), 0x0d);
+
+    /* SPI bus lock: spi_take_semaphore()/spi_give_semaphore() do nothing until it exists.
+       Without it a register access can overlap a music data chunk; with the CS/XDCS diode-OR
+       reset circuit, both lines low at the same time resets the VS1053. */
+    if (sSPI == NULL) vSemaphoreCreateBinary(sSPI);   // created in the "available" state
 
     /* ===== Configure SPI Bus ===== */
     WRITE_PERI_REG(PERIPHS_IO_MUX, 0x105 | (0 << 9));

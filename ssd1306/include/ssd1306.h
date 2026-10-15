@@ -32,6 +32,23 @@ typedef enum {
 } SSD1306_COLOR_t;
 
 /**
+ * @brief  SSD1306 image rotation
+ */
+typedef enum {
+	SSD1306_ROTATE_0   = 0, /*!< Default orientation (segment remap 0xA1, COM scan 0xC8) */
+	SSD1306_ROTATE_180 = 1  /*!< Rotated by 180 degrees (segment remap 0xA0, COM scan 0xC0) */
+} SSD1306_ROTATION_t;
+
+/**
+ * @brief  Rotates the image on the panel (done by the controller, no buffer changes)
+ * @note   Can be called before @ref SSD1306_Init() (the setting is applied during init)
+ *         or at any time afterwards (the picture flips immediately)
+ * @param  rotation: One of @ref SSD1306_ROTATION_t
+ * @retval None
+ */
+void SSD1306_SetRotation(SSD1306_ROTATION_t rotation);
+
+/**
  * @brief  Initializes SSD1306
  * @param  None
  * @retval Initialization status:

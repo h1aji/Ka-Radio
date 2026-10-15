@@ -30,6 +30,9 @@ extern uint16_t getVolume(void);
 
 #define DISPLAY_FONT Font_7x10
 
+/* 1 = rotate the picture by 180 degrees (display mounted upside down), 0 = normal orientation */
+#define DISPLAY_ROTATE_180 1
+
 static void disp_clear(void)
 {
 	SSD1306_Fill(SSD1306_COLOR_BLACK);
@@ -223,16 +226,17 @@ static void displayTick(void)
 	dirty |= displayLineSet(&lines[LINE_TITLE1], t1);
 	dirty |= displayLineSet(&lines[LINE_TITLE2], t2);
 
-	vol = getVolume();
-	if (vol != dispVolume) {
-		dispVolume = vol;
-		dirty = true;
-	}
-
 	if (++secTick >= DISPLAY_TICKS_PER_SEC) {
 		struct tm *dt;
 
 		secTick = 0;
+
+		// getVolume() may read the VS1053 over SPI, so poll it only once a second
+		vol = getVolume();
+		if (vol != dispVolume) {
+			dispVolume = vol;
+			dirty = true;
+		}
 		if (ntp_get_time_cached(&dt)) {
 			char timeStr[24];
 
@@ -265,6 +269,7 @@ void ICACHE_FLASH_ATTR displayInit(void)
 {
 	int i;
 
+	SSD1306_SetRotation(DISPLAY_ROTATE_180 ? SSD1306_ROTATE_180 : SSD1306_ROTATE_0);
 	SSD1306_Init();
 
 	disp_clear();

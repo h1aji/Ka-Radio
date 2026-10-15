@@ -11,6 +11,7 @@ typedef struct {
 	int16_t CurrentY;
 	uint8_t Inverted;
 	uint8_t Initialized;
+	uint8_t Rotation;	/* SSD1306_ROTATION_t */
 } SSD1306_t;
 
 /* Private variable */
@@ -49,6 +50,25 @@ static bool SSD1306_I2C_Write(uint8_t control, const uint8_t *data, uint16_t len
 	return true;
 }
 
+/* Segment remap + COM scan direction: together they rotate the image by 180 degrees */
+static void SSD1306_ApplyRotation(void) {
+	if (SSD1306.Rotation == SSD1306_ROTATE_180) {
+		SSD1306_WRITECOMMAND(0xC0); //Set COM Output Scan Direction: normal (COM0 to COM63)
+		SSD1306_WRITECOMMAND(0xA0); //--set segment re-map: column 0 maps to SEG0
+	} else {
+		SSD1306_WRITECOMMAND(0xC8); //Set COM Output Scan Direction: remapped (COM63 to COM0)
+		SSD1306_WRITECOMMAND(0xA1); //--set segment re-map 0 to 127
+	}
+}
+
+void SSD1306_SetRotation(SSD1306_ROTATION_t rotation) {
+	SSD1306.Rotation = (rotation == SSD1306_ROTATE_180) ? SSD1306_ROTATE_180 : SSD1306_ROTATE_0;
+
+	/* before SSD1306_Init() only remember the setting, Init() applies it */
+	if (SSD1306.Initialized)
+		SSD1306_ApplyRotation();
+}
+
 uint8_t SSD1306_Init(void) {
 	/* Init I2C bus (SDA=GPIO4, SCL=GPIO5, see ssd1306_i2c.h) */
 	ssd1306_i2c_master_gpio_init();
@@ -58,13 +78,13 @@ uint8_t SSD1306_Init(void) {
 	SSD1306_WRITECOMMAND(0x20); //Set Memory Addressing Mode
 	SSD1306_WRITECOMMAND(0x02); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
 	SSD1306_WRITECOMMAND(0xB0); //Set Page Start Address for Page Addressing Mode,0-7
-	SSD1306_WRITECOMMAND(0xC8); //Set COM Output Scan DirectionSSD1306_WRITECOMMAND(command)
+	/* COM scan direction + segment re-map (SSD1306_SetRotation) are sent below, after the page address */
 	SSD1306_WRITECOMMAND(0x00); //---set low column address
 	SSD1306_WRITECOMMAND(0x10); //---set high column address
 	SSD1306_WRITECOMMAND(0x40); //--set start line address
 	SSD1306_WRITECOMMAND(0x81); //--set contrast control register
 	SSD1306_WRITECOMMAND(0xFF);
-	SSD1306_WRITECOMMAND(0xA1); //--set segment re-map 0 to 127
+	SSD1306_ApplyRotation();    //--set COM scan direction and segment re-map
 	SSD1306_WRITECOMMAND(0xA6); //--set normal display
 	SSD1306_WRITECOMMAND(0xA8); //--set multiplex ratio(1 to 64)
 	SSD1306_WRITECOMMAND(0x3F); //
