@@ -223,6 +223,54 @@ char SSD1306_Puts(char* str, FontDef_t* Font, SSD1306_COLOR_t color) {
 }
 
 
+char SSD1306_PutcScaled(char ch, FontDef_t* Font, SSD1306_COLOR_t color, uint8_t scale) {
+	uint32_t i, b, j;
+	uint8_t sx, sy;
+	SSD1306_COLOR_t c;
+
+	if (scale < 1) {
+		scale = 1;
+	}
+
+	/* Check available space in LCD */
+	if (SSD1306_WIDTH <= SSD1306.CurrentX || SSD1306_HEIGHT <= SSD1306.CurrentY) {
+		/* Error */
+		return 0;
+	}
+
+	/* Go through font, every font pixel becomes a scale x scale block */
+	for (i = 0; i < Font->FontHeight; i++) {
+		b = Font->data[(ch - 32) * Font->FontHeight + i];
+		for (j = 0; j < Font->FontWidth; j++) {
+			c = ((b << j) & 0x8000) ? color : (SSD1306_COLOR_t)!color;
+			for (sy = 0; sy < scale; sy++) {
+				for (sx = 0; sx < scale; sx++) {
+					SSD1306_DrawPixel(SSD1306.CurrentX + j * scale + sx, SSD1306.CurrentY + i * scale + sy, c);
+				}
+			}
+		}
+	}
+
+	/* Increase pointer */
+	SSD1306.CurrentX += Font->FontWidth * scale;
+
+	/* Return character written */
+	return ch;
+}
+
+char SSD1306_PutsScaled(char* str, FontDef_t* Font, SSD1306_COLOR_t color, uint8_t scale) {
+	while (*str) {
+		if (SSD1306_PutcScaled(*str, Font, color, scale) != *str) {
+			/* Return error */
+			return *str;
+		}
+		str++;
+	}
+
+	return *str;
+}
+
+
 void SSD1306_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, SSD1306_COLOR_t c) {
 	int16_t dx, dy, sx, sy, err, e2, i, tmp;
 

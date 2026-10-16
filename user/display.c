@@ -33,6 +33,10 @@ extern uint16_t getVolume(void);
 /* 1 = rotate the picture by 180 degrees (display mounted upside down), 0 = normal orientation */
 #define DISPLAY_ROTATE_180 1
 
+/* Splash screen shown at start-up: "Ka-Radio" / "Loading ..." / IP address */
+#define DISPLAY_SPLASH_MS          5000   // how long the splash stays on screen
+#define DISPLAY_SPLASH_TITLE_SCALE 2      // title = Font_7x10 magnified 2x ("Ka-Radio" = 112 x 20 px), no extra font data in RAM
+
 static void disp_clear(void)
 {
 	SSD1306_Fill(SSD1306_COLOR_BLACK);
@@ -42,6 +46,15 @@ static void disp_puts(uint16_t x, uint16_t y, char *str)
 {
 	SSD1306_GotoXY(x, y);
 	SSD1306_Puts(str, &DISPLAY_FONT, SSD1306_COLOR_WHITE);
+}
+
+// Centered text, magnified by 'scale' (1 = normal size)
+static void disp_puts_centered(uint16_t y, char *str, uint8_t scale)
+{
+	uint16_t w = strlen(str) * DISPLAY_FONT.FontWidth * scale;
+
+	SSD1306_GotoXY((w < SSD1306_WIDTH) ? (SSD1306_WIDTH - w) / 2 : 0, y);
+	SSD1306_PutsScaled(str, &DISPLAY_FONT, SSD1306_COLOR_WHITE, scale);
 }
 
 static void disp_volume_bar(uint16_t y, uint16_t vol /* 0..255 */)
@@ -83,6 +96,7 @@ static uint16_t dispVolume;
 static char dispTime[24];
 static uint16_t cachedStationIdx;
 static char localStationName[64];
+static bool redrawPending;	// force one full redraw (e.g. right after the splash screen)
 
 // Copies text into a line if it changed, resetting its scroll position.
 // Returns true if the line changed (i.e. the screen needs a redraw).
@@ -212,6 +226,11 @@ static void displayTick(void)
 	char t1[64], t2[64];
 	int i;
 
+	if (redrawPending) {
+		redrawPending = false;
+		dirty = true;
+	}
+
 	displayRefreshStationName();
 
 	{
@@ -257,8 +276,60 @@ static void displayTick(void)
 		displayDraw();
 }
 
+/* ---------------------------------------------------------------------- */
+/* Splash screen                                                           */
+/* ---------------------------------------------------------------------- */
+
+// Address of the device: the station interface address, or the soft-AP address
+// when the radio runs as an access point. "0.0.0.0" until an address is assigned.
+static void displayGetIp(char *buf, size_t size)
+{
+	struct ip_info info;
+	uint32_t ip = 0;
+
+	if (wifi_get_ip_info((wifi_get_opmode() == SOFTAP_MODE) ? SOFTAP_IF : STATION_IF, &info))
+		ip = info.ip.addr;
+
+	snprintf(buf, size, "%d.%d.%d.%d", (int)(ip & 0xff), (int)((ip >> 8) & 0xff),
+		(int)((ip >> 16) & 0xff), (int)((ip >> 24) & 0xff));
+}
+
+static void displaySplashDraw(char *ip)
+{
+	uint16_t rowH = DISPLAY_FONT.FontHeight;
+
+	disp_clear();
+	disp_puts_centered(6, "Ka-Radio", DISPLAY_SPLASH_TITLE_SCALE);
+	disp_puts_centered(6 + rowH * DISPLAY_SPLASH_TITLE_SCALE + 8, "Loading ...", 1);
+	disp_puts_centered(6 + rowH * DISPLAY_SPLASH_TITLE_SCALE + 8 + rowH + 4, ip, 1);
+	disp_update();
+}
+
+// Shows the splash screen for DISPLAY_SPLASH_MS. The address is re-read while it is
+// on screen, so it appears as soon as the radio has one.
+static void displaySplash(void)
+{
+	char ip[20], newIp[20];
+	portTickType start = xTaskGetTickCount();
+
+	displayGetIp(ip, sizeof(ip));
+	displaySplashDraw(ip);
+
+	while ((xTaskGetTickCount() - start) < (DISPLAY_SPLASH_MS / portTICK_RATE_MS)) {
+		vTaskDelay(DISPLAY_TICK_MS / portTICK_RATE_MS);
+
+		displayGetIp(newIp, sizeof(newIp));
+		if (strcmp(ip, newIp) != 0) {
+			strcpy(ip, newIp);
+			displaySplashDraw(ip);
+		}
+	}
+}
+
 static void displayTask(void *pvParams)
 {
+	displaySplash();
+
 	for (;;) {
 		displayTick();
 		vTaskDelay(DISPLAY_TICK_MS / portTICK_RATE_MS);
@@ -272,17 +343,13 @@ void ICACHE_FLASH_ATTR displayInit(void)
 	SSD1306_SetRotation(DISPLAY_ROTATE_180 ? SSD1306_ROTATE_180 : SSD1306_ROTATE_0);
 	SSD1306_Init();
 
-	disp_clear();
-	disp_puts(0, 0, "KaRadio");
-	disp_puts(0, DISPLAY_FONT.FontHeight, getIp());
-	disp_update();
-
 	for (i = 0; i < LINE_COUNT; i++)
 		memset(&lines[i], 0, sizeof(lines[i]));
 	dispVolume = 0;
 	dispTime[0] = 0;
 	cachedStationIdx = (uint16_t)-1;
 	localStationName[0] = 0;
+	redrawPending = true;	// the task draws the splash screen first, then the normal screen
 
 	xTaskCreate(displayTask, "display", 512, NULL, 2, NULL);
 }

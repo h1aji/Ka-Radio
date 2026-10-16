@@ -120,6 +120,28 @@ char SSD1306_Putc(char ch, FontDef_t* Font, SSD1306_COLOR_t color);
 char SSD1306_Puts(char* str, FontDef_t* Font, SSD1306_COLOR_t color);
 
 /**
+ * @brief  Puts character to internal RAM, every font pixel drawn as scale x scale pixels
+ * @note   @ref SSD1306_UpdateScreen() must be called after that in order to see updated LCD screen
+ * @param  ch: Character to be written
+ * @param  *Font: Pointer to @ref FontDef_t structure with used font
+ * @param  color: Color used for drawing. This parameter can be a value of @ref SSD1306_COLOR_t enumeration
+ * @param  scale: Magnification factor, 1 = normal size
+ * @retval Character written
+ */
+char SSD1306_PutcScaled(char ch, FontDef_t* Font, SSD1306_COLOR_t color, uint8_t scale);
+
+/**
+ * @brief  Puts string to internal RAM, magnified like @ref SSD1306_PutcScaled()
+ * @note   @ref SSD1306_UpdateScreen() must be called after that in order to see updated LCD screen
+ * @param  *str: String to be written
+ * @param  *Font: Pointer to @ref FontDef_t structure with used font
+ * @param  color: Color used for drawing. This parameter can be a value of @ref SSD1306_COLOR_t enumeration
+ * @param  scale: Magnification factor, 1 = normal size
+ * @retval Zero on success or character value when function failed
+ */
+char SSD1306_PutsScaled(char* str, FontDef_t* Font, SSD1306_COLOR_t color, uint8_t scale);
+
+/**
  * @brief  Draws line on LCD
  * @note   @ref SSD1306_UpdateScreen() must be called after that in order to see updated LCD screen
  * @param  x0: Line X start point. Valid input is 0 to SSD1306_WIDTH - 1
