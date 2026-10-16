@@ -30,11 +30,16 @@ extern uint16_t getVolume(void);
 
 #define DISPLAY_FONT Font_7x10
 
+/* Custom glyphs appended to Font_7x10 (ssd1306/fonts.c), right after '~' (0x7E) */
+#define DISPLAY_GLYPH_PLAY  "\x7f"
+#define DISPLAY_GLYPH_PAUSE "\x80"
+
 /* 1 = rotate the picture by 180 degrees (display mounted upside down), 0 = normal orientation */
 #define DISPLAY_ROTATE_180 1
 
 /* Splash screen shown at start-up: "Ka-Radio" / "Loading ..." / IP address */
-#define DISPLAY_SPLASH_MS          5000   // how long the splash stays on screen
+#define DISPLAY_SPLASH_WAIT_MS     30000  // max time to wait for a real address before giving up and showing it anyway
+#define DISPLAY_SPLASH_MS          5000   // how long the splash stays on screen once the address is shown
 #define DISPLAY_SPLASH_TITLE_SCALE 2      // title = Font_7x10 magnified 2x ("Ka-Radio" = 112 x 20 px), no extra font data in RAM
 
 static void disp_clear(void)
@@ -211,7 +216,7 @@ static void displayDraw(void)
 
 	disp_volume_bar(SSD1306_HEIGHT - 2 * rowH, dispVolume);
 
-	snprintf(status, sizeof(status), "%s %s", getState() ? ">" : "||", dispTime);
+	snprintf(status, sizeof(status), "%s %s", getState() ? DISPLAY_GLYPH_PLAY : DISPLAY_GLYPH_PAUSE, dispTime);
 	disp_puts(0, SSD1306_HEIGHT - rowH, status);
 
 	disp_update();
@@ -305,8 +310,9 @@ static void displaySplashDraw(char *ip)
 	disp_update();
 }
 
-// Shows the splash screen for DISPLAY_SPLASH_MS. The address is re-read while it is
-// on screen, so it appears as soon as the radio has one.
+// Shows the splash screen. First waits (up to DISPLAY_SPLASH_WAIT_MS) for a real
+// address, since the radio is still associating/DHCP'ing at this point, then keeps
+// the splash up for DISPLAY_SPLASH_MS once an address is on screen.
 static void displaySplash(void)
 {
 	char ip[20], newIp[20];
@@ -315,6 +321,14 @@ static void displaySplash(void)
 	displayGetIp(ip, sizeof(ip));
 	displaySplashDraw(ip);
 
+	while (strcmp(ip, "0.0.0.0") == 0 &&
+			(xTaskGetTickCount() - start) < (DISPLAY_SPLASH_WAIT_MS / portTICK_RATE_MS)) {
+		vTaskDelay(DISPLAY_TICK_MS / portTICK_RATE_MS);
+		displayGetIp(ip, sizeof(ip));
+	}
+	displaySplashDraw(ip);
+
+	start = xTaskGetTickCount();
 	while ((xTaskGetTickCount() - start) < (DISPLAY_SPLASH_MS / portTICK_RATE_MS)) {
 		vTaskDelay(DISPLAY_TICK_MS / portTICK_RATE_MS);
 
