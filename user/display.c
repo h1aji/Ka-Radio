@@ -22,25 +22,39 @@
 // works around): forward-declare it here instead of touching webserver.h.
 extern uint16_t getVolume(void);
 
-/* ---------------------------------------------------------------------- */
-/* Panel-specific drawing. Only SSD1306 today - keep every direct call to */
-/* ssd1306.h behind these helpers so another panel can be slotted in here */
-/* later without touching the status model/scrolling logic below.        */
-/* ---------------------------------------------------------------------- */
+// Defined in the "Screensaver" section below, called from displayTick() above it.
+static void displayScreensaverDraw(void);
+
+/* ---------------------------------------------------------------------- 
+   Panel-specific drawing. Only SSD1306 today - keep every direct call to
+   ssd1306.h behind these helpers so another panel can be slotted in here
+   later without touching the status model/scrolling logic below.
+   ---------------------------------------------------------------------- */
 
 #define DISPLAY_FONT Font_7x10
 
-/* Custom glyphs appended to Font_7x10 (ssd1306/fonts.c), right after '~' (0x7E) */
+// Custom glyphs appended to Font_7x10 (ssd1306/fonts.c), right after '~' (0x7E)
 #define DISPLAY_GLYPH_PLAY  "\x7f"
 #define DISPLAY_GLYPH_PAUSE "\x80"
+#define DISPLAY_GLYPH_STOP  "\x81"
 
-/* 1 = rotate the picture by 180 degrees (display mounted upside down), 0 = normal orientation */
+// 1 = rotate the picture by 180 degrees (display mounted upside down), 0 = normal orientation
 #define DISPLAY_ROTATE_180 1
 
-/* Splash screen shown at start-up: "Ka-Radio" / "Loading ..." / IP address */
+// Splash screen shown at start-up: "Ka-Radio" / "Loading ..." / IP address
 #define DISPLAY_SPLASH_WAIT_MS     30000  // max time to wait for a real address before giving up and showing it anyway
 #define DISPLAY_SPLASH_MS          5000   // how long the splash stays on screen once the address is shown
 #define DISPLAY_SPLASH_TITLE_SCALE 2      // title = Font_7x10 magnified 2x ("Ka-Radio" = 112 x 20 px), no extra font data in RAM
+
+// Y position of the address line, shared with the screensaver so both put it in the same spot
+#define DISPLAY_SPLASH_IP_Y(rowH)  (6 + (rowH) * DISPLAY_SPLASH_TITLE_SCALE + 8 + (rowH) + 4)
+
+// Screensaver: big HH:MM clock, shown once nothing (track/station/volume) has changed for a while
+#define DISPLAY_SCREENSAVER_IDLE_PLAYING_MS 60000  // idle time before the screensaver kicks in while playing
+#define DISPLAY_SCREENSAVER_IDLE_STOPPED_MS 20000  // idle time before the screensaver kicks in while stopped
+#define DISPLAY_SCREENSAVER_IDLE_PLAYING_TICKS (DISPLAY_SCREENSAVER_IDLE_PLAYING_MS / DISPLAY_TICK_MS)
+#define DISPLAY_SCREENSAVER_IDLE_STOPPED_TICKS (DISPLAY_SCREENSAVER_IDLE_STOPPED_MS / DISPLAY_TICK_MS)
+#define DISPLAY_SCREENSAVER_CLOCK_SCALE 3      // Font_7x10 x3 = 21 x 30 px digits, "HH:MM" is then 105 px wide
 
 static void disp_clear(void)
 {
@@ -73,10 +87,10 @@ static void disp_update(void)
 	SSD1306_UpdateScreen();
 }
 
-/* ---------------------------------------------------------------------- */
-/* Status model: one entry per scrolling text line (station, genre, the   */
-/* two halves of the current title), plus volume/clock.                   */
-/* ---------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------- 
+   Status model: one entry per scrolling text line (station, genre, the
+   two halves of the current title), plus volume/clock.
+   ---------------------------------------------------------------------- */
 
 #define DISPLAY_TICK_MS            250   // 4 Hz, same cadence as the Arduino's Timer1
 #define DISPLAY_TICKS_PER_SEC      (1000 / DISPLAY_TICK_MS)
@@ -101,7 +115,10 @@ static uint16_t dispVolume;
 static char dispTime[24];
 static uint16_t cachedStationIdx;
 static char localStationName[64];
-static bool redrawPending;	// force one full redraw (e.g. right after the splash screen)
+static bool redrawPending;	    // force one full redraw (e.g. right after the splash screen)
+static char dispClockHHMM[6];	// "HH:MM", kept in sync with dispTime, shown by the screensaver
+static uint16_t idleTicks;	    // ticks since the last station/track/volume change
+static bool screensaverActive;
 
 // Copies text into a line if it changed, resetting its scroll position.
 // Returns true if the line changed (i.e. the screen needs a redraw).
@@ -216,7 +233,7 @@ static void displayDraw(void)
 
 	disp_volume_bar(SSD1306_HEIGHT - 2 * rowH, dispVolume);
 
-	snprintf(status, sizeof(status), "%s %s", getState() ? DISPLAY_GLYPH_PLAY : DISPLAY_GLYPH_PAUSE, dispTime);
+	snprintf(status, sizeof(status), "%s %s", getState() ? DISPLAY_GLYPH_PLAY : DISPLAY_GLYPH_STOP, dispTime);
 	disp_puts(0, SSD1306_HEIGHT - rowH, status);
 
 	disp_update();
@@ -227,6 +244,8 @@ static void displayTick(void)
 	static uint8_t secTick = 0;
 	struct icyHeader *icy = clientGetHeader();
 	bool dirty = false;
+	bool activity = false;	// a real station/track/volume change, as opposed to a scroll/clock tick - resets the screensaver's idle timer
+	bool changed;
 	uint16_t vol;
 	char t1[64], t2[64];
 	int i;
@@ -241,14 +260,22 @@ static void displayTick(void)
 	{
 		const char *icyName = (icy != NULL) ? icy->members.single.name : NULL;
 		const char *name = (icyName != NULL && icyName[0] != 0) ? icyName : localStationName;
-		dirty |= displayLineSet(&lines[LINE_STATION], name);
+		changed = displayLineSet(&lines[LINE_STATION], name);
+		dirty |= changed;
+		activity |= changed;
 	}
 
-	dirty |= displayLineSet(&lines[LINE_GENRE], (icy != NULL) ? icy->members.single.genre : NULL);
+	changed = displayLineSet(&lines[LINE_GENRE], (icy != NULL) ? icy->members.single.genre : NULL);
+	dirty |= changed;
+	activity |= changed;
 
 	displaySplitTitle(getState() ? getMeta() : "STOPPED", t1, sizeof(t1), t2, sizeof(t2));
-	dirty |= displayLineSet(&lines[LINE_TITLE1], t1);
-	dirty |= displayLineSet(&lines[LINE_TITLE2], t2);
+	changed = displayLineSet(&lines[LINE_TITLE1], t1);
+	dirty |= changed;
+	activity |= changed;
+	changed = displayLineSet(&lines[LINE_TITLE2], t2);
+	dirty |= changed;
+	activity |= changed;
 
 	if (++secTick >= DISPLAY_TICKS_PER_SEC) {
 		struct tm *dt;
@@ -260,6 +287,7 @@ static void displayTick(void)
 		if (vol != dispVolume) {
 			dispVolume = vol;
 			dirty = true;
+			activity = true;
 		}
 		if (ntp_get_time_cached(&dt)) {
 			char timeStr[24];
@@ -269,6 +297,7 @@ static void displayTick(void)
 				dt->tm_hour, dt->tm_min, dt->tm_sec);
 			if (strcmp(timeStr, dispTime) != 0) {
 				strcpy(dispTime, timeStr);
+				snprintf(dispClockHHMM, sizeof(dispClockHHMM), "%02d:%02d", dt->tm_hour, dt->tm_min);
 				dirty = true;
 			}
 		}
@@ -277,8 +306,26 @@ static void displayTick(void)
 	for (i = 0; i < LINE_COUNT; i++)
 		dirty |= displayLineScroll(&lines[i]);
 
-	if (dirty)
-		displayDraw();
+	{
+		uint16_t idleThreshold = getState() ? DISPLAY_SCREENSAVER_IDLE_PLAYING_TICKS : DISPLAY_SCREENSAVER_IDLE_STOPPED_TICKS;
+
+		if (activity)
+			idleTicks = 0;
+		else if (idleTicks < idleThreshold)
+			idleTicks++;
+
+		if ((idleTicks >= idleThreshold) != screensaverActive) {
+			screensaverActive = !screensaverActive;
+			dirty = true;
+		}
+	}
+
+	if (dirty) {
+		if (screensaverActive)
+			displayScreensaverDraw();
+		else
+			displayDraw();
+	}
 }
 
 /* ---------------------------------------------------------------------- */
@@ -299,6 +346,23 @@ static void displayGetIp(char *buf, size_t size)
 		(int)((ip >> 16) & 0xff), (int)((ip >> 24) & 0xff));
 }
 
+/* ----------------------------------------------------------------------
+   Screensaver
+   ---------------------------------------------------------------------- */
+
+static void displayScreensaverDraw(void)
+{
+	uint16_t rowH = DISPLAY_FONT.FontHeight;
+	char ip[20];
+
+	displayGetIp(ip, sizeof(ip));
+
+	disp_clear();
+	disp_puts_centered((SSD1306_HEIGHT - rowH * DISPLAY_SCREENSAVER_CLOCK_SCALE) / 2, dispClockHHMM, DISPLAY_SCREENSAVER_CLOCK_SCALE);
+	disp_puts_centered(DISPLAY_SPLASH_IP_Y(rowH), ip, 1);
+	disp_update();
+}
+
 static void displaySplashDraw(char *ip)
 {
 	uint16_t rowH = DISPLAY_FONT.FontHeight;
@@ -306,7 +370,7 @@ static void displaySplashDraw(char *ip)
 	disp_clear();
 	disp_puts_centered(6, "Ka-Radio", DISPLAY_SPLASH_TITLE_SCALE);
 	disp_puts_centered(6 + rowH * DISPLAY_SPLASH_TITLE_SCALE + 8, "Loading ...", 1);
-	disp_puts_centered(6 + rowH * DISPLAY_SPLASH_TITLE_SCALE + 8 + rowH + 4, ip, 1);
+	disp_puts_centered(DISPLAY_SPLASH_IP_Y(rowH), ip, 1);
 	disp_update();
 }
 
@@ -361,9 +425,12 @@ void ICACHE_FLASH_ATTR displayInit(void)
 		memset(&lines[i], 0, sizeof(lines[i]));
 	dispVolume = 0;
 	dispTime[0] = 0;
+	dispClockHHMM[0] = 0;
 	cachedStationIdx = (uint16_t)-1;
 	localStationName[0] = 0;
 	redrawPending = true;	// the task draws the splash screen first, then the normal screen
+	idleTicks = 0;
+	screensaverActive = false;
 
 	xTaskCreate(displayTask, "display", 512, NULL, 2, NULL);
 }

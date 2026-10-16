@@ -102,7 +102,9 @@ GPIO05  - SCL
 
 ### Roadmap
 
- - Add I2C SSD1306 support
+ - Review firmware update process
+ - Setup Github CI/CD
+ - Adjust web interface for mobile devices
 
 License
 ----
