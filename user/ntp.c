@@ -2,7 +2,7 @@
  *
  * Copyright 2016 karawin (http://www.karawin.fr)
  *
- * Simple NTP client for ESP8266 RTOS SDK
+ * Simple NTP client for Ka-Radio
  * list of major public servers http://tf.nist.gov/tf-cgi/servers.cgi
  * time.nist.gov
  ******************************************************************************/
@@ -22,6 +22,10 @@
 #include "ntp.h"
 #include "eeprom.h"
 #include "interface.h"
+
+
+#define NTP_HOST "pool.ntp.org" // NTP host
+#define NTP_PORT "123"          // UDP port
 
 #define NTP_RESYNC_SEC 3600U // re-sync with the server this often once the clock is set
 #define NTP_RETRY_SEC  30U   // retry interval while the sync keeps failing
@@ -111,16 +115,16 @@ static bool ntp_fetch(time_t *out)
 	ntp_t *ntp;
 	char *msg;
 	int rv;
-	char service[] = {"123"};       // ntp port
-	char node[] = {"pool.ntp.org"}; // this one is universal
+	char service[] = {NTP_PORT};
+	char node[] = {NTP_HOST};
 	struct addrinfo hints, *servinfo = NULL, *p = NULL;
-	struct sockaddr_in servaddr; // address actually used to send the request
-	struct sockaddr_in fromaddr; // address the reply claims to be from
+	struct sockaddr_in servaddr;   // address actually used to send the request
+	struct sockaddr_in fromaddr;   // address the reply claims to be from
 	socklen_t fromlen;
 	uint32_t secs1900;
 
 	timeout.tv_usec = 0;
-	timeout.tv_sec = 5000; // recvfrom() timeout: this SDK's lwIP reads tv_sec as milliseconds ("bug *1000"), so 5000 = 5 s
+	timeout.tv_sec = 5000; // recvfrom() timeout: this SDK's lwIP reads tv_sec as milliseconds ("bug *1000"), so 5000 = 5s
 
 	msg = zalloc(sizeof(ntp_t));
 	if (msg == NULL) {

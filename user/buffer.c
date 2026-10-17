@@ -26,9 +26,9 @@ uint32_t wptr = 0;
 uint32_t rptr = 0;
 uint8_t bempty = 1;
 
-/* ===================================================================== */
-/*  SPIRAM access                                                        */
-/* ===================================================================== */
+/* =====================================================================
+    SPIRAM access
+   ===================================================================== */
 
 /*
  * Measure the real SPIRAM capacity. Chips ignore the address bits they do not
@@ -67,7 +67,7 @@ void spiramInit() {
 	GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, (1<<SPIRAM_CS));   // enable output driver
 
 	spiram = false;
-	spi_speed_2mhz(); //2MHz
+	spi_speed_2mhz();
 	spiramWrite(strlen(test), 0, testram);
 	spiramRead(strlen(test), 0, test);
 	if (memcmp(test,testram,16) == 0) {
@@ -90,9 +90,8 @@ uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
 	spi_put_char((address>>16)&0xFF);
 	spi_put_char((address>>8)&0xFF);
 	spi_put_char(address&0xFF);
-	for(i = 0; i < size; i++) {
-		dst[i] = spi_get_char();
-	}
+
+	for (i = 0; i < size; i++) dst[i] = spi_get_char();
 
 	SPIRAM_CS_HIGH();
 
@@ -104,7 +103,7 @@ uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
 uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 	uint32_t i = 0;
 	spi_take_semaphore();
-	spi_speed_16mhz(); //16MHz
+	spi_speed_16mhz();
 
 	SPIRAM_CS_LOW();
 
@@ -112,20 +111,18 @@ uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data) {
 	spi_put_char((address>>16)&0xFF);
 	spi_put_char((address>>8)&0xFF);
 	spi_put_char(address&0xFF);
-	for(i = 0; i < size; i++) {
-		spi_put_char(data[i]);
-	}
+
+	for (i = 0; i < size; i++) spi_put_char(data[i]);
 
 	SPIRAM_CS_HIGH();
 
-//	spi_speed_2mhz(); //2MHz
 	spi_give_semaphore();
 	return i;
 }
 
-/* ===================================================================== */
-/*  Ring buffer (internal RAM, or SPIRAM when detected)                  */
-/* ===================================================================== */
+/* =====================================================================
+    Ring buffer (internal RAM, or SPIRAM when detected)
+   ===================================================================== */
 
 ICACHE_FLASH_ATTR void bufferInit()
 {

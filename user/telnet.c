@@ -2,8 +2,8 @@
  *
  * Copyright 2016 karawin (http://www.karawin.fr)
  *
- * quick and dirty telnet inplementation for wifi webradio
- * minimal implementaion for log and command
+ * Quick and simple telnet implementation for Ka-Radio
+ * minimal setup for log and commands
  *
  */
 
@@ -31,7 +31,7 @@ const char strtWELCOME[] ICACHE_RODATA_ATTR STORE_ATTR  ={"Karadio telnet\n> "};
 
 
 int telnetclients[NBCLIENTT];
-//set of socket descriptors
+// set of socket descriptors
 fd_set readfdst;
 // reception buffer
 char brec[256];
@@ -51,7 +51,6 @@ static void telnet_give_semaphore() {
 	if(sTELNET) xSemaphoreGive(sTELNET);
 }
 
-///////////////////////
 // init some data
 void telnetinit(void) {
 	int i;
@@ -67,7 +66,6 @@ void telnetinit(void) {
 	obrec = malloc(2);
 }
 
-/////////////////////////////////////////////////////////////////////
 // a socket with a websocket request. Note it and answer to the client
 bool telnetnewclient(int socket) {
 	int i ;
@@ -82,7 +80,6 @@ bool telnetnewclient(int socket) {
 	return false; // no more room
 }
 
-/////////////////////////////////////////////////////////////////////
 // remove the client in the list of clients
 void telnetremoveclient(int socket) {
 	int i ;
@@ -97,7 +94,6 @@ void telnetremoveclient(int socket) {
 		}
 }
 
-/////////////////////////////////////////////////////////////////////
 // is socket a telnet one?
 bool istelnet( int socket) {
 	int i ;
@@ -105,7 +101,6 @@ bool istelnet( int socket) {
 		if ((telnetclients[i]!= -1)&&(telnetclients[i] == socket)) return true;
 	return false;
 }
-
 
 ICACHE_FLASH_ATTR bool telnetAccept(int tsocket) {
 int32_t recbytes = 0;
@@ -126,8 +121,7 @@ int32_t recbytes = 0;
 	return false;
 }
 
-
-//broadcast a txt data to all clients
+// broadcast a txt data to all clients
 void telnetWrite(uint32_t lenb,const char *fmt, ...) {
 	int i ;
 	char *buf = NULL;
@@ -140,8 +134,8 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...) {
 	
 	va_list ap;
 	va_start(ap, fmt);
-//printf("=================================\ntelnet write lenb: %d, fmt: %x\n",lenb,(int)fmt);
-	
+	//printf("=================================\ntelnet write lenb: %d, fmt: %x\n",lenb,(int)fmt);
+
 	if (fmt> (char*)0x40100000)  // in flash
 	{
 		len = strlen(fmt);
@@ -169,18 +163,18 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...) {
 	}
 	va_end(ap);
 	buf = realloc(buf,rlen+1);
-//printf("telnet write len: %d, %s\n",rlen,buf);
+	//printf("telnet write len: %d, %s\n",rlen,buf);
 	if (buf == NULL) return;
 	// write to all clients
 	telnet_take_semaphore();
 	for (i = 0;i<NBCLIENTT;i++)	
-		if (istelnet( telnetclients[i]))
-		{
-			write( telnetclients[i],  buf, rlen);//strlen(buf));
-		}	
+		if (istelnet( telnetclients[i])) {
+			write( telnetclients[i],  buf, rlen);
+			//strlen(buf));
+		}
 	telnet_give_semaphore();	
 	free (buf);
-//printf("telnet write exit lenb:%d\n--------------------------\n",lenb);
+	//printf("telnet write exit lenb:%d\n--------------------------\n",lenb);
 }
 
 ICACHE_FLASH_ATTR int telnetNego(int tsocket) {
@@ -199,10 +193,10 @@ ICACHE_FLASH_ATTR int telnetNego(int tsocket) {
 	
 ICACHE_FLASH_ATTR int telnetCommand(int tsocket) {
 	if (irec == 0) return;
-//printf(PSTR("%sHEAPd0: %d #\n"),"##SYS.",xPortGetFreeHeapSize( ));	
+	//printf(PSTR("%sHEAPd0: %d #\n"),"##SYS.",xPortGetFreeHeapSize( ));	
 	brec[irec] = 0x0;
 	write(tsocket,"\n> ",1);
-//	printf("%s\n",brec);
+	//printf("%s\n",brec);
 	obrec = realloc(obrec,strlen(brec)+1);
 	strcpy(obrec,brec); // save old command
 	checkCommand(irec, brec);
@@ -237,12 +231,12 @@ ICACHE_FLASH_ATTR int telnetRead(int tsocket) {
 		}	
 
 		buf = realloc(buf,recbytes+2);
-//		printf(PSTR("%sHEAPdi1: %d #\nrecbytes: %d\n"),"##SYS.",xPortGetFreeHeapSize(),recbytes);	
+		//printf(PSTR("%sHEAPdi1: %d #\nrecbytes: %d\n"),"##SYS.",xPortGetFreeHeapSize(),recbytes);	
 		if (buf != NULL)
 		{
 			for (i = 0;i< recbytes;i++)
 			{
-//				printf("%x ",buf[i]);
+				//printf("%x ",buf[i]);
 				if (!inIac)
 				switch(buf[i]){
 				case '\r':

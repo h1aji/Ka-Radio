@@ -1,28 +1,4 @@
 /*
- * ESPRSSIF MIT License
- *
- * Copyright (c) 2015 <ESPRESSIF SYSTEMS (SHANGHAI) PTE LTD>
- *
- * Permission is hereby granted for use on ESPRESSIF SYSTEMS ESP8266 only, in which case,
- * it is free of charge, to any person obtaining a copy of this software and associated
- * documentation files (the "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the Software is furnished
- * to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- */
-
-/*
  * Over-the-air firmware update.
  *
  * Sections:
@@ -60,16 +36,16 @@
 #include "webclient.h"
 #include "websocket.h"
 
-/* ------------------------------------------------------------------------- */
-/*  Configuration                                                            */
-/* ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+    Configuration
+   ------------------------------------------------------------------------- */
 
-#define OTA_HOST          "karadio.karawin.fr"   /* firmware server               */
+#define OTA_HOST          "karadio.karawin.fr"   // firmware server
 #define OTA_PORT          80
-#define OTA_URL_SIZE      512                    /* size of the request buffer    */
-#define OTA_CHECK_TIMES   360000                 /* upgrade check retries         */
+#define OTA_URL_SIZE      512                    // size of the request buffer
+#define OTA_CHECK_TIMES   360000                 // upgrade check retries
 
-#define UPGRADE_DATA_SEG_LEN 1460                /* the size cannot be bigger     */
+#define UPGRADE_DATA_SEG_LEN 1460                // the size cannot be bigger
 #define UPGRADE_RETRY_TIMES  10
 
 #define OTA_STR_(x)       #x
@@ -85,7 +61,7 @@ static const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR = {
     "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
     "Connection: keep-alive\r\n"
     "Cache-Control: no-cache\r\n"
-    "User-Agent: Karadio 1.5 \r\n"
+    "User-Agent: Karadio 2.1 \r\n"
     "Accept: */*\r\n"
     "Accept-Encoding: gzip,deflate,sdch\r\n"
     "\r\n"
@@ -94,23 +70,23 @@ static const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR = {
 /* image CRC check, defined in crc32.c */
 extern int upgrade_crc_check(uint16_t fw_bin_sec, unsigned int sumlength);
 
-/* ------------------------------------------------------------------------- */
-/*  Flash writer                                                             */
-/* ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+    Flash writer
+   ------------------------------------------------------------------------- */
 
 struct upgrade_param {
-    uint32_t fw_bin_addr;       /* next address to program                    */
-    uint16_t fw_bin_sec;        /* first sector of the target slot            */
-    uint16_t fw_bin_sec_num;    /* number of sectors of the target slot       */
-    uint16_t fw_bin_sec_earse;  /* next sector to erase                       */
-    uint8_t extra;              /* bytes of save[] waiting for a full word    */
+    uint32_t fw_bin_addr;       // next address to program
+    uint16_t fw_bin_sec;        // first sector of the target slot
+    uint16_t fw_bin_sec_num;    // number of sectors of the target slot
+    uint16_t fw_bin_sec_earse;  // next sector to erase
+    uint8_t extra;              // bytes of save[] waiting for a full word
     uint8_t save[4];
     uint8_t *buffer;
 };
 
 static struct upgrade_param *upgrade;
 
-/* true when the sector is outside the slot we are allowed to erase */
+// true when the sector is outside the slot we are allowed to erase
 static bool out_of_range(uint16_t erase_sec)
 {
     uint8_t spi_size_map = system_get_flash_size_map();
@@ -251,9 +227,9 @@ bool system_upgrade(uint8_t *data, uint32_t len)
     return ret;
 }
 
-/* ------------------------------------------------------------------------- */
-/*  Download                                                                 */
-/* ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+    Download
+   ------------------------------------------------------------------------- */
 
 static uint32_t totallength = 0;
 static uint32_t sumlength = 0;
@@ -590,10 +566,6 @@ BOOL system_upgrade_start(struct upgrade_server_info *server)
 
     return (pdPASS == ret);
 }
-
-/* ------------------------------------------------------------------------- */
-/*  Entry point                                                              */
-/* ------------------------------------------------------------------------- */
 
 /******************************************************************************
  * FunctionName : user_esp_upgrade_rsp

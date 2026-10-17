@@ -1,7 +1,9 @@
 /******************************************************************************
+ * 
  * Copyright 2015 Piotr Sperka (http://www.piotrsperka.info)
  * Copyright 2016 karawin (http://www.karawin.fr)
-*/
+ * 
+ ******************************************************************************/
 
 #include "esp_common.h"
 #include "esp_system.h"
@@ -40,7 +42,7 @@ const char stritHELP0[] ICACHE_RODATA_ATTR STORE_ATTR  = {" \
 Commands:\n\
 ---------\n\
  Wifi related commands\n\
-//////////////////\n\
+//////////////////////////\n\
 wifi.lis: give the list of received SSID\n\
 wifi.con: Display the AP1 and AP2 SSID\n\
 wifi.con(\"ssid\",\"password\"): Record the given AP ssid with password in AP1 for next reboot\n\
@@ -100,9 +102,9 @@ sys.adc: Display the adc value\n\
 sys.version: Display the release and Revision of KaraDio\n\
 sys.host: display the hostname for mDNS\n\
 sys.host(\"your hostname\"): change and display the hostname for mDNS\n\
-///////\n\
+////////////\n\
   Other\n\
-///////\n\
+////////////\n\
 help: this command\n\
 <enter> will display\n\
 #INFO:\"\"#\n\
@@ -129,15 +131,18 @@ void setVolumePlus()
 {
 	setRelVolume(10);
 }
+
 void setVolumeMinus()
 {
 	setRelVolume(-10);
-}		
+}
+
 void setVolumew(char* vol)
 {
 	setVolume(vol);	
 	wsVol(vol);
-}	
+}
+
 int kasprintf(char *dest, const char *fmt, ...)
 {
 	char* flash;
@@ -164,7 +169,6 @@ int kasprintf(char *dest, const char *fmt, ...)
 	return ret;
 }
 
-
 unsigned short adcdiv;	
 void setHostname(char* s)
 {
@@ -186,6 +190,7 @@ void setHostname(char* s)
 	vTaskDelay(1);
 	free(info);
 }
+
 //display or change the hostname and services
 void chostname(char* s)
 {
@@ -229,12 +234,14 @@ void readAdc()
 	adc = system_adc_read();
 	kprintf(PSTR("##ADC: %d * %d = %d\n"),adc,adcdiv,adc*adcdiv);
 }
+
 void readRssi()
 {
 	int8_t rssi;
 	rssi = wifi_station_get_rssi();
 	kprintf(PSTR("##RSSI: %d\n"),rssi);
 }
+
 // Read the command panel
 void switchCommand() {
 	uint16_t adc;
@@ -267,6 +274,7 @@ void switchCommand() {
 	{
 		setVolumeMinus();
 	}		
+
 	if (!inside)
 	{	
 		if (adc < 220) // stop
@@ -292,8 +300,6 @@ void switchCommand() {
 		}
 	}
 }
-
-
 
 uint8_t startsWith(const char *pre, const char *str)
 {
@@ -521,7 +527,6 @@ ICACHE_FLASH_ATTR void clientParsePort(char *s)
     }
 }
 
-
 ICACHE_FLASH_ATTR void clientPlay(char *s)
 {
     char *t = strstr(s, parslashquote);
@@ -610,15 +615,14 @@ char url[200];
 	tmp = ++tmpend;//%
 	tmpend = strchr(tmp,'"');
 	if ((tmpend != NULL)&&(tmpend-tmp)) si->ovol = atoi(tmp);	
-	
-	
-//printf("==> id: %d, name: %s, url: %s\n",id,si->name,url);	
+		
+	//printf("==> id: %d, name: %s, url: %s\n",id,si->name,url);	
 	
     // Parsing
 	if (url[0] != 0)
 		parseUrl(url, si->domain, si->file, &(si->port));
 	
-//printf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
+	//printf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
 	if (id < 0xff) {
 		if (si->domain[0]==0) {si->port = 0;si->file[0] = 0;}
 		saveStation(si, id); 
@@ -684,6 +688,7 @@ ICACHE_FLASH_ATTR void clientList(char *s)
 		if (!onlyOne) kprintf(strilLIST,0x0d);
 	}
 }
+
 ICACHE_FLASH_ATTR void clientInfo()
 {
 	struct shoutcast_info* si;
@@ -715,6 +720,7 @@ ICACHE_FLASH_ATTR char* webInfo()
 	return resp;
 
 }
+
 ICACHE_FLASH_ATTR char* webList(int id)
 {
 	struct shoutcast_info* si;
@@ -758,6 +764,7 @@ ICACHE_FLASH_ATTR void sysI2S(char* s)
 	free(device);
 	sysI2S((char*)"");
 }
+
 ICACHE_FLASH_ATTR void sysUart(char* s)
 {
 	bool empty = false;
@@ -791,6 +798,7 @@ ICACHE_FLASH_ATTR void sysUart(char* s)
 	kprintf(PSTR("\n%sUART= %d# on next reset\n"),msgsys,device->uartspeed);	
 	free(device);
 }
+
 ICACHE_FLASH_ATTR void clientVol(char *s)
 {
     char *t = strstr(s, parslashquote);
@@ -901,8 +909,8 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 		else if(strcmp(tmp+5, "status") == 0) wifiStatus();
 		else if(strcmp(tmp+5, "station") == 0) wifiGetStation();
 		else printInfo(tmp);
-	} else
-	if(startsWith ("cli.", tmp))
+	}
+	else if(startsWith ("cli.", tmp))
 	{
 		if     (startsWith (  "url", tmp+4)) 	clientParseUrl(tmp);
 		else if(startsWith (  "path", tmp+4))	clientParsePath(tmp);
@@ -920,8 +928,8 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 		else if(startsWith (  "vol",tmp+4)) 	clientVol(tmp);
 		else if(startsWith (  "edit",tmp+4)) 	clientEdit(tmp);
 		else printInfo(tmp);
-	} else
-	if(startsWith ("sys.", tmp))
+	}
+	else if(startsWith ("sys.", tmp))
 	{
 			 if(startsWith (  "i2s",tmp+4)) 	sysI2S(tmp);
 		else if(strcmp(tmp+4, "adc") == 0) 		readAdc();
@@ -939,7 +947,7 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 		else if(startsWith (  "host",tmp+4)) 	chostname(tmp);
 		else printInfo(tmp);
 	}
-	else 
+	else
 	{
 		if(strcmp(tmp, "help") == 0)
 		{
@@ -952,7 +960,6 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char* s)
 			kprintf(stritHELP3,0x0d);
 		}
 		else printInfo(tmp);
-	}	
-	free(tmp);
-	
+	}
+	free(tmp);	
 }

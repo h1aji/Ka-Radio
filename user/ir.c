@@ -49,13 +49,13 @@
 #define IR_KEY_8        0xFFA857
 #define IR_KEY_9        0xFF906F
 #define IR_KEY_0        0xFF9867
-#define IR_KEY_PREV     0xFF10EF    /* |<< */
-#define IR_KEY_NEXT     0xFF5AA5    /* >>| */
-#define IR_KEY_MUTE     0xFF38C7
-#define IR_KEY_MINUS    0xFF4AB5    /* -   */
-#define IR_KEY_PLUS     0xFF18E7    /* +   */
-#define IR_KEY_PLAY     0xFF6897
-#define IR_KEY_STOP     0xFFB04F
+#define IR_KEY_PREV     0xFF10EF    // <
+#define IR_KEY_NEXT     0xFF5AA5    // >
+#define IR_KEY_MUTE     0xFF38C7    // OK
+#define IR_KEY_MINUS    0xFF4AB5    // -
+#define IR_KEY_PLUS     0xFF18E7    // +
+#define IR_KEY_PLAY     0xFF6897    // *
+#define IR_KEY_STOP     0xFFB04F    // #
 
 /* ------------------------------------------------------------------------- */
 /*  Receiver                                                                 */

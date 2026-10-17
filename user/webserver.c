@@ -55,22 +55,22 @@ uint8_t clientIvol = 0;
 void *inmalloc(size_t n)
 {
 	void* ret;
-//printf ("server Malloc of %d %d,  Heap size: %d\n",n,((n / 32) + 1) * 32,xPortGetFreeHeapSize( ));
+	//printf ("server Malloc of %d %d,  Heap size: %d\n",n,((n / 32) + 1) * 32,xPortGetFreeHeapSize( ));
 	ret = malloc(n);
-	
-//	printf ("server Malloc of %x : %d bytes Heap size: %d\n",ret,n,xPortGetFreeHeapSize( ));
-//	if (n <4) printf("Server: incmalloc size:%d\n",n);	
+
+	//printf ("server Malloc of %x : %d bytes Heap size: %d\n",ret,n,xPortGetFreeHeapSize( ));
+	//if (n <4) printf("Server: incmalloc size:%d\n",n);	
 	return ret;
 }	
+
 void infree(void *p)
 {
 	if (p != NULL)
-	{	free(p);
-//		printf("server free of %x,  Heap size: %d",(int)p,xPortGetFreeHeapSize( ));
-					   
+	{
+		free(p);
+		//printf("server free of %x,  Heap size: %d",(int)p,xPortGetFreeHeapSize( ));					   
 	}
-}	
-
+}
 
 ICACHE_FLASH_ATTR struct servFile* findFile(char* name)
 {
@@ -83,17 +83,16 @@ ICACHE_FLASH_ATTR struct servFile* findFile(char* name)
 	}
 }
 
-
 ICACHE_FLASH_ATTR void respOk(int conn,char* message)
 {
 	char rempty[] = {""};
 	if (message == NULL) message = rempty;
 	char fresp[strlen(strsROK)+strlen(message)+15]; // = inmalloc(strlen(strsROK)+strlen(message)+15);
 	if(kasprintf(fresp,PSTR("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\nConnection: keep-alive\r\n\r\n%s"),strlen(message),message)) 
-//printf("ok %s\n",fresp);
-			write(conn, fresp, strlen(fresp));
+	//printf("ok %s\n",fresp);
 
-//printf("respOk exit\n");
+	write(conn, fresp, strlen(fresp));
+	//printf("respOk exit\n");
 }
 
 ICACHE_FLASH_ATTR void respKo(int conn)
@@ -116,13 +115,13 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 		device = getDeviceSettings();
 		if (device != NULL)	 {
 			if (device->options & T_THEME) strcpy(name , "/style1.css");
-//			printf("name: %s, theme:%d\n",name,device->options&T_THEME);
+			//printf("name: %s, theme:%d\n",name,device->options&T_THEME);
 			infree(device);
 		}
 	}
 	struct servFile* f = findFile(name);
-//kprintf("find %s at %x\n",name,f);
-//	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+	//kprintf("find %s at %x\n",name,f);
+	//printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
 	gpart = PART;
 	if(f != NULL)
 	{
@@ -134,15 +133,13 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 	if(length > 0)
 	{
 		char *con = NULL;
-		
 		if (xSemaphoreTake(semfile,portMAX_DELAY -1))
-		{				
+		{
 			do {
 				gpart /=2;
 				con = (char*)inmalloc((gpart)*sizeof(char));
 				vTaskDelay(5);
 			} while ((con == NULL)&&(gpart >=LIMIT));
-		
 			if ((con == NULL)||(gpart <LIMIT))
 			{
 				//sprintf(buf, "HTTP/1.1 500 Internal Server Error\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", (f!=NULL ? f->type : "text/plain"), 0);
@@ -152,12 +149,12 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 				respKo(conn);
 				xSemaphoreGive(semfile);
 				return ;
-			}	
-		
-//printf("serveFile socket:%d,  %s. Length: %d  sliced in %d\n",conn,name,length,gpart);		
+			}
+
+			//printf("serveFile socket:%d,  %s. Length: %d  sliced in %d\n",conn,name,length,gpart);		
 			if(kasprintf(buf,PSTR( "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Encoding: gzip\r\nContent-Length: %d\r\nConnection: keep-alive\r\n\r\n"), (f!=NULL ? f->type : "text/plain"), length))
 			{
-//printf("serveFile send %d bytes\n%s\n",strlen(buf),buf);	
+				//printf("serveFile send %d bytes\n%s\n",strlen(buf),buf);	
 				vTaskDelay(2); // why i need it? Don't know. 
 				write(conn, buf, strlen(buf));
 				progress = length;
@@ -165,7 +162,7 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 				if (progress <= part) part = progress;
 				while (progress > 0) 
 				{
-//printf("serveFile socket:%d,  read at %x len: %d\n",conn,content,part);	
+					//printf("serveFile socket:%d,  read at %x len: %d\n",conn,content,part);	
 					flashRead(con, (uint32_t)content, part);
 					write(conn, con, part);
 					content += part;
@@ -183,14 +180,11 @@ ICACHE_FLASH_ATTR void serveFile(char* name, int conn)
 	{
 		respKo(conn);
 	}
-//	printf("serveFile socket:%d, end\n",conn);
+	//printf("serveFile socket:%d, end\n",conn);
 }
 
-
-
 ICACHE_FLASH_ATTR bool getSParameter(char* result,uint32_t len,const char* sep,const char* param, char* data, uint16_t data_length) {
-	if ((data == NULL) || (param == NULL))return false;
-	
+	if ((data == NULL) || (param == NULL))return false;	
 	char* p = strstr(data, param);
 	if(p != NULL) {
 		p += strlen(param);
@@ -203,7 +197,6 @@ ICACHE_FLASH_ATTR bool getSParameter(char* result,uint32_t len,const char* sep,c
 			for(i=0; i<len; i++) result[i] = 0;
 			strncpy(result, p, len);
 			result[len]=0;
-//			ESP_LOGV(TAG,"getSParam: in: \"%s\"   \"%s\"",data,result);
 			return true;
 		} else return false;
 	} else return false;
@@ -220,29 +213,29 @@ ICACHE_FLASH_ATTR char* getParameter(char* sep,char* param, char* data, uint16_t
 			if (p_end==p) return NULL;
 			char* t = inmalloc(p_end-p + 1);
 			if (t == NULL) { printf(PSTR("getParameterF fails%c"),0x0d); return NULL;}
-//printf("getParameter malloc of %d  for %s\n",p_end-p + 1,param);
+			//printf("getParameter malloc of %d  for %s\n",p_end-p + 1,param);
 			int i;
 			for(i=0; i<(p_end-p + 1); i++) t[i] = 0;
 			strncpy(t, p, p_end-p);
-//printf("getParam: in: \"%s\"   \"%s\"\n",data,t);
+			//printf("getParam: in: \"%s\"   \"%s\"\n",data,t);
 			return t;
 		} else return NULL;
 	} else return NULL;
 }
+
 ICACHE_FLASH_ATTR char* getParameterFromResponse(char* param, char* data, uint16_t data_length) {
 	return getParameter("&",param,data, data_length) ;
 }
+
 ICACHE_FLASH_ATTR bool getSParameterFromResponse(char* result,uint32_t size, const char* param, char* data, uint16_t data_length) {
 	return getSParameter(result,size,"&",param,data, data_length) ;
 }
+
 ICACHE_FLASH_ATTR char* getParameterFromComment(char* param, char* data, uint16_t data_length) {
 	return getParameter("\"",param,data, data_length) ;
 }
 
-
-
-ICACHE_FLASH_ATTR void clientSetOvol(int8_t ovol)
-{
+ICACHE_FLASH_ATTR void clientSetOvol(int8_t ovol) {
 	clientOvol = ovol;
 	kprintf(PSTR("##CLI.OVOLSET#: %d\n"),ovol);
 	vTaskDelay(20);
@@ -250,34 +243,34 @@ ICACHE_FLASH_ATTR void clientSetOvol(int8_t ovol)
 
 // set the current volume with its offset
 ICACHE_FLASH_ATTR void setOffsetVolume(void) {
-		struct device_settings *device;
-		device = getDeviceSettings();
-		int16_t uvol = 0;
-		if (device != NULL) 
-		{
-			kprintf(PSTR("##CLI.VOL#: %d\n"),device->vol);
-			uvol = device->vol+clientOvol;
-			infree(device);			
-		}
-		if (uvol > 254) uvol = 254;
-		if (uvol <=0) uvol = 1;
-//printf("setOffsetVol: %d\n",clientOvol);
-		VS1053_SetVolume(uvol);
+	struct device_settings *device;
+	device = getDeviceSettings();
+	int16_t uvol = 0;
+	if (device != NULL) 
+	{
+		kprintf(PSTR("##CLI.VOL#: %d\n"),device->vol);
+		uvol = device->vol+clientOvol;
+		infree(device);			
+	}
+	if (uvol > 254) uvol = 254;
+	if (uvol <=0) uvol = 1;
+	//printf("setOffsetVol: %d\n",clientOvol);
+	VS1053_SetVolume(uvol);
 }
 
 // set the volume with vol,  add offset
 ICACHE_FLASH_ATTR void setVolume(char* vol) {
-//		uint16_t ivol = atoi(vol);
-		clientIvol = atoi(vol);
-		int16_t uvol = atoi(vol);
-		uvol += clientOvol;
-		if (uvol > 254) uvol = 254;
-		if (uvol <0) uvol = 1;
-		if(vol) {
-//			printf("setVol: \"%s + %d, uvol: %d, clientIvol:%d\"\n",vol,clientOvol,uvol,clientIvol);
-			VS1053_SetVolume(uvol);
-			kprintf(PSTR("##CLI.VOL#: %d\n"),clientIvol);		
-		}
+	//uint16_t ivol = atoi(vol);
+	clientIvol = atoi(vol);
+	int16_t uvol = atoi(vol);
+	uvol += clientOvol;
+	if (uvol > 254) uvol = 254;
+	if (uvol <0) uvol = 1;
+	if(vol) {
+		//printf("setVol: \"%s + %d, uvol: %d, clientIvol:%d\"\n",vol,clientOvol,uvol,clientIvol);
+		VS1053_SetVolume(uvol);
+		kprintf(PSTR("##CLI.VOL#: %d\n"),clientIvol);		
+	}
 }
 
 ICACHE_FLASH_ATTR uint16_t getVolume() {
@@ -286,7 +279,7 @@ ICACHE_FLASH_ATTR uint16_t getVolume() {
 
 // Set the volume with increment vol
 ICACHE_FLASH_ATTR void setRelVolume(int8_t vol) {
-//	struct device_settings *device;
+	//struct device_settings *device;
 	char Vol[5];
 	int16_t rvol;
 	rvol = clientIvol+vol;
@@ -307,16 +300,17 @@ ICACHE_FLASH_ATTR void rssi(int socket) {
 			websocketwrite(socket,answer, strlen(answer));
 		}
 }
+
 // flip flop the theme indicator
 ICACHE_FLASH_ATTR void theme() {
-		struct device_settings *device;
-		device = getDeviceSettings();
-		if (device != NULL)	 {
-			if ((device->options&T_THEME)!=0) device->options&=NT_THEME; else device->options |= T_THEME;
-			saveDeviceSettings(device);
-//			printf("theme:%d\n",device->options&T_THEME);
-			infree(device);	
-		}
+	struct device_settings *device;
+	device = getDeviceSettings();
+	if (device != NULL)	 {
+		if ((device->options&T_THEME)!=0) device->options&=NT_THEME; else device->options |= T_THEME;
+		saveDeviceSettings(device);
+		//printf("theme:%d\n",device->options&T_THEME);
+		infree(device);	
+	}
 }
 
 ICACHE_FLASH_ATTR void sleepCallback(void *pArg) {
@@ -326,6 +320,7 @@ ICACHE_FLASH_ATTR void sleepCallback(void *pArg) {
 		clientSilentDisconnect(); // stop the player
 	}		
 }
+
 ICACHE_FLASH_ATTR void wakeCallback(void *pArg) {
 	if (--wakeDelay == 0)
 	{
@@ -337,42 +332,44 @@ ICACHE_FLASH_ATTR void wakeCallback(void *pArg) {
 
 ICACHE_FLASH_ATTR void startSleep(uint32_t delay)
 {
-//	printf("Delay:%d\n",delay);
+	//printf("Delay:%d\n",delay);
 	if (delay == 0) return;
 	sleepDelay = delay*60; // minutes to seconds
 	os_timer_disarm(&sleepTimer);
 	os_timer_arm(&sleepTimer, 1000, true); // 1 second and rearm	
 }
+
 ICACHE_FLASH_ATTR void stopSleep(){
-//	printf("stopDelayDelay\n");
+	//printf("stopDelayDelay\n");
 	os_timer_disarm(&sleepTimer);
 }
+
 ICACHE_FLASH_ATTR void startWake(uint32_t delay)
 {
-//	printf("Wake Delay:%d\n",delay);
+	//printf("Wake Delay:%d\n",delay);
 	if (delay == 0) return;
 	wakeDelay = delay*60; // minutes to seconds
 	os_timer_disarm(&wakeTimer);
 	os_timer_arm(&wakeTimer, 1000, true); // 1 second and rearm	
 }
+
 ICACHE_FLASH_ATTR void stopWake(){
-//	printf("stopDelayWake\n");
+	//printf("stopDelayWake\n");
 	os_timer_disarm(&wakeTimer);
 }
 
 // treat the received message of the websocket
 void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
 {
-//	struct device_settings *device;
-	//wsvol
-//	printf("websocketHandle: %s\n",payload);
+	//struct device_settings *device;
+	//printf("websocketHandle: %s\n",payload);
 	if (strstr(payload,"wsvol=")!= NULL)
 	{
 		char answer[17];
 		if (strstr(payload,"&") != NULL)
 			*strstr(payload,"&")=0;
 		else return;
-//		setVolume(payload+6);
+		//setVolume(payload+6);
 		if (kasprintf(answer,PSTR("{\"wsvol\":\"%s\"}"),payload+6))	
 			websocketlimitedbroadcast(socket,answer, strlen(answer));
 	}
@@ -392,13 +389,12 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 		startWake(atoi(payload+10));
 	}
 	else if (strstr(payload,"stopWake")!= NULL){stopWake();}
-	//monitor
+	// monitor
 	else if (strstr(payload,"monitor")!= NULL){wsMonitor();}
 //	else if (strstr(payload,"upgrade")!= NULL){update_firmware("new");}
 	else if (strstr(payload,"theme")!= NULL){theme();}
 	else if (strstr(payload,"wsrssi")!= NULL){rssi(socket);}
 }
-
 
 ICACHE_FLASH_ATTR void playStationInt(int sid) {
 	struct shoutcast_info* si;
@@ -409,7 +405,7 @@ ICACHE_FLASH_ATTR void playStationInt(int sid) {
 	if(si != NULL &&si->domain && si->file) {
 			int i;
 			vTaskDelay(4);
-//			clientSilentDisconnect();
+			//clientSilentDisconnect();
 			clientDisconnect(PSTR("playStationInt"));
 			for (i = 0;i<100;i++)
 			{
@@ -435,7 +431,7 @@ ICACHE_FLASH_ATTR void playStationInt(int sid) {
 	device = getDeviceSettings();
 	if (device != NULL)
 	{
-//	printf ("playstationInt: %d, device: %d\n",sid,device->currentstation);
+		//printf ("playstationInt: %d, device: %d\n",sid,device->currentstation);
 		if (device->currentstation != sid)
 		{
 			device->currentstation = sid;
@@ -446,13 +442,12 @@ ICACHE_FLASH_ATTR void playStationInt(int sid) {
 }
 	
 ICACHE_FLASH_ATTR void playStation(char* id) {
-//	struct shoutcast_info* si;
-//	char answer[22];
+	//struct shoutcast_info* si;
+	//char answer[22];
 	int uid;
 	uid = atoi(id) ;
-//	printf ("playstation: %d\n",uid);
-	if (uid < 255)
-		currentStation = atoi(id) ;
+	//printf ("playstation: %d\n",uid);
+	if (uid < 255) currentStation = atoi(id);
 	playStationInt(currentStation);	
 }
 
@@ -485,11 +480,9 @@ ICACHE_FLASH_ATTR void pathParse(char* str)
 	}
 }
 
-
-
 ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int conn) {
-//printf("HandlePost %s\n",name);
-//	char* head = NULL;
+	//printf("HandlePost %s\n",name);
+	//char* head = NULL;
 	int i;
 	bool tst;
 	bool changed = false;
@@ -528,7 +521,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		if(data_size > 0) {
 			char * vol = data+4;
 			data[data_size-1] = 0;
-//			printf("/sounvol vol: %s num:%d \n",vol, atoi(vol));
+			//printf("/sounvol vol: %s num:%d \n",vol, atoi(vol));
 			setVolume(vol); 
 		}
 	} else if(strcmp(name, "/sound") == 0) {
@@ -590,7 +583,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 	} else if(strcmp(name, "/getStation") == 0) {
 		if(data_size > 0) {
 			char id[6];
-//			char* id = getParameterFromResponse("idgp=", data, data_size);
+			//char* id = getParameterFromResponse("idgp=", data, data_size);
 			if (getSParameterFromResponse(id,6,"idgp=", data, data_size) ) 
 			{
 				if ((atoi(id) >=0) && (atoi(id) < 255)) 
@@ -617,7 +610,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 							for(i = 0; i<sizeof(buf); i++) buf[i] = 0;
 							kasprintf(buf, PSTR("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\n\r\n{\"Name\":\"%s\",\"URL\":\"%s\",\"File\":\"%s\",\"Port\":\"%d\",\"ovol\":\"%d\"}"),					
 							json_length, si->name, si->domain, si->file,si->port,si->ovol);
-//							printf("getStation Buf len:%d : %s\n",strlen(buf),buf);						
+							//printf("getStation Buf len:%d : %s\n",strlen(buf),buf);						
 							write(conn, buf, strlen(buf));
 							infree(buf);
 						}
@@ -625,23 +618,23 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 					infree(si);
 					return;
 				} else printf(strsID,atoi(id));
-//				infree (id);
+				//infree (id);
 			} 			
 		}
 	} else if(strcmp(name, "/setStation") == 0) {
 		if(data_size > 0) {
-//printf("data:%s\n",data);
+			//printf("data:%s\n",data);
 			char nb[6] ;
 			bool res;
 			uint16_t unb,uid = 0;
-//printf("nb init:%s\n",nb);
+			//printf("nb init:%s\n",nb);
 			bool pState = getState();  // remember if we are playing
 			res=getSParameterFromResponse(nb,6,"nb=", data, data_size);
 			if (res) 
 				unb = atoi(nb);
 			else unb = 1;
 
-//printf("unb init:%d\n",unb);
+			//printf("unb init:%d\n",unb);
 			char* url; char* file; char* name;
 			struct shoutcast_info *si =  inmalloc(sizeof(struct shoutcast_info)*unb);
 			struct shoutcast_info *nsi ;
@@ -686,22 +679,26 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				infree(url);
 				
 				data = strstr(data,"&&")+2;
-//				printf("si:%x, nsi:%x, addr:%x\n",si,nsi,data);
+				//printf("si:%x, nsi:%x, addr:%x\n",si,nsi,data);
 			}
-//printf("save station: %d, unb:%d, addr:%x\n",uid,unb,si);
+			//printf("save station: %d, unb:%d, addr:%x\n",uid,unb,si);
 			saveMultiStation(si, uid,unb);
-//printf("save station return: %d, unb:%d, addr:%x\n",uid,unb,si);
+			//printf("save station return: %d, unb:%d, addr:%x\n",uid,unb,si);
 			infree (si);	
 			if (pState != getState()) 
 				if (pState) {clientConnect();vTaskDelay(200);}	 //we was playing so start again the play		
 		}
-	} else if(strcmp(name, "/play") == 0) {
+	}
+	else if(strcmp(name, "/play") == 0) 
+	{
 		if(data_size > 4) {
 			char * id = data+3;
 			data[data_size-1] = 0;
 				playStation(id);
 		}
-	} else if(strcmp(name, "/auto") == 0) {
+	}
+	else if(strcmp(name, "/auto") == 0)
+	{
 		if(data_size > 4) {
 			char * id = data+3;
 			data[data_size-1] = 0;
@@ -724,7 +721,9 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				infree(device);	
 			}			
 		}
-	} else if(strcmp(name, "/rauto") == 0) {
+	}
+	else if(strcmp(name, "/rauto") == 0)
+	{
 		char *buf = inmalloc(106);
 		if (buf == NULL)
 		{	
@@ -744,7 +743,9 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			}
 		}	
 		return;		
-	} else if(strcmp(name, "/theme") == 0) {
+	}
+	else if(strcmp(name, "/theme") == 0)
+	{
 		char *buf = inmalloc( strlen(strsTHEME)+16);
 		if (buf == NULL)
 		{	
@@ -764,8 +765,10 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			}
 		}		
 		return;			
-	} else if(strcmp(name, "/stop") == 0) {
-//	    int i;
+	}
+	else if(strcmp(name, "/stop") == 0)
+	{
+		//int i;
 		if (clientIsConnected())
 		{	
 			clientDisconnect(PSTR("Post Stop"));
@@ -775,11 +778,14 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				vTaskDelay(4);
 			}
 		}
-	} else if(strcmp(name, "/upgrade") == 0)
+	}
+	else if(strcmp(name, "/upgrade") == 0)
 	{
 		update_firmware("new");  // start the OTA
-	} else if(strcmp(name, "/icy") == 0)	{	
-//		printf("icy vol \n");
+	}
+	else if(strcmp(name, "/icy") == 0)
+	{
+		//printf("icy vol \n");
 		char currentSt[5]; kasprintf(currentSt,PSTR("%d"),currentStation);
 		char vol[5]; kasprintf(vol,PSTR("%d"),(VS1053_GetVolume()));
 		char treble[5]; kasprintf(treble,PSTR("%d"),VS1053_GetTreble());
@@ -789,7 +795,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		char spac[5]; kasprintf(spac,PSTR("%d"),VS1053_GetSpatial());
 				
 		struct icyHeader *header = clientGetHeader();
-//		printf("icy start header %x\n",header);
+		//printf("icy start header %x\n",header);
 		char* not2;
 		not2 = header->members.single.notice2;
 		if (not2 ==NULL) not2=header->members.single.audioinfo;
@@ -804,13 +810,12 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 		((not2 ==NULL)?0:strlen(not2))+
 		((header->members.single.genre ==NULL)?0:strlen(header->members.single.genre))+
 		((header->members.single.metadata ==NULL)?0:strlen(header->members.single.metadata))
-		+ strlen(currentSt)+	strlen(vol) +strlen(treble)+strlen(bass)+strlen(tfreq)+strlen(bfreq)+strlen(spac)
-		;
-//		printf("icy start header %x  len:%d vollen:%d vol:%s\n",header,json_length,strlen(vol),vol);
+		+ strlen(currentSt)+	strlen(vol) +strlen(treble)+strlen(bass)+strlen(tfreq)+strlen(bfreq)+strlen(spac);
+		//printf("icy start header %x  len:%d vollen:%d vol:%s\n",header,json_length,strlen(vol),vol);
 		
 		char *buf = inmalloc( json_length + 75);
 		if ((buf == NULL) )
-		{	
+		{
 			printf(strsMALLOC1,"post icy");
 			respKo(conn);
 		}
@@ -826,7 +831,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 
 			if (kasprintf(buf, strsICY,
 				
-//			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}",
+			//sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}",
 			json_length,
 			currentSt,
 			(header->members.single.description ==NULL)?"":header->members.single.description,
@@ -845,16 +850,16 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				infree(buf);
 				wsMonitor();
 			} else respKo (conn);			
-		}		
+		}	
 		return;
-		
-	} else if(strcmp(name, "/wifi") == 0)	
+	} 
+	else if(strcmp(name, "/wifi") == 0)	
 	{
 		bool val = false;
-		char tmpip[16],tmpmsk[16],tmpgw[16],tmptzo[10];;
+		char tmpip[16],tmpmsk[16],tmpgw[16],tmptzo[10];
 		struct device_settings *device;
 		struct device_settings1 *device1;
-//		uint8_t a,b,c,d;
+		//uint8_t a,b,c,d;
 		changed = false;		
 		if(data_size > 0) {
 			char valid[5];
@@ -889,7 +894,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				char* aip = getParameterFromResponse("ip=", data, data_size);
 				char* amsk = getParameterFromResponse("msk=", data, data_size);
 				char* agw = getParameterFromResponse("gw=", data, data_size);
-//				char* adhcp = getSParameterFromResponse("dhcp=",4, data, data_size);				
+				//char* adhcp = getSParameterFromResponse("dhcp=",4, data, data_size);				
 				changed = true;
 				ip_addr_t valu;
 				if (aip != NULL)
@@ -903,22 +908,22 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				}
 				if (getSParameterFromResponse(adhcp,4,"dhcp=", data, data_size))
 					if (strlen(adhcp)!=0) 
-					{if (strcmp(adhcp,"true")==0) 
-					device->dhcpEn = 1; else device->dhcpEn = 0;}
-//				if (adhcp!= NULL) if (strlen(adhcp)!=0) if (strcmp(adhcp,"true")==0)device->dhcpEn = 1; else device->dhcpEn = 0;
-				strcpy(device->ssid,(ssid==NULL)?"":ssid);
-				strcpy(device->ssid2,(ssid2==NULL)?"":ssid2);
-				
+					{
+						if (strcmp(adhcp,"true")==0) device->dhcpEn = 1; else device->dhcpEn = 0;
+					}
+					//if (adhcp!= NULL) if (strlen(adhcp)!=0) if (strcmp(adhcp,"true")==0)device->dhcpEn = 1; else device->dhcpEn = 0;
+					strcpy(device->ssid,(ssid==NULL)?"":ssid);
+					strcpy(device->ssid2,(ssid2==NULL)?"":ssid2);
 				if (pasw != NULL) {
 					if (strcmp(pasw,apMode)!=0) strcpy(device->pass,pasw);
 				}
 				if (pasw2 != NULL){
 					if (strcmp(pasw2,apMode)!=0) strcpy(device1->pass2,pasw2);					
-				}						
-
+				}
 				infree(ssid);infree(pasw);infree(ssid2); infree(pasw2);
 				infree(aip);infree(amsk);infree(agw); 
 			}
+
 			if ((device->ua!= NULL)&&(strlen(device->ua)==0))
 			{
 				if (aua==NULL) {aua= inmalloc(12); strcpy(aua,"Karadio/2.1");}
@@ -941,7 +946,7 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 					{
 						strncpy(device1->hostname,host,HOSTLEN-1);
 						printf(PSTR("HOSTAME  %s. Need to restart\n"),device1->hostname);
-//						setHostname(device1->hostname);
+						//setHostname(device1->hostname);
 						changed = true;
 					}	
 				}				
@@ -954,10 +959,11 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				kasprintf(tmptzo,PSTR("%d"),device->tzoffset);
 				strcpy(tzo,tmptzo); 
 			}
-			else if (strlen(tzo) ==0)
+			else if (strlen(tzo)==0)
 			{
-				free (tzo);
-				tzo= inmalloc(10); strcpy(tzo,"0");
+				free(tzo);
+				tzo=inmalloc(10);
+				strcpy(tzo,"0");
 			}
 
 			if (strlen(tzo) >0)
@@ -965,12 +971,11 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 				if (strcmp(tzo,"undefined") != 0)
 				{
 					device->tzoffset= atoi(tzo);
-//					addonDt();
+					//addonDt();
 					changed = true;
 				}	
 			}				
-			infree(tzo);			
-			
+			infree(tzo);
 			if (changed)
 			{
 				saveDeviceSettings(device);	
@@ -983,13 +988,13 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			char adhcp[4];
 			//char* macstr = inmalloc(20*sizeof(char));
 			wifi_get_macaddr ( 0, macaddr );			
-			
+
 			int json_length ;
 			json_length =95+ 19+
 			strlen(device->ssid) +
-//			strlen(ipass11) +
+			//strlen(ipass11) +
 			strlen(device->ssid2) +
-//			strlen(ipass22) +
+			//strlen(ipass22) +
 			strlen(device->ua)+
 			strlen(device1->hostname)+
 			kasprintf(tmptzo,PSTR("%d"),device->tzoffset)+
@@ -1000,32 +1005,34 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 			kasprintf(macstr,PSTR(MACSTR),MAC2STR(macaddr));
 
 			char *buf = inmalloc( json_length + 95);
-			if ((buf == NULL) )
+			if ((buf == NULL))
 			{	
 				printf(strsMALLOC1,("post wifi"));
 				respKo(conn);
 			}
-			else {			
+			else 
+			{
 				if (kasprintf(buf, PSTR("HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"ssid\":\"%s\",\"pasw\":\"%s\",\"ssid2\":\"%s\",\"pasw2\":\"%s\",\
 \"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
 				json_length,
 				device->ssid,"",device->ssid2,"",tmpip,tmpmsk,tmpgw,device->ua,adhcp,macstr,device1->hostname,tmptzo))
 				{
-//printf(PSTR("wifi Buf len:%d\n%s\nfmt:%s\n"),strlen(buf),buf,fmt);
+					//printf(PSTR("wifi Buf len:%d\n%s\nfmt:%s\n"),strlen(buf),buf,fmt);
 					write(conn, buf, strlen(buf));
 				}
 				infree(buf);
 			}
-			
 			infree(device);
 			infree(device1);
-			if (val){
+			if (val)
+			{
 				vTaskDelay(100);		
 				system_restart_enhance(SYS_BOOT_NORMAL_BIN, system_get_userbin_addr());	
 			}	
 			return;
-		}	
-	} else if(strcmp(name, "/clear") == 0)	
+		}
+	}
+	else if(strcmp(name, "/clear") == 0)	
 	{
 		eeEraseStations();	//clear all stations
 	}
@@ -1035,40 +1042,41 @@ ICACHE_FLASH_ATTR void handlePOST(char* name, char* data, int data_size, int con
 ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 	char* c;
 	char* d;
-//	char websocketmsg[] = {"websocket request: %s\n"};
+	//char websocketmsg[] = {"websocket request: %s\n"};
 
-//	xTaskHandle pxCreatedTask;
-//	printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
-//printf("httpServerHandleConnection  %20c \n",&buf);
+	//xTaskHandle pxCreatedTask;
+	//printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+	//printf("httpServerHandleConnection  %20c \n",&buf);
 	if( (c = strstr(buf, "GET ")) != NULL)
 	{
-//kprintfl("GET socket:%d str:\n%s\n",conn,buf);
+		//kprintfl("GET socket:%d str:\n%s\n",conn,buf);
 		if( ((d = strstr(buf,"Connection:")) !=NULL)&& ((d = strstr(d," Upgrade")) != NULL))
-		{  // a websocket request
-//printf ("websocketAccept socket: %d\n",conn);
+		{
+			// a websocket request
+			//printf ("websocketAccept socket: %d\n",conn);
 			websocketAccept(conn,buf,buflen);	
 			return false;
 		} else
 		{
-//			char fname[32];
-//			uint8_t i;
-//			for(i=0; i<32; i++) fname[i] = 0;
+			//char fname[32];
+			//uint8_t i;
+			//for(i=0; i<32; i++) fname[i] = 0;
 			c += 4;
 			char* c_end = strstr(c, "HTTP");
 			if(c_end == NULL) return true;
 			*(c_end-1) = 0;
 			c_end = strstr(c,"?");
-//			
-// web command api,
-/////////////////// 		
+
 			if(c_end != NULL) // commands api
 			{
 				char* param;
-//				printf("GET commands  socket:%d command:%s\n",conn,c);
-// uart command
+				//printf("GET commands  socket:%d command:%s\n",conn,c);
 				param = strstr(c,"uart") ;
-				if (param != NULL) {uart_div_modify(0, UART_CLK_FREQ / 115200) ; } //UART_SetBaudrate(0, 115200);}	
-// volume command				
+				if (param != NULL)
+				{
+					uart_div_modify(0, UART_CLK_FREQ / 115200);
+				}
+
 				param = getParameterFromResponse("volume=", c, strlen(c)) ;
 				if ((param != NULL)&&(atoi(param)>=0)&&(atoi(param)<=254))
 				{	
@@ -1076,31 +1084,43 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 					wsVol(param);
 				}	
 				infree(param);
-// play command				
+				// play command				
 				param = getParameterFromResponse("play=", c, strlen(c)) ;
-				if (param != NULL) {playStation(param);infree(param);}
-// start command				
+				if (param != NULL) 
+				{
+					playStation(param);
+					infree(param);
+				}
+				// start command				
 				param = strstr(c,"start") ;
-				if (param != NULL) {playStationInt(currentStation);}
-// stop command				
+				if (param != NULL) {
+					playStationInt(currentStation);
+				}
+				// stop command			
 				param = strstr(c,"stop") ;
-				if (param != NULL) {clientDisconnect(PSTR("Web stop"));}
-// next command				
-				param = strstr(c,"next") ;
-				if (param != NULL) {wsStationNext();}
-// prev command				
+				if (param != NULL) {
+					clientDisconnect(PSTR("Web stop"));
+				}
+				// next command			
+				param = strstr(c,"next");
+				if (param != NULL) {
+					wsStationNext();
+				}
+				// prev command			
 				param = strstr(c,"prev") ;
-				if (param != NULL) {wsStationPrev();}	
-// instantplay command				
+				if (param != NULL) {
+					wsStationPrev();
+				}	
+				// instantplay command				
 				param = getParameterFromComment("instant=", c, strlen(c)) ;
 				if (param != NULL) {
 					clientDisconnect(PSTR("Web Instant"));
 					pathParse(param);
-//					printf("Instant param:%s\n",param);
+					//printf("Instant param:%s\n",param);
 					clientParsePlaylist(param);clientConnectOnce();
 					infree(param);
 				}
-// version command				
+				// version command			
 				param = strstr(c,"version") ;
 				if (param != NULL) {
 					char* vr = malloc(30);
@@ -1114,17 +1134,17 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 						return true;
 					}
 				}
-// infos command				
+				// infos command				
 				param = strstr(c,"infos") ;				
 				if (param != NULL) {
 					char* vr = webInfo();	
-//					printf("Infos vr:%s\n",vr);
+					//printf("Infos vr:%s\n",vr);
 					respOk(conn,vr); 
 					infree(vr);
-//					printf("Infos:%s\n",param);
+					//printf("Infos:%s\n",param);
 					return true;
 				}		
-// list command	 ?list=1 to list the name of the station 1			
+				// list command	 ?list=1 to list the name of the station 1			
 				param = getParameterFromResponse("list=", c, strlen(c)) ;
 				if ((param != NULL)&&(atoi(param)>=0)&&(atoi(param)<=254))
 				{
@@ -1136,19 +1156,20 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 				respOk(conn,NULL); // response OK to the origin
 			}
 			else 
-// file GET		
+			// file GET
 			{
 				if(strlen(c) > 32) {
 					respKo(conn); 
-					return true;}
-//printf("GET file  socket:%d file:%s\n",conn,c);
+					return true;
+				}
+				//printf("GET file  socket:%d file:%s\n",conn,c);
 				serveFile(c, conn);
-//printf("GET end socket:%d file:%s\n",conn,c);
+				//printf("GET end socket:%d file:%s\n",conn,c);
 			}
 		}
-	} else if( (c = strstr(buf, "POST ")) != NULL) {
-// a post request		
-//kprintf("POST socket: %d  buflen: %d\n",conn,buflen);
+	} else if ((c = strstr(buf, "POST ")) != NULL) {
+		// a post request		
+		//kprintf("POST socket: %d  buflen: %d\n",conn,buflen);
 		char fname[32];
 		uint8_t i;
 		for(i=0; i<32; i++) fname[i] = 0;
@@ -1158,10 +1179,10 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 		uint8_t len = c_end-c;
 		if(len > 32) return true;
 		strncpy(fname, c, len);
-//		printf("Name: %s\n", fname);
+		//printf("Name: %s\n", fname);
 		// DATA
 		char* d_start = strstr(buf, "\r\n\r\n");
-//	printf("dstart:%s\n",d_start);
+		//printf("dstart:%s\n",d_start);
 		if(d_start > 0) {
 			d_start += 4;
 			uint16_t len = buflen - (d_start-buf);
@@ -1171,40 +1192,39 @@ ICACHE_FLASH_ATTR bool httpServerHandleConnection(int conn, char* buf, uint16_t 
 	return true;
 }
 
-
-
-// Server child to handle a request from a browser.
+// Server child to handle a request from a browser
 ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 #define RECLEN	768
 	struct timeval timeout; 
     timeout.tv_sec = 2000; // bug *1000 for seconds
     timeout.tv_usec = 0;
 	int recbytes ,recb;
-//	portBASE_TYPE uxHighWaterMark;
+	//portBASE_TYPE uxHighWaterMark;
 	int  client_sock =  (int)pvParams;
 	uint32_t reclen = 	RECLEN;	
     char *buf = (char *)inmalloc(reclen);
 	bool result = true;
 
-//kprintf("Client entry  socket:%x  reclen:%d\n",client_sock,reclen);
-	
+	//kprintf("Client entry  socket:%x  reclen:%d\n",client_sock,reclen);
+
 	while (buf == NULL)
 	{
 		vTaskDelay(100);
 		kprintf(PSTR("SC Buff null\n"));
 		buf = (char *)inmalloc(reclen); // second chance
 	}
-//kprintf("Client entry 1 socket:%x  reclen:%d\n",client_sock,reclen);
+
+	//kprintf("Client entry 1 socket:%x  reclen:%d\n",client_sock,reclen);
 	if (buf != NULL)
 	{
-//kprintf("Client entry 2 socket:%x  reclen:%d\n",client_sock,reclen);
+		//kprintf("Client entry 2 socket:%x  reclen:%d\n",client_sock,reclen);
 		memset(buf,0,reclen);
-		if (setsockopt (client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-			printf(strsSOCKET,"setsockopt",errno);
-//kprintf("Client entry 3 socket:%x  reclen:%d\n",client_sock,reclen);
+		if (setsockopt (client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) printf(strsSOCKET,"setsockopt",errno);
+		//kprintf("Client entry 3 socket:%x  reclen:%d\n",client_sock,reclen);
 
 		while (((recbytes = read(client_sock , buf, reclen)) != 0)) 
-		{ // For now we assume max. reclen bytes for request with 2*reclen extention if needed
+		{
+			// For now we assume max. reclen bytes for request with 2*reclen extention if needed
 			if (recbytes < 0) {
 				break;
 				if (errno != EAGAIN )
@@ -1212,7 +1232,10 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 					kprintf(strsSOCKET,"client_sock",errno);
 					vTaskDelay(10);	
 					break;
-				} else {kprintf(strsSOCKET,tryagain,errno);break;}
+				} else {
+					kprintf(strsSOCKET,tryagain,errno);
+					break;
+				}
 			}	
 			char* bend = NULL;
 			do {
@@ -1220,14 +1243,15 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 				if (bend != NULL) 
 				{	
 					bend += 4;
-//kprintf("Server: header len : %d,recbytes = %d,reclen: %d\n%s\nend\n",bend - buf,recbytes,reclen,buf);	
-					if (strstr(buf,"POST") ) //rest of post?
+					//kprintf("Server: header len : %d,recbytes = %d,reclen: %d\n%s\nend\n",bend - buf,recbytes,reclen,buf);	
+					if (strstr(buf,"POST"))
+					//rest of post?
 					{
 						uint16_t cl = atoi(strstr(buf, "Content-Length: ")+16);
-//printf("cl: %d, rec:%s\n",cl,buf);
+						//printf("cl: %d, rec:%s\n",cl,buf);
 						if ((reclen == RECLEN) && ((bend - buf +cl)> reclen))
 						{
-//printf("cl: %d, rec:%d\n",cl,recbytes);
+							//printf("cl: %d, rec:%d\n",cl,recbytes);
 							buf = realloc(buf,(2*RECLEN) );
 							if (buf == NULL) { printf(strsSOCKET,"realloc",errno);   break;}
 							reclen = 2*RECLEN;
@@ -1236,10 +1260,10 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 						vTaskDelay(1);
 						if ((bend - buf +cl)> recbytes)
 						{	
-//kprintf ("Server: try receive more:%d bytes. reclen = %d, must be %d\n", recbytes,reclen,bend - buf +cl);
+							//kprintf ("Server: try receive more:%d bytes. reclen = %d, must be %d\n", recbytes,reclen,bend - buf +cl);
 							while(((recb = read(client_sock , buf+recbytes, cl))==0)){vTaskDelay(1);printf(PSTR("."));}
 							buf[recbytes+recb] = 0;
-//printf ("Server: received more now: %d bytes, rec:\n%s\nEnd\n", recbytes+recb,buf);
+							//printf ("Server: received more now: %d bytes, rec:\n%s\nEnd\n", recbytes+recb,buf);
 							if (recb < 0) {
 								respKo(client_sock);
 								break;
@@ -1254,19 +1278,17 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 							recbytes += recb;
 						}
 					}
-				} 
-				else { 
-					
-//kprintf ("Server: try receive more for end:%d bytes\n", recbytes);					
+				} else {
+					//kprintf ("Server: try receive more for end:%d bytes\n", recbytes);					
 					if (reclen == RECLEN) 
 					{
-//kprintf ("Server: try receive more for end:%d bytes\n", recbytes);
+						//kprintf ("Server: try receive more for end:%d bytes\n", recbytes);
 						buf = realloc(buf,(2*RECLEN) +1);
 						if (buf == NULL) {printf(strsSOCKET,"Realloc",errno);break;}
 						reclen = 2*RECLEN;
 					}	
 					while(((recb= read(client_sock , buf+recbytes, reclen-recbytes))==0)) vTaskDelay(1);
-//kprintf ("Server: received more for end now: %d bytes\n", recbytes+recb);
+					//kprintf ("Server: received more for end now: %d bytes\n", recbytes+recb);
 					if (recb < 0) {
 						respKo(client_sock);
 						break;
@@ -1281,9 +1303,9 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 					recbytes += recb;
 				} //until "\r\n\r\n"
 			} while (bend == NULL);
-//kprintf ("Server: call httpServerHandleConnection: %d bytes\n", recbytes);
+			//kprintf ("Server: call httpServerHandleConnection: %d bytes\n", recbytes);
 			result = httpServerHandleConnection(client_sock, buf, recbytes);
-//kprintf ("Server: exit httpServerHandleConnection: %d bytes\n", recbytes);
+			//kprintf ("Server: exit httpServerHandleConnection: %d bytes\n", recbytes);
 			if (reclen == 2*RECLEN)
 			{
 				reclen = RECLEN;
@@ -1299,7 +1321,7 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 			vTaskDelay(1);
 		}
 		infree(buf);
-	} else  kprintf(strsMALLOC1,"buf");
+	} else kprintf(strsMALLOC1,"buf");
 	if (result)
 	{
 		int err;
@@ -1309,15 +1331,16 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams) {
 		if (err != ERR_OK) 
 		{
 			err=close(client_sock);
-//			printf ("closeERR:%d\n",err);
+			//printf ("closeERR:%d\n",err);
 		}
 	}
 	xSemaphoreGive(semclient);	
-//kprintf (PSTR("Give client_sock: %d %s"),client_sock,"\n");		
+	//kprintf (PSTR("Give client_sock: %d %s"),client_sock,"\n");		
+
 /*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);	
 */
 
-//	printf("Client exit socket:%d result %d \n",client_sock,result);
+	//printf("Client exit socket:%d result %d \n",client_sock,result);
 	vTaskDelete( NULL );	
 }

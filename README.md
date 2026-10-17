@@ -105,6 +105,7 @@ GPIO05  - SCL
  - Review firmware update process
  - Setup Github CI/CD
  - Adjust web interface for mobile devices
+ - Add MQTT support
 
 License
 ----
