@@ -4,8 +4,19 @@
 #include "espressif/esp8266/pin_mux_register.h"
 #include "gpio.h"
 
-static uint8_t m_nLastSDA;
-static uint8_t m_nLastSCL;
+/*
+ * Bit-banged bus speed. SSD1306_I2C_DELAY_US is the pause between two line changes; every bit
+ * needs about three of them, so 1 us gives roughly a 100-200 kHz bus (the SSD1306 accepts up to
+ * 400 kHz). The old 5 us delays kept the CPU busy for about 180 ms per screen update.
+ */
+#ifndef SSD1306_I2C_DELAY_US
+#define SSD1306_I2C_DELAY_US 1
+#endif
+#define I2C_DELAY() os_delay_us(SSD1306_I2C_DELAY_US)
+
+/* logical level of the two lines; both released (high) after ssd1306_i2c_master_gpio_init() */
+static uint8_t m_nLastSDA = 1;
+static uint8_t m_nLastSCL = 1;
 
 /* roles of the two bus pins; ssd1306_i2c_scan() swaps them temporarily to detect crossed wires */
 static uint8_t m_sda = SSD1306_I2C_SDA_GPIO;
@@ -23,14 +34,19 @@ static void ssd1306_i2c_setDC(uint8_t sda, uint8_t scl)
 {
 	sda &= 0x01;
 	scl &= 0x01;
+
+	/* a register write is only needed when the level changes */
+	if (sda != m_nLastSDA) {
+		if (sda) GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, SSD1306_SDA_BIT);
+		else     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, SSD1306_SDA_BIT);
+	}
+	if (scl != m_nLastSCL) {
+		if (scl) GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, SSD1306_SCL_BIT);
+		else     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, SSD1306_SCL_BIT);
+	}
+
 	m_nLastSDA = sda;
 	m_nLastSCL = scl;
-
-	if (sda) GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, SSD1306_SDA_BIT);
-	else     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, SSD1306_SDA_BIT);
-
-	if (scl) GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, SSD1306_SCL_BIT);
-	else     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, SSD1306_SCL_BIT);
 }
 
 static uint8_t ssd1306_i2c_getDC(void)
@@ -40,14 +56,14 @@ static uint8_t ssd1306_i2c_getDC(void)
 
 void ssd1306_i2c_master_stop(void)
 {
-	os_delay_us(5);
+	I2C_DELAY();
 
 	ssd1306_i2c_setDC(0, m_nLastSCL);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(0, 1);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 1);
-	os_delay_us(5);
+	I2C_DELAY();
 }
 
 void ssd1306_i2c_master_init(void)
@@ -55,20 +71,20 @@ void ssd1306_i2c_master_init(void)
 	uint8_t i;
 
 	ssd1306_i2c_setDC(1, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	/* when SCL = 0, toggle SDA to clear up */
 	ssd1306_i2c_setDC(0, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	/* set data_cnt to max value */
 	for (i = 0; i < 28; i++) {
 		ssd1306_i2c_setDC(1, 0);
-		os_delay_us(5);
+		I2C_DELAY();
 		ssd1306_i2c_setDC(1, 1);
-		os_delay_us(5);
+		I2C_DELAY();
 	}
 
 	/* reset all */
@@ -90,7 +106,8 @@ void ssd1306_i2c_master_gpio_init(void)
 	GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, SSD1306_SDA_BIT | SSD1306_SCL_BIT);
 	GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, SSD1306_SDA_BIT | SSD1306_SCL_BIT);
 
-	ssd1306_i2c_setDC(1, 1);
+	m_nLastSDA = 1;	/* both lines are physically high now */
+	m_nLastSCL = 1;
 
 	ssd1306_i2c_master_init();
 }
@@ -98,25 +115,25 @@ void ssd1306_i2c_master_gpio_init(void)
 void ssd1306_i2c_master_start(void)
 {
 	ssd1306_i2c_setDC(1, m_nLastSCL);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 1);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(0, 1);
-	os_delay_us(5);
+	I2C_DELAY();
 }
 
 static void ssd1306_i2c_setAck(uint8_t level)
 {
 	ssd1306_i2c_setDC(m_nLastSDA, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(level, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(level, 1);
-	os_delay_us(8);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(level, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 }
 
 static uint8_t ssd1306_i2c_getAck(void)
@@ -124,16 +141,16 @@ static uint8_t ssd1306_i2c_getAck(void)
 	uint8_t ret;
 
 	ssd1306_i2c_setDC(m_nLastSDA, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 1);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	ret = ssd1306_i2c_getDC();
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(1, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	return ret;
 }
@@ -158,29 +175,29 @@ uint8_t ssd1306_i2c_master_readByte(void)
 	uint8_t ret = 0;
 	uint8_t i, bit;
 
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(m_nLastSDA, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	for (i = 0; i < 8; i++) {
-		os_delay_us(5);
+		I2C_DELAY();
 		ssd1306_i2c_setDC(1, 0);
-		os_delay_us(5);
+		I2C_DELAY();
 		ssd1306_i2c_setDC(1, 1);
-		os_delay_us(5);
+		I2C_DELAY();
 
 		bit = ssd1306_i2c_getDC();
-		os_delay_us(5);
+		I2C_DELAY();
 
 		if (i == 7) {
-			os_delay_us(3);
+			I2C_DELAY();
 		}
 
 		ret |= bit << (7 - i);
 	}
 
 	ssd1306_i2c_setDC(1, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	return ret;
 }
@@ -190,23 +207,23 @@ void ssd1306_i2c_master_writeByte(uint8_t wrdata)
 	int8_t i;
 	uint8_t bit;
 
-	os_delay_us(5);
+	I2C_DELAY();
 	ssd1306_i2c_setDC(m_nLastSDA, 0);
-	os_delay_us(5);
+	I2C_DELAY();
 
 	for (i = 7; i >= 0; i--) {
 		bit = (wrdata >> i) & 0x01;
 		ssd1306_i2c_setDC(bit, 0);
-		os_delay_us(5);
+		I2C_DELAY();
 		ssd1306_i2c_setDC(bit, 1);
-		os_delay_us(5);
+		I2C_DELAY();
 
 		if (i == 0) {
-			os_delay_us(3);
+			I2C_DELAY();
 		}
 
 		ssd1306_i2c_setDC(bit, 0);
-		os_delay_us(5);
+		I2C_DELAY();
 	}
 }
 

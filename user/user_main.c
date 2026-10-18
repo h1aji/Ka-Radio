@@ -526,8 +526,9 @@ void user_init(void)
 {
 	struct device_settings *device;
 	uint32_t uspeed;
+
 //	REG_SET_BIT(0x3ff00014, BIT(0));
-//	system_update_cpu_freq(SYS_CPU_160MHZ);
+	system_update_cpu_freq(SYS_CPU_160MHZ);
 
 	xTaskHandle pxCreatedTask;
     Delay(100);
@@ -566,8 +567,9 @@ void user_init(void)
 	printf(striTASK,"t3",pxCreatedTask);	
 	xTaskCreate(serversTask, "t4", 370, NULL, 4, &pxCreatedTask); //380
 	printf(striTASK,"t4",pxCreatedTask);
+
 	irInit(); // infrared remote on GPIO2
-	displayInit(); // SSD1306 status OLED
+//	displayInit(); // SSD1306 status OLED
 
 	printf (striHEAP,xPortGetFreeHeapSize( ));
 }

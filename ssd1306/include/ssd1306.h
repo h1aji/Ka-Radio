@@ -22,6 +22,9 @@
 #define SSD1306_HEIGHT           64
 #endif
 
+/* The panel is organised in pages of 8 rows (at most 8 pages: the dirty-page mask is 8 bits) */
+#define SSD1306_PAGES            (SSD1306_HEIGHT / 8)
+
 /**
  * @brief  SSD1306 color enumeration
  */
@@ -64,6 +67,15 @@ uint8_t SSD1306_Init(void);
  * @retval None
  */
 void SSD1306_UpdateScreen(void);
+
+/**
+ * @brief  Sends one page (8 rows) to the panel, but only if it differs from what the panel already shows
+ * @note   Lets the caller yield between pages. A page is only sent when its content changed,
+ *         so a small change costs a fraction of a full @ref SSD1306_UpdateScreen()
+ * @param  page: Page number, 0 to SSD1306_PAGES - 1
+ * @retval true if data was sent over I2C, false if the page was unchanged or the panel does not answer
+ */
+bool SSD1306_UpdatePage(uint8_t page);
 
 /**
  * @brief  Toggles pixels invertion inside internal RAM

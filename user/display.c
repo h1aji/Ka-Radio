@@ -82,9 +82,15 @@ static void disp_volume_bar(uint16_t y, uint16_t vol /* 0..255 */)
 	SSD1306_DrawFilledRectangle(1, y + 1, (uint16_t)((SSD1306_WIDTH - 2) * vol / 255), 4, SSD1306_COLOR_WHITE);
 }
 
+// Sends only the pages that changed, one at a time. Between pages the task sleeps for a tick,
+// so no I2C burst blocks the other tasks (or the Wi-Fi stack) for more than a few milliseconds.
 static void disp_update(void)
 {
-	SSD1306_UpdateScreen();
+	uint8_t page;
+
+	for (page = 0; page < SSD1306_PAGES; page++)
+		if (SSD1306_UpdatePage(page))
+			vTaskDelay(1);
 }
 
 /* ---------------------------------------------------------------------- 
@@ -432,5 +438,5 @@ void ICACHE_FLASH_ATTR displayInit(void)
 	idleTicks = 0;
 	screensaverActive = false;
 
-	xTaskCreate(displayTask, "display", 512, NULL, 2, NULL);
+	xTaskCreate(displayTask, "display", 640, NULL, 1, NULL);	// lowest user priority: never in the way of the stream or Wi-Fi
 }

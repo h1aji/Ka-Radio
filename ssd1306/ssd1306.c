@@ -17,6 +17,15 @@ typedef struct {
 /* Private variable */
 static SSD1306_t SSD1306;
 
+/* What the panel currently shows. Only pages that differ from this copy are sent. */
+static uint8_t SSD1306_Shadow[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
+static uint8_t SSD1306_ForcePages = 0xFF;	/* pages to send even if unchanged (after init / recovery) */
+
+/* I2C failure handling: don't hammer a panel that does not answer */
+#define SSD1306_RETRY_UPDATES 10	/* screen updates skipped after a failure before trying again */
+static uint8_t SSD1306_Online = 1;
+static uint8_t SSD1306_Backoff = 0;
+
 /*
  * ssd1306_i2c.h only gives bit-banged start/stop/byte primitives, no
  * register-write helper, so start+address+control+data+stop is built here.
@@ -50,15 +59,34 @@ static bool SSD1306_I2C_Write(uint8_t control, const uint8_t *data, uint16_t len
 	return true;
 }
 
+/* Failure of an I2C transfer: report once, then pause the updates for a while */
+static void SSD1306_Failed(void) {
+	if (SSD1306_Online)
+		printf("SSD1306: display does not answer on I2C\n");
+	SSD1306_Online = 0;
+	SSD1306_Backoff = SSD1306_RETRY_UPDATES;
+}
+
+/* Several command bytes in one transfer (control byte 0x00 = commands) */
+static void SSD1306_WriteCommands(const uint8_t *cmds, uint16_t len) {
+	if (SSD1306_I2C_Write(0x00, cmds, len))
+		SSD1306_Online = 1;
+	else
+		SSD1306_Failed();
+}
+
 /* Segment remap + COM scan direction: together they rotate the image by 180 degrees */
 static void SSD1306_ApplyRotation(void) {
+	uint8_t cmds[2];
+
 	if (SSD1306.Rotation == SSD1306_ROTATE_180) {
-		SSD1306_WRITECOMMAND(0xC0); //Set COM Output Scan Direction: normal (COM0 to COM63)
-		SSD1306_WRITECOMMAND(0xA0); //--set segment re-map: column 0 maps to SEG0
+		cmds[0] = 0xC0; //Set COM Output Scan Direction: normal (COM0 to COM63)
+		cmds[1] = 0xA0; //--set segment re-map: column 0 maps to SEG0
 	} else {
-		SSD1306_WRITECOMMAND(0xC8); //Set COM Output Scan Direction: remapped (COM63 to COM0)
-		SSD1306_WRITECOMMAND(0xA1); //--set segment re-map 0 to 127
+		cmds[0] = 0xC8; //Set COM Output Scan Direction: remapped (COM63 to COM0)
+		cmds[1] = 0xA1; //--set segment re-map 0 to 127
 	}
+	SSD1306_WriteCommands(cmds, sizeof(cmds));
 }
 
 void SSD1306_SetRotation(SSD1306_ROTATION_t rotation) {
@@ -69,39 +97,46 @@ void SSD1306_SetRotation(SSD1306_ROTATION_t rotation) {
 		SSD1306_ApplyRotation();
 }
 
+/* The whole init sequence, three transfers instead of one transfer per command */
+static void SSD1306_SendInit(void) {
+	static const uint8_t before_rotation[] = {
+		0xAE,		//display off
+		0x20, 0x02,	//Set Memory Addressing Mode: 00 Horizontal, 01 Vertical, 10 Page (used here), 11 Invalid
+		0xB0,		//Set Page Start Address for Page Addressing Mode,0-7
+		0x00,		//---set low column address
+		0x10,		//---set high column address
+		0x40,		//--set start line address
+		0x81, 0xFF	//--set contrast control register
+	};
+	static const uint8_t after_rotation[] = {
+		0xA6,		//--set normal display
+		0xA8, 0x3F,	//--set multiplex ratio(1 to 64)
+		0xA4,		//0xa4,Output follows RAM content;0xa5,Output ignores RAM content
+		0xD3, 0x00,	//-set display offset: not offset
+		0xD5, 0xF0,	//--set display clock divide ratio/oscillator frequency
+		0xD9, 0x22,	//--set pre-charge period
+		0xDA, 0x12,	//--set com pins hardware configuration
+		0xDB, 0x20,	//--set vcomh: 0.77xVcc
+		0x8D, 0x14,	//--set DC-DC enable
+		0xAF		//--turn on SSD1306 panel
+	};
+
+	SSD1306_WriteCommands(before_rotation, sizeof(before_rotation));
+	SSD1306_ApplyRotation();	//--set COM scan direction and segment re-map
+	SSD1306_WriteCommands(after_rotation, sizeof(after_rotation));
+}
+
 uint8_t SSD1306_Init(void) {
 	/* Init I2C bus (SDA=GPIO4, SCL=GPIO5, see ssd1306_i2c.h) */
 	ssd1306_i2c_master_gpio_init();
 
 	/* Init LCD */
-	SSD1306_WRITECOMMAND(0xAE); //display off
-	SSD1306_WRITECOMMAND(0x20); //Set Memory Addressing Mode
-	SSD1306_WRITECOMMAND(0x02); //00,Horizontal Addressing Mode;01,Vertical Addressing Mode;10,Page Addressing Mode (RESET);11,Invalid
-	SSD1306_WRITECOMMAND(0xB0); //Set Page Start Address for Page Addressing Mode,0-7
-	/* COM scan direction + segment re-map (SSD1306_SetRotation) are sent below, after the page address */
-	SSD1306_WRITECOMMAND(0x00); //---set low column address
-	SSD1306_WRITECOMMAND(0x10); //---set high column address
-	SSD1306_WRITECOMMAND(0x40); //--set start line address
-	SSD1306_WRITECOMMAND(0x81); //--set contrast control register
-	SSD1306_WRITECOMMAND(0xFF);
-	SSD1306_ApplyRotation();    //--set COM scan direction and segment re-map
-	SSD1306_WRITECOMMAND(0xA6); //--set normal display
-	SSD1306_WRITECOMMAND(0xA8); //--set multiplex ratio(1 to 64)
-	SSD1306_WRITECOMMAND(0x3F); //
-	SSD1306_WRITECOMMAND(0xA4); //0xa4,Output follows RAM content;0xa5,Output ignores RAM content
-	SSD1306_WRITECOMMAND(0xD3); //-set display offset
-	SSD1306_WRITECOMMAND(0x00); //-not offset
-	SSD1306_WRITECOMMAND(0xD5); //--set display clock divide ratio/oscillator frequency
-	SSD1306_WRITECOMMAND(0xF0); //--set divide ratio
-	SSD1306_WRITECOMMAND(0xD9); //--set pre-charge period
-	SSD1306_WRITECOMMAND(0x22); //
-	SSD1306_WRITECOMMAND(0xDA); //--set com pins hardware configuration
-	SSD1306_WRITECOMMAND(0x12);
-	SSD1306_WRITECOMMAND(0xDB); //--set vcomh
-	SSD1306_WRITECOMMAND(0x20); //0x20,0.77xVcc
-	SSD1306_WRITECOMMAND(0x8D); //--set DC-DC enable
-	SSD1306_WRITECOMMAND(0x14); //
-	SSD1306_WRITECOMMAND(0xAF); //--turn on SSD1306 panel
+	SSD1306_Online = 1;
+	SSD1306_Backoff = 0;
+	SSD1306_SendInit();
+
+	/* The panel RAM content is unknown after power-up: send every page once */
+	SSD1306_ForcePages = 0xFF;
 
 	/* Clear screen */
 	SSD1306_Fill(SSD1306_COLOR_BLACK);
@@ -113,26 +148,62 @@ uint8_t SSD1306_Init(void) {
 	SSD1306.CurrentX = 0;
 	SSD1306.CurrentY = 0;
 
-	/* Initialized OK */
+	/* Initialized */
 	SSD1306.Initialized = 1;
 
-	/* Return OK */
-	return 1;
+	/* 1 if the panel answered, 0 if it was not detected on the I2C bus */
+	return SSD1306_Online;
+}
+
+bool SSD1306_UpdatePage(uint8_t page) {
+	uint8_t cmds[3];
+	uint8_t mask;
+	const uint8_t *src;
+	uint8_t *dst;
+
+	if (page >= SSD1306_PAGES)
+		return false;
+
+	/* Panel not answering: wait a few updates, then try to bring it back up */
+	if (!SSD1306_Online) {
+		if (page == 0 && SSD1306_Backoff > 0)
+			SSD1306_Backoff--;
+		if (SSD1306_Backoff > 0)
+			return false;
+
+		SSD1306_SendInit();
+		if (!SSD1306_Online)
+			return false;
+		SSD1306_ForcePages = 0xFF;	/* it came back: its RAM content is unknown */
+	}
+
+	mask = 1 << page;
+	src = &SSD1306_Buffer[SSD1306_WIDTH * page];
+	dst = &SSD1306_Shadow[SSD1306_WIDTH * page];
+
+	if (!(SSD1306_ForcePages & mask) && memcmp(src, dst, SSD1306_WIDTH) == 0)
+		return false;	/* nothing changed on this page */
+
+	/* page and column address in one transfer, then the page data (control byte 0x40 = data) */
+	cmds[0] = 0xB0 + page;
+	cmds[1] = 0x00;
+	cmds[2] = 0x10;
+	if (!SSD1306_I2C_Write(0x00, cmds, sizeof(cmds)) ||
+			!SSD1306_I2C_Write(0x40, src, SSD1306_WIDTH)) {
+		SSD1306_Failed();
+		return false;
+	}
+
+	memcpy(dst, src, SSD1306_WIDTH);
+	SSD1306_ForcePages &= ~mask;
+	return true;
 }
 
 void SSD1306_UpdateScreen(void) {
 	uint8_t m;
 
-	for (m = 0; m < 8; m++) {
-		SSD1306_WRITECOMMAND(0xB0 + m);
-		SSD1306_WRITECOMMAND(0x00);
-		SSD1306_WRITECOMMAND(0x10);
-
-		// Write multi data (control byte 0x40 = data)
-		if (!SSD1306_I2C_Write(0x40, &SSD1306_Buffer[SSD1306_WIDTH * m], SSD1306_WIDTH)) {
-			printf("I2C Fail\n");
-		}
-	}
+	for (m = 0; m < SSD1306_PAGES; m++)
+		SSD1306_UpdatePage(m);
 }
 
 void SSD1306_ToggleInvert(void) {
@@ -550,7 +621,5 @@ void SSD1306_OFF(void) {
 void SSD1306_WRITECOMMAND(uint8_t command)
 {
 	// control byte 0x00 = command
-	if (!SSD1306_I2C_Write(0x00, &command, 1)) {
-		printf("I2C Fail\n");
-	}
+	SSD1306_WriteCommands(&command, 1);
 }
