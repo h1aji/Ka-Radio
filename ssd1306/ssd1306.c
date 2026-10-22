@@ -21,6 +21,19 @@ static SSD1306_t SSD1306;
 static uint8_t SSD1306_Shadow[SSD1306_WIDTH * SSD1306_HEIGHT / 8];
 static uint8_t SSD1306_ForcePages = 0xFF;	/* pages to send even if unchanged (after init / recovery) */
 
+/*
+ * Debug switch for hunting problems with the stream: 1 = everything runs as usual but nothing is
+ * ever sent on the I2C bus. If the problem is gone with 1, the I2C traffic is the cause (CPU time
+ * or electrical noise); if it stays, look at the rest of the display task.
+ */
+#ifndef SSD1306_I2C_DRY_RUN
+#define SSD1306_I2C_DRY_RUN 0
+#endif
+
+/* Default contrast, as in esp-open-rtos. 0xFF (full) draws noticeably more current. */
+#define SSD1306_CONTRAST_DEFAULT 0x9F
+static uint8_t SSD1306_Contrast = SSD1306_CONTRAST_DEFAULT;
+
 /* I2C failure handling: don't hammer a panel that does not answer */
 #define SSD1306_RETRY_UPDATES 10	/* screen updates skipped after a failure before trying again */
 static uint8_t SSD1306_Online = 1;
@@ -32,6 +45,11 @@ static uint8_t SSD1306_Backoff = 0;
  */
 static bool SSD1306_I2C_Write(uint8_t control, const uint8_t *data, uint16_t len) {
 	uint16_t i;
+
+#if SSD1306_I2C_DRY_RUN
+	(void)control; (void)data; (void)len;
+	return true;
+#endif
 
 	ssd1306_i2c_master_start();
 
@@ -97,33 +115,48 @@ void SSD1306_SetRotation(SSD1306_ROTATION_t rotation) {
 		SSD1306_ApplyRotation();
 }
 
-/* The whole init sequence, three transfers instead of one transfer per command */
+/* The whole init sequence, three transfers instead of one transfer per command.
+   Oscillator, pre-charge and VCOMH values are the ones esp-open-rtos uses with the internal charge pump. */
 static void SSD1306_SendInit(void) {
-	static const uint8_t before_rotation[] = {
+	uint8_t before_rotation[] = {
 		0xAE,		//display off
 		0x20, 0x02,	//Set Memory Addressing Mode: 00 Horizontal, 01 Vertical, 10 Page (used here), 11 Invalid
 		0xB0,		//Set Page Start Address for Page Addressing Mode,0-7
 		0x00,		//---set low column address
 		0x10,		//---set high column address
 		0x40,		//--set start line address
-		0x81, 0xFF	//--set contrast control register
+		0x81, 0x00	//--set contrast control register (value filled in below)
 	};
 	static const uint8_t after_rotation[] = {
 		0xA6,		//--set normal display
-		0xA8, 0x3F,	//--set multiplex ratio(1 to 64)
+		0xA8, SSD1306_HEIGHT - 1,	//--set multiplex ratio(1 to 64): one per row
 		0xA4,		//0xa4,Output follows RAM content;0xa5,Output ignores RAM content
 		0xD3, 0x00,	//-set display offset: not offset
-		0xD5, 0xF0,	//--set display clock divide ratio/oscillator frequency
-		0xD9, 0x22,	//--set pre-charge period
-		0xDA, 0x12,	//--set com pins hardware configuration
-		0xDB, 0x20,	//--set vcomh: 0.77xVcc
+		0xD5, 0x80,	//--set display clock divide ratio/oscillator frequency (reset default, lower EMI than 0xF0)
+		0xD9, 0xF1,	//--set pre-charge period (for the internal charge pump)
+		0xDA, (SSD1306_HEIGHT == 64) ? 0x12 : 0x02,	//--set com pins hardware configuration: alternative for 64 rows, sequential for 32
+		0xDB, 0x40,	//--set vcomh
 		0x8D, 0x14,	//--set DC-DC enable
 		0xAF		//--turn on SSD1306 panel
 	};
 
+	before_rotation[sizeof(before_rotation) - 1] = SSD1306_Contrast;
+
 	SSD1306_WriteCommands(before_rotation, sizeof(before_rotation));
 	SSD1306_ApplyRotation();	//--set COM scan direction and segment re-map
 	SSD1306_WriteCommands(after_rotation, sizeof(after_rotation));
+}
+
+void SSD1306_SetContrast(uint8_t contrast) {
+	uint8_t cmds[2] = { 0x81, 0x00 };
+
+	SSD1306_Contrast = contrast;
+
+	/* before SSD1306_Init() only remember the value, Init() sends it */
+	if (SSD1306.Initialized && SSD1306_Online) {
+		cmds[1] = contrast;
+		SSD1306_WriteCommands(cmds, sizeof(cmds));
+	}
 }
 
 uint8_t SSD1306_Init(void) {
@@ -158,6 +191,7 @@ uint8_t SSD1306_Init(void) {
 bool SSD1306_UpdatePage(uint8_t page) {
 	uint8_t cmds[3];
 	uint8_t mask;
+	uint16_t first, last;
 	const uint8_t *src;
 	uint8_t *dst;
 
@@ -181,20 +215,31 @@ bool SSD1306_UpdatePage(uint8_t page) {
 	src = &SSD1306_Buffer[SSD1306_WIDTH * page];
 	dst = &SSD1306_Shadow[SSD1306_WIDTH * page];
 
-	if (!(SSD1306_ForcePages & mask) && memcmp(src, dst, SSD1306_WIDTH) == 0)
-		return false;	/* nothing changed on this page */
+	if (SSD1306_ForcePages & mask) {
+		first = 0;
+		last = SSD1306_WIDTH - 1;
+	} else {
+		/* only the columns between the first and the last difference are sent */
+		for (first = 0; first < SSD1306_WIDTH && src[first] == dst[first]; first++)
+			;
+		if (first == SSD1306_WIDTH)
+			return false;	/* nothing changed on this page */
+		for (last = SSD1306_WIDTH - 1; src[last] == dst[last]; last--)
+			;
+	}
 
-	/* page and column address in one transfer, then the page data (control byte 0x40 = data) */
+	/* page and start column in one transfer, then the data (control byte 0x40 = data).
+	   In page addressing mode 0x00-0x0F set the low and 0x10-0x1F the high nibble of the column. */
 	cmds[0] = 0xB0 + page;
-	cmds[1] = 0x00;
-	cmds[2] = 0x10;
+	cmds[1] = 0x00 | (first & 0x0F);
+	cmds[2] = 0x10 | (first >> 4);
 	if (!SSD1306_I2C_Write(0x00, cmds, sizeof(cmds)) ||
-			!SSD1306_I2C_Write(0x40, src, SSD1306_WIDTH)) {
+			!SSD1306_I2C_Write(0x40, src + first, last - first + 1)) {
 		SSD1306_Failed();
 		return false;
 	}
 
-	memcpy(dst, src, SSD1306_WIDTH);
+	memcpy(dst + first, src + first, last - first + 1);
 	SSD1306_ForcePages &= ~mask;
 	return true;
 }

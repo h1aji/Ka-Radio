@@ -38,6 +38,10 @@ static void displayScreensaverDraw(void);
 #define DISPLAY_GLYPH_PAUSE "\x80"
 #define DISPLAY_GLYPH_STOP  "\x81"
 
+// Panel brightness: normal, and dimmed while the screensaver clock is shown (less current, less OLED wear)
+#define DISPLAY_CONTRAST_NORMAL 0x9F
+#define DISPLAY_CONTRAST_DIM    0x20
+
 // 1 = rotate the picture by 180 degrees (display mounted upside down), 0 = normal orientation
 #define DISPLAY_ROTATE_180 1
 
@@ -98,9 +102,9 @@ static void disp_update(void)
    two halves of the current title), plus volume/clock.
    ---------------------------------------------------------------------- */
 
-#define DISPLAY_TICK_MS            250   // 4 Hz, same cadence as the Arduino's Timer1
+#define DISPLAY_TICK_MS            500   // 2 Hz: scrolling and redraws
 #define DISPLAY_TICKS_PER_SEC      (1000 / DISPLAY_TICK_MS)
-#define DISPLAY_SCROLL_PAUSE_TICKS 6     // ~1.5s pause before a scrolled line loops back
+#define DISPLAY_SCROLL_PAUSE_TICKS (1500 / DISPLAY_TICK_MS)   // ~1.5s pause before a scrolled line loops back
 
 typedef struct {
 	char text[64];
@@ -322,6 +326,7 @@ static void displayTick(void)
 
 		if ((idleTicks >= idleThreshold) != screensaverActive) {
 			screensaverActive = !screensaverActive;
+			SSD1306_SetContrast(screensaverActive ? DISPLAY_CONTRAST_DIM : DISPLAY_CONTRAST_NORMAL);
 			dirty = true;
 		}
 	}
@@ -425,6 +430,7 @@ void ICACHE_FLASH_ATTR displayInit(void)
 	int i;
 
 	SSD1306_SetRotation(DISPLAY_ROTATE_180 ? SSD1306_ROTATE_180 : SSD1306_ROTATE_0);
+	SSD1306_SetContrast(DISPLAY_CONTRAST_NORMAL);
 	SSD1306_Init();
 
 	for (i = 0; i < LINE_COUNT; i++)

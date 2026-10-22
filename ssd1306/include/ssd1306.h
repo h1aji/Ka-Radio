@@ -225,6 +225,14 @@ void SSD1306_DrawCircle(int16_t x0, int16_t y0, int16_t r, SSD1306_COLOR_t c);
  */
 void SSD1306_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, SSD1306_COLOR_t c);
 
+/**
+ * @brief  Sets the panel contrast (brightness). A lower value draws less current from the supply.
+ * @note   Can be called before @ref SSD1306_Init(); the value is then used by the init sequence
+ * @param  contrast: 0 (dimmest) to 255. The default is 0x9F, the value esp-open-rtos uses.
+ * @retval None
+ */
+void SSD1306_SetContrast(uint8_t contrast);
+
 void SSD1306_WRITECOMMAND(uint8_t command);
 
 #endif

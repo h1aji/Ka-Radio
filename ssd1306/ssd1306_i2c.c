@@ -5,14 +5,43 @@
 #include "gpio.h"
 
 /*
- * Bit-banged bus speed. SSD1306_I2C_DELAY_US is the pause between two line changes; every bit
- * needs about three of them, so 1 us gives roughly a 100-200 kHz bus (the SSD1306 accepts up to
- * 400 kHz). The old 5 us delays kept the CPU busy for about 180 ms per screen update.
+ * Bit-banged bus speed. Every bit needs two pauses (data setup + clock high), SSD1306_I2C_DELAY_NS each.
+ * The pause is counted in CPU cycles (CCOUNT register), so it is exact at 80 and at 160 MHz and does
+ * not pay the call overhead of os_delay_us(). 1000 ns gives roughly a 200-250 kHz bus; 600 ns gets
+ * near 400 kHz, which modules with weak pull-up resistors may not follow.
+ * SSD1306_I2C_USE_CCOUNT 0 falls back to os_delay_us(SSD1306_I2C_DELAY_US).
  */
+#ifndef SSD1306_I2C_USE_CCOUNT
+#define SSD1306_I2C_USE_CCOUNT 1
+#endif
+#ifndef SSD1306_I2C_DELAY_NS
+#define SSD1306_I2C_DELAY_NS 1000
+#endif
 #ifndef SSD1306_I2C_DELAY_US
 #define SSD1306_I2C_DELAY_US 1
 #endif
+
+#if SSD1306_I2C_USE_CCOUNT
+static uint32_t m_delayCycles = 80;	/* set from the CPU clock in ssd1306_i2c_master_gpio_init() */
+
+static inline uint32_t ssd1306_i2c_ccount(void)
+{
+	uint32_t c;
+	__asm__ __volatile__("rsr %0, ccount" : "=a"(c));
+	return c;
+}
+
+static inline void ssd1306_i2c_delay(void)
+{
+	uint32_t start = ssd1306_i2c_ccount();
+
+	while ((ssd1306_i2c_ccount() - start) < m_delayCycles)
+		;
+}
+#define I2C_DELAY() ssd1306_i2c_delay()
+#else
 #define I2C_DELAY() os_delay_us(SSD1306_I2C_DELAY_US)
+#endif
 
 /* logical level of the two lines; both released (high) after ssd1306_i2c_master_gpio_init() */
 static uint8_t m_nLastSDA = 1;
@@ -93,6 +122,13 @@ void ssd1306_i2c_master_init(void)
 
 void ssd1306_i2c_master_gpio_init(void)
 {
+#if SSD1306_I2C_USE_CCOUNT
+	/* system_get_cpu_freq() is 80 or 160 (MHz), i.e. CPU cycles per microsecond */
+	m_delayCycles = ((uint32_t)SSD1306_I2C_DELAY_NS * system_get_cpu_freq()) / 1000;
+	if (m_delayCycles < 8)
+		m_delayCycles = 8;
+#endif
+
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);
 
@@ -213,18 +249,13 @@ void ssd1306_i2c_master_writeByte(uint8_t wrdata)
 
 	for (i = 7; i >= 0; i--) {
 		bit = (wrdata >> i) & 0x01;
-		ssd1306_i2c_setDC(bit, 0);
+		ssd1306_i2c_setDC(bit, 0);	/* data changes while the clock is low */
 		I2C_DELAY();
-		ssd1306_i2c_setDC(bit, 1);
+		ssd1306_i2c_setDC(bit, 1);	/* clock high */
 		I2C_DELAY();
-
-		if (i == 0) {
-			I2C_DELAY();
-		}
-
-		ssd1306_i2c_setDC(bit, 0);
-		I2C_DELAY();
+		ssd1306_i2c_setDC(bit, 0);	/* clock low; the next bit changes the data right away */
 	}
+	I2C_DELAY();
 }
 
 /* ------------------------------------------------------------------------- */
