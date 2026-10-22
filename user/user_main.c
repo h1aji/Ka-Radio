@@ -69,12 +69,12 @@ void cb(sc_status stat, void *pdata)
 }
 */
 
-char* getIp() { return (localIp);}
-mdnsHandle* getMdns() { return mdns;}
-void setMdns(mdnsHandle* toset) {mdns= toset;}
+char* getIp() { return (localIp); }
+mdnsHandle* getMdns() { return mdns; }
+void setMdns(mdnsHandle* toset) { mdns= toset; }
 
 void testtask(void* p) {
-struct device_settings *device;	
+struct device_settings *device;
 /*
 	int uxHighWaterMark;
 	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
@@ -86,72 +86,60 @@ struct device_settings *device;
 
 		// save volume if changed		
 		device = getDeviceSettings();
-		if (device != NULL)
-		{	
-			if (device->vol != clientIvol){ 
+		if (device != NULL) {
+			if (device->vol != clientIvol) { 
 				device->vol = clientIvol;
 				saveDeviceSettings(device);
-
-//	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-//	printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
-
+				//uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+				//printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
 			}
-			free(device);	
-		}	
+			free(device);
+		}
 	}
-//	printf("t0 end\n");
+	//printf("t0 end\n");
 	vTaskDelete( NULL ); // stop the task
 }
-
 
 ICACHE_FLASH_ATTR void housekeepingCallback(void *pArg) {
 struct device_settings *device;	
 
 	FlashCount++;
 		
-	if (FlashCount == FlashOn)
-	{
-		if (FlashVolume++ == 5) // every 10 sec
-		{
+	if (FlashCount == FlashOn) {
+		if (FlashVolume++ == 5) {
 			// save volume if changed
 			FlashVolume = 0;
-			if (xPortGetFreeHeapSize( ) > 4096) // don't worry it will be done later
-			{
+			if (xPortGetFreeHeapSize() > 4096) {
 				device = getDeviceSettingsSilent();
-				if (device != NULL)
-				{	
+				if (device != NULL) {
 					if (device->vol != clientIvol)
-						if (xPortGetFreeHeapSize( ) > 4096)
-						{ 
-//printf("save vol %d\n",clientIvol);
+						if (xPortGetFreeHeapSize() > 4096) {
+							//printf("save vol %d\n",clientIvol);
 							device->vol = clientIvol;
 							saveDeviceSettings(device);
 						}
-					free(device);	
+					free(device);
 				}
 			}
 		}
-	}		
+	}
 	if (FlashCount == FlashOn) FlashCount = 0; // restart the cycle
-		
 }
 
-ICACHE_FLASH_ATTR void initHousekeeping(void) 
-{	
+ICACHE_FLASH_ATTR void initHousekeeping(void) {
 	os_timer_disarm(&housekeepingTimer);
 	FlashCount = 0;
 	os_timer_setfn(&housekeepingTimer, housekeepingCallback, NULL);
 	os_timer_arm(&housekeepingTimer, 10, true); //  and rearm
-	vTaskDelay(1);	
-//	printf("initHousekeeping done\n");
+	vTaskDelay(1);
+	//printf("initHousekeeping done\n");
 }
 
 
 //-------------------------
 // mDNS management
 //-------------------------
-void initMDNS(char* host,uint32_t ip)
-{
+void initMDNS(char* host,uint32_t ip) {
 	ip_address_t addrip;
 	ip6_address_t addrv6 = { 0 };
 	addrip.addr = ip;
@@ -164,15 +152,10 @@ void initMDNS(char* host,uint32_t ip)
 }
 
 
-
 //-------------------------
 // Wifi  management
 //-------------------------
-void initWifi()
-{
-//-------------------------
-// AP Connection management
-//-------------------------
+void initWifi() {
 	uint16_t ap = 0;
 	int i = 0;	
 	char hostn[HOSTLEN];
@@ -187,9 +170,8 @@ void initWifi()
 	config = malloc(sizeof(struct station_config));
 	info = malloc(sizeof(struct ip_info));
 	
-// if device1 not initialized, erase it and copy pass2 to the new place
-	if (device1->cleared != 0xAABB)
-	{		
+	// if device1 not initialized, erase it and copy pass2 to the new place
+	if (device1->cleared != 0xAABB) {		
 		eeErasesettings1();
 		device1->cleared = 0xAABB; //marker init done
 		memcpy(device1->pass2,device->pass2, 64);
@@ -199,8 +181,16 @@ void initWifi()
 	wifi_station_set_auto_connect(false);
 	wifi_get_ip_info(STATION_IF, info); // ip netmask gw
 	wifi_station_get_config_default(config); //ssid passwd
-	if ((device->ssid[0] == 0xFF)&& (device->ssid2[0] == 0xFF) )  {eeEraseAll(); device = getDeviceSettings();} // force init of eeprom
-	if (device->ssid2[0] == 0xFF) {device->ssid2[0] = 0; device1->pass2[0] = 0; }
+
+	if ((device->ssid[0] == 0xFF) && (device->ssid2[0] == 0xFF)) {
+		eeEraseAll();
+		device = getDeviceSettings();
+	} // force init of eeprom
+
+	if (device->ssid2[0] == 0xFF) {
+		device->ssid2[0] = 0;
+		device1->pass2[0] = 0;
+	}
 	printf(striAP,device->ssid,device->ssid2);
 		
 	if ((strlen(device->ssid)==0)||(device->ssid[0]==0xff)/*||(device->ipAddr[0] ==0)*/) // first use
@@ -236,23 +226,24 @@ void initWifi()
 	printf(striSTA1,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
 	wifi_station_connect();
 //----------------
-	
-	
+
+
 //	printf("DHCP: 0x%x\n Device: IP: %d.%d.%d.%d\n",device->dhcpEn,device->ipAddr[0], device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]);
 //	printf("\nI: %d status: %d\n",i,wifi_station_get_connect_status());
 
 	i = 0;
 		
-	while ((wifi_station_get_connect_status() != STATION_GOT_IP))
-	{	
+	while ((wifi_station_get_connect_status() != STATION_GOT_IP)) {	
 		printf(striTRY,ap+1,config->ssid,i,wifi_station_get_connect_status());
 
-		vTaskDelay(400);//  ms
-		if (( strlen(config->ssid) ==0)||  (wifi_station_get_connect_status() == STATION_WRONG_PASSWORD)||(wifi_station_get_connect_status() == STATION_CONNECT_FAIL)||(wifi_station_get_connect_status() == STATION_NO_AP_FOUND))
-		{ 	
+		vTaskDelay(400); // ms
+		if ((strlen(config->ssid) == 0) ||
+			(wifi_station_get_connect_status() == STATION_WRONG_PASSWORD) ||
+			(wifi_station_get_connect_status() == STATION_CONNECT_FAIL) ||
+			(wifi_station_get_connect_status() == STATION_NO_AP_FOUND))
+		{
 			// try AP2 //
-			if ((strlen(device->ssid2) > 0)&& (ap <1))
-			{
+			if ((strlen(device->ssid2) > 0)&& (ap <1)) {
 				i = -1;
 				wifi_station_disconnect();
 // set for AP2 //
@@ -266,7 +257,7 @@ void initWifi()
 				if (!device->dhcpEn) {
 					wifi_station_dhcpc_stop();
 					wifi_set_ip_info(STATION_IF, info);
-				} 					
+				}
 				wifi_station_connect();
 				printf(striSTA2,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));	
 				ap++;
@@ -274,9 +265,8 @@ void initWifi()
 			else i = 10; // go to SOFTAP_MODE
 		}
 		i++;
-	
-		if (i >= 10)
-		{	// AP mode
+
+		if (i >= 10) {
 			printf(PSTR("%c"),0x0d);
 			wifi_station_disconnect();
 			vTaskDelay(100);
@@ -292,16 +282,16 @@ void initWifi()
 			vTaskDelay(10);
 			strcpy (apconfig->ssid,"WifiKaRadio");
 			apconfig->ssid_len = 0;	
-//printf("passwd: %s\nhidden: %d\nmaxc: %d\nauth: %d\n",apconfig->password,apconfig->ssid_hidden,apconfig->max_connection,apconfig->authmode);					
+			//printf("passwd: %s\nhidden: %d\nmaxc: %d\nauth: %d\n",apconfig->password,apconfig->ssid_hidden,apconfig->max_connection,apconfig->authmode);					
 			if(wifi_softap_set_config(apconfig) != true)printf(PSTR("softap failed%c%c"),0x0d,0x0d);
 			vTaskDelay(1);
 			wifi_get_ip_info(1, info);
-//printf(striSTA1,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
+			//printf(striSTA1,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
 			vTaskDelay(10);
-//			conn = true; 
+			//conn = true; 
 			free(apconfig);
 			break;
-		}//
+		}
 	}
 
 	wifi_station_set_reconnect_policy(true);
@@ -323,21 +313,23 @@ void initWifi()
 	// keep the radio awake. MODEM_SLEEP_T saves power if the stall is not caused by it.
 	wifi_set_sleep_type(NONE_SLEEP_T);
 	if ((strlen(device1->hostname) >= HOSTLEN) ||
-		(strlen(device1->hostname) == 0) || (device1->hostname[0] ==  0xff))
+		(strlen(device1->hostname) == 0) || 
+		(device1->hostname[0] ==  0xff))
 	{
 		strcpy(hostn,"WifiKaRadio");
 		strcpy(device1->hostname,hostn);
 		saveDeviceSettings1(device1);	
+	} else {
+		strcpy(hostn,device1->hostname);
 	}
-	else strcpy(hostn,device1->hostname);
+
 	printf(PSTR("HOSTNAME: %s\nLocal IP: %s\n"),hostn,localIp);
 	initMDNS(hostn,info->ip.addr);
-	
+
 	free(info);
 	free(device);
 	free(device1);
 	free(config);
-
 }
 
 void uartInterfaceTask(void *pvParameters) {
@@ -345,7 +337,7 @@ void uartInterfaceTask(void *pvParameters) {
 	struct device_settings *device;
 
 	initWifi();
-	
+
 	uint16_t ap = 0;
 	int i = 0;	
 	uint8_t maxap;
@@ -363,40 +355,40 @@ void uartInterfaceTask(void *pvParameters) {
 	ap = 0;
 	ap =system_adc_read();
 
-	if (ap <10) 
-	{		
+	if (ap <10) {
 		adcdiv = 0; // no panel adc grounded
 		kprintf(PSTR("No panel%c"),0x0d);
-	}
-	else
-	{
+	} else {
 	// read adc to see if it is a nodemcu with adc dividor
-		if (ap < 400) adcdiv = 3;
-			else adcdiv = 1;	
+		if (ap < 400) {
+			adcdiv = 3;
+		} else {
+			adcdiv = 1;
+		}
 		kprintf(PSTR("ADC Div: %d from adc: %d\n"),adcdiv,ap);
 	}
+
 	FlashOn = 190;
 	initHousekeeping(); // start the housekeeping timer (volume save). This will kill the testtask to free memory
 		
-//autostart	
+	// autostart
 	device = getDeviceSettings();
 	currentStation = device->currentstation;
 	VS1053_I2SRate(device->i2sspeed);
 	clientIvol = device->vol;
 
-	if ((wifi_get_opmode() == STATION_MODE)&&(device->autostart ==1))
-	{	
+	if ((wifi_get_opmode() == STATION_MODE)&&(device->autostart ==1)) {	
 		kprintf(PSTR("autostart: playing:%d, currentstation:%d\n"),device->autostart,device->currentstation);
 		vTaskDelay(10); 
 		playStationInt(device->currentstation);
 	}
+
 	free(device);	
 
 	while(1) {
 		while(1) {
 			int c = uart_getchar_ms(100);
-			if (c!= -1)
-			{
+			if (c!= -1) {
 				if((char)c == '\r') break;
 				if((char)c == '\n') break;
 				tmp[t] = (char)c;
@@ -406,7 +398,7 @@ void uartInterfaceTask(void *pvParameters) {
 			switchCommand() ;  // hardware panel of command
 		}
 		checkCommand(t, tmp);
-		
+
 /*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	printf("watermark uartInterfaceTask: %d  heap:%d\n",uxHighWaterMark,xPortGetFreeHeapSize( ));
 */		
@@ -461,7 +453,6 @@ uint32_t user_rf_cal_sector_set(void)
             rf_cal_sec = 0;
             break;
     }
-
     return rf_cal_sec;
 }
 
@@ -499,17 +490,18 @@ uint32_t user_rf_cal_sector_set(void)
 	}		
 }
 */
+
+
 /******************************************************************************
  * FunctionName : checkUart
  * Description  : Check for a valid uart baudrate
  * Parameters   : baud
  * Returns      : baud
 *******************************************************************************/
-uint32_t checkUart(uint32_t speed)
-{
+uint32_t checkUart(uint32_t speed) {
 	uint32_t valid[] = {1200,2400,4800,9600,14400,19200,28800,38400,57600,76880,115200,230400};
 	int i = 0;
-	for (i;i<12;i++){
+	for (i;i<12;i++) {
 		if (speed == valid[i]) return speed;
 	}
 	return 115200; // default
@@ -522,8 +514,7 @@ uint32_t checkUart(uint32_t speed)
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-void user_init(void)
-{
+void user_init(void) {
 	struct device_settings *device;
 	uint32_t uspeed;
 
@@ -551,7 +542,7 @@ void user_init(void)
 	system_print_meminfo();
 	printf(PSTR("Heap size: %d\n"),xPortGetFreeHeapSize( ));
 	clientInit();
-//	Delay(10);	
+	//Delay(10);	
 	
     flash_size_map size_map = system_get_flash_size_map();
 	printf(PSTR("size_map: %d\n"),size_map);
@@ -569,7 +560,7 @@ void user_init(void)
 	printf(striTASK,"t4",pxCreatedTask);
 
 	irInit(); // infrared remote on GPIO2
-//	displayInit(); // SSD1306 status OLED
+	displayInit(); // SSD1306 status OLED
 
 	printf (striHEAP,xPortGetFreeHeapSize( ));
 }
