@@ -139,8 +139,10 @@ ICACHE_FLASH_ATTR void dump(uint8_t *from, uint32_t len)
     uint8_t *addr;
     addr = from;
     for (i; i < len; i += 16) {
-        printf( PSTR(
-                "\n%x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x    \t\ %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c"),
+        printf(
+            PSTR(
+                "\n%x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x    \t\
+                %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c"),
             addr, addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], addr[8],
             addr[9], addr[10], addr[11], addr[12], addr[13], addr[14], addr[15], addr[0], addr[1],
             addr[2], addr[3], addr[4], addr[5], addr[6], addr[7], addr[8], addr[9], addr[10],

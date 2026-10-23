@@ -1108,9 +1108,13 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
                 printf(strsMALLOC1, ("post wifi"));
                 respKo(conn);
             } else {
-                if (kasprintf(buf, PSTR( "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"ssid\":\"%s\",\"pasw\":\"%s\",\"ssid2\":\"%s\",\"pasw2\":\"%s\",\\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
-                        json_length, device->ssid, "", device->ssid2, "", tmpip, tmpmsk, tmpgw,
-                        device->ua, adhcp, macstr, device1->hostname, tmptzo)) {
+				if (kasprintf(
+                    buf,
+                    PSTR("HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"ssid\":\"%s\",\"pasw\":\"%s\",\
+                        \"ssid2\":\"%s\",\"pasw2\":\"%s\",\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\
+                        \"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
+                    json_length,device->ssid,"",device->ssid2,"",tmpip,tmpmsk,tmpgw,device->ua,adhcp,macstr,device1->hostname,tmptzo))
+				{
                     //printf(PSTR("wifi Buf len:%d\n%s\nfmt:%s\n"),strlen(buf),buf,fmt);
                     write(conn, buf, strlen(buf));
                 }
