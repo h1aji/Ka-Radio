@@ -17,55 +17,55 @@
 #include "../webpage/favicon"
 
 struct servFile {
-	const char name[32];
-	const char type[16];
-	uint16_t size;
-	const char* content;
-	struct servFile *next;
+    const char name[32];
+    const char type[16];
+    uint16_t size;
+    const char* content;
+    struct servFile *next;
 };
 
 const struct servFile faviconFile = {
-	"/favicon.png",
-	"image/png",
-	sizeof(favicon_png),
-	favicon_png,
-	(struct servFile*)NULL
+    "/favicon.png",
+    "image/png",
+    sizeof(favicon_png),
+    favicon_png,
+    (struct servFile*)NULL
 };
 const struct servFile logoFile = {
-	"/logo.png",
-	"image/png",
-	sizeof(logo_png),
-	logo_png,
-	(struct servFile*)&faviconFile
+    "/logo.png",
+    "image/png",
+    sizeof(logo_png),
+    logo_png,
+    (struct servFile*)&faviconFile
 };
 
 const struct servFile scriptFile = {
-	"/script.js",
-	"text/javascript",
-	sizeof(script_js),
-	script_js,
-	(struct servFile*)&logoFile
+    "/script.js",
+    "text/javascript",
+    sizeof(script_js),
+    script_js,
+    (struct servFile*)&logoFile
 };
 
 const struct servFile styleFile = {
-	"/style.css",
-	"text/css",
-	sizeof(style_css),
-	style_css,
-	(struct servFile*)&scriptFile
+    "/style.css",
+    "text/css",
+    sizeof(style_css),
+    style_css,
+    (struct servFile*)&scriptFile
 };
 
 const struct servFile styleFile1 = {
-	"/style1.css",
-	"text/css",
-	sizeof(style1_css),
-	style1_css,
-	(struct servFile*)&styleFile
+    "/style1.css",
+    "text/css",
+    sizeof(style1_css),
+    style1_css,
+    (struct servFile*)&styleFile
 };
 const struct servFile indexFile = {
-	"/",
-	"text/html",
-	sizeof(index_html),
-	index_html,
-	(struct servFile*)&styleFile1
+    "/",
+    "text/html",
+    sizeof(index_html),
+    index_html,
+    (struct servFile*)&styleFile1
 };

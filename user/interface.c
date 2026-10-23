@@ -185,16 +185,16 @@ void setHostname(char *s)
     struct ip_info *info;
     mdnsHandle *mydns = getMdns();
     info = malloc(sizeof(struct ip_info));
-    //	printf("HOSTAME0  %s. Need to restart\n",s);
+    //printf("HOSTAME0  %s. Need to restart\n",s);
     if (mydns != NULL) {
         mdns_destroy(mydns);
-        //		printf("HOSTAME0  Destroy\n");
+        //printf("HOSTAME0  Destroy\n");
     }
     vTaskDelay(1);
-    //	printf("HOSTAME1\n");
+    //printf("HOSTAME1\n");
     wifi_get_ip_info(STATION_IF, info);
     vTaskDelay(1);
-    //	printf("HOSTAME2\n");
+    //printf("HOSTAME2\n");
     initMDNS(s, info->ip.addr);
     vTaskDelay(1);
     free(info);
@@ -261,45 +261,39 @@ void switchCommand()
     adc = system_adc_read();
     adc *= adcdiv;
 
-    //	if (adc < 930)
-    //		os_printf("adc: %d  div: %d\n",adc,adcdiv);
+    //if (adc < 930)
+    //    os_printf("adc: %d  div: %d\n",adc,adcdiv);
 
     if (inside && (adc > 930)) {
         inside = false;
         return;
     }
 
-    //	vTaskDelay(1);
+    //vTaskDelay(1);
     Delay(1);
     adc = system_adc_read();
     adc *= adcdiv;
 
-    if ((adc > 400) && (adc < 580)) // volume +
-    {
-        setVolumePlus();
-    } else if ((adc > 730) && (adc < 830)) // volume -
-    {
-        setVolumeMinus();
+    if ((adc > 400) && (adc < 580)) {
+        setVolumePlus(); // volume +
+    } else if ((adc > 730) && (adc < 830)) {
+        setVolumeMinus(); // volume -
     }
 
     if (!inside) {
-        if (adc < 220) // stop
-        {
+        if (adc < 220) {
             inside = true;
-            clientDisconnect(PSTR("Adc Stop"));
-        } else if ((adc > 278) && (adc < 380)) // start
-        {
+            clientDisconnect(PSTR("Adc Stop")); // stop
+        } else if ((adc > 278) && (adc < 380)) {
             inside = true;
             kasprintf(Vol, PSTR("%d"), currentStation);
-            playStation(Vol);
-        } else if ((adc > 830) && (adc < 920)) // station+
-        {
+            playStation(Vol);  // start
+        } else if ((adc > 830) && (adc < 920)) {
             inside = true;
-            wsStationNext();
-        } else if ((adc > 590) && (adc < 710)) // station-
-        {
+            wsStationNext();  // station+
+        } else if ((adc > 590) && (adc < 710)) {
             inside = true;
-            wsStationPrev();
+            wsStationPrev();  // station-
         }
     }
 }
@@ -323,7 +317,7 @@ ICACHE_FLASH_ATTR void wifiScanCallback(void *arg, STATUS status)
         int i = MAX_WIFI_STATIONS;
         char *buf;
         struct bss_info *bss_link = (struct bss_info *)arg;
-        //		kprintf(PSTR("\n%s"),msgScan);
+        //kprintf(PSTR("\n%s"),msgScan);
         buf = malloc(128);
         if (buf == NULL)
             return;
@@ -332,8 +326,7 @@ ICACHE_FLASH_ATTR void wifiScanCallback(void *arg, STATUS status)
             bss_link = bss_link->next.stqe_next;
             if (bss_link == NULL)
                 break;
-            kasprintf(buf, PSTR("\n%s;%d;%d;%d"), bss_link->ssid, bss_link->channel, bss_link->rssi,
-                      bss_link->authmode);
+            kasprintf(buf, PSTR("\n%s;%d;%d;%d"), bss_link->ssid, bss_link->channel, bss_link->rssi, bss_link->authmode);
             kprintf(PSTR("%s\n"), buf);
         }
         kprintf(PSTR("\n#%s"), msgScan);
@@ -354,12 +347,14 @@ ICACHE_FLASH_ATTR void wifiConnect(char *cmd)
         devset->ssid[i] = 0;
     for (i = 0; i < 64; i++)
         devset->pass[i] = 0;
+
     char *t = strstr(cmd, parslashquote);
     if (t == 0) {
         kprintf(stritCMDERROR, 0x0d);
         free(devset);
         return;
     }
+
     char *t_end = strstr(t, "\",\"");
     if (t_end == 0) {
         kprintf(stritCMDERROR, 0x0d);
@@ -386,13 +381,12 @@ ICACHE_FLASH_ATTR void wifiConnect(char *cmd)
 
 ICACHE_FLASH_ATTR void wifiConnectMem()
 {
-
     struct device_settings *devset = getDeviceSettings();
     kprintf(PSTR("\n##AP1: %s#"), devset->ssid);
     kprintf(PSTR("\n##AP2: %s#\n"), devset->ssid2);
     free(devset);
 
-    /*	int i;
+    /*  int i;
             struct station_config* cfg = malloc(sizeof(struct station_config));
 
             for(i = 0; i < 32; i++) cfg->ssid[i] = 0;
@@ -412,7 +406,7 @@ ICACHE_FLASH_ATTR void wifiConnectMem()
             else kprintf(PSTR("\n##WIFI.NOT_CONNECTED#"));
 
             free(cfg);
-            */
+    */
 }
 
 ICACHE_FLASH_ATTR void wifiDisconnect()
@@ -476,7 +470,7 @@ ICACHE_FLASH_ATTR void clientParsePath(char *s)
         kprintf(stritCMDERROR, 0x0d);
         return;
     }
-    //	kprintf(PSTR("cli.path: %s\n"),t);
+    //kprintf(PSTR("cli.path: %s\n"),t);
     char *t_end = strstr(t, parquoteslash) - 2;
     if (t_end <= 0) {
         kprintf(stritCMDERROR, 0x0d);
@@ -488,7 +482,7 @@ ICACHE_FLASH_ATTR void clientParsePath(char *s)
         for (tmp = 0; tmp < (t_end - t + 1); tmp++)
             path[tmp] = 0;
         strncpy(path, t + 2, (t_end - t));
-        //	kprintf(PSTR("cli.path: %s\n"),path);
+        //kprintf(PSTR("cli.path: %s\n"),path);
         clientSetPath(path);
         char *title = malloc(130);
         sprintf(title, "{\"ipath\":\"%s\"}", path);
@@ -505,11 +499,13 @@ ICACHE_FLASH_ATTR void clientParsePort(char *s)
         kprintf(stritCMDERROR, 0x0d);
         return;
     }
+
     char *t_end = strstr(t, parquoteslash) - 2;
     if (t_end <= 0) {
         kprintf(stritCMDERROR, 0x0d);
         return;
     }
+
     char *port = (char *)malloc((t_end - t + 1) * sizeof(char));
     if (port != NULL) {
         uint8_t tmp;
@@ -533,11 +529,13 @@ ICACHE_FLASH_ATTR void clientPlay(char *s)
         kprintf(stritCMDERROR, 0x0d);
         return;
     }
+
     char *t_end = strstr(t, parquoteslash) - 2;
     if (t_end <= 0) {
         kprintf(stritCMDERROR, 0x0d);
         return;
     }
+
     char *id = (char *)malloc((t_end - t + 1) * sizeof(char));
     if (id != NULL) {
         uint8_t tmp;
@@ -560,7 +558,7 @@ bool parseUrl(char *src, char *url, char *path, uint16_t *port)
     else
         tmp = src;
     tbu = tmp;
-    // printf("tbu: %s\n",tbu);
+    //printf("tbu: %s\n",tbu);
     teu = strchr(tbu, ':');
     if (teu) {
         tmp = teu + 1;
@@ -600,7 +598,7 @@ void clientEdit(char *s)
     memset(url, 0, 200);
     si->port = 80;
     si->ovol = 0;
-    //	printf("##CLI.EDIT: %s",s);
+    //printf("##CLI.EDIT: %s",s);
     tmp = s + 10;
     tmpend = strchr(tmp, ':');
     if (tmpend - tmp)
@@ -609,14 +607,14 @@ void clientEdit(char *s)
     tmpend = strchr(tmp, ',');
     if (tmpend - tmp) {
         strncpy(si->name, tmp, tmpend - tmp);
-    } //*tmpend = 0; }
+    }
     tmp = ++tmpend; //,
     tmpend = strchr(tmp, '%');
     if (tmpend == NULL)
         tmpend = strchr(tmp, '"');
     if (tmpend - tmp) {
         strncpy(url, tmp, tmpend - tmp);
-    } //*tmpend = 0; }
+    }
     else
         url[0] = 0;
     tmp = ++tmpend; //%
@@ -624,14 +622,13 @@ void clientEdit(char *s)
     if ((tmpend != NULL) && (tmpend - tmp))
         si->ovol = atoi(tmp);
 
-    // printf("==> id: %d, name: %s, url: %s\n",id,si->name,url);
+    //printf("==> id: %d, name: %s, url: %s\n",id,si->name,url);
 
     // Parsing
     if (url[0] != 0)
         parseUrl(url, si->domain, si->file, &(si->port));
 
-    // printf(" id: %d, name: %s, url: %s, port: %d, path:
-    // %s\n",id,si->name,si->domain,si->port,si->file);
+    //printf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
     if (id < 0xff) {
         if (si->domain[0] == 0) {
             si->port = 0;
@@ -888,7 +885,7 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char *s)
     for (i = 0; i < size; i++)
         tmp[i] = s[i];
     tmp[size] = 0;
-    //	kprintf(PSTR("size: %d, cmd=%s\n"),size,tmp);
+    //kprintf(PSTR("size: %d, cmd=%s\n"),size,tmp);
     if (startsWith("wifi.", tmp)) {
         if (strcmp(tmp + 5, "list") == 0)
             wifiScan();

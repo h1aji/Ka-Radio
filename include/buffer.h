@@ -2,7 +2,7 @@
  * Copyright 2016 karawin (http://www.karawin.fr)
  *
  * Stream buffer with optional external SPIRAM (23LC1024)
- * 
+ *
  */
 
 #ifndef __BUFFER_H__

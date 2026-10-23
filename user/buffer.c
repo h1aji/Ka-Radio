@@ -105,7 +105,7 @@ uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst)
 
     SPIRAM_CS_HIGH();
 
-    //	spi_speed_2mhz(); //2MHz
+    //spi_speed_2mhz();
     spi_give_semaphore();
     return i;
 }

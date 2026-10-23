@@ -471,16 +471,16 @@ void ICACHE_FLASH_ATTR LoadUserCode(const unsigned short *plugin, uint16_t size)
             val = iplugin[i++];
             while (n--) {
                 WriteVS10xxRegister(addr, val);
-                //		kprintf(PSTR("write %x at %x \n"),val,addr);
+                //kprintf(PSTR("write %x at %x \n"),val,addr);
             }
         } else { /* Copy run, copy n samples */
             while (n--) {
                 val = iplugin[i++];
                 WriteVS10xxRegister(addr, val);
-                //		kprintf(PSTR("write %x at %x \n"),val,addr);
+                //kprintf(PSTR("write %x at %x \n"),val,addr);
             }
         }
-        //	kprintf(PSTR("write %x at %x \n"),val,addr);
+        //kprintf(PSTR("write %x at %x \n"),val,addr);
     }
     free(iplugin);
 }

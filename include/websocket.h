@@ -13,7 +13,7 @@
 #include "c_types.h"
 
 #define NBCLIENT 5
-#define MAXDATA	 528
+#define MAXDATA  528
 
 typedef enum {
     WSop_continuation = 0x00, ///< %x0 denotes a continuation frame
@@ -27,19 +27,16 @@ typedef enum {
 } wsopcode_t;
 
 typedef struct {
-        bool fin;
-//        bool rsv1;
-//        bool rsv2;
-//        bool rsv3;
-	wsopcode_t opCode;
-        bool mask;
-	size_t payloadLen;
-        uint8_t * maskKey;
+    bool fin;
+    wsopcode_t opCode;
+    bool mask;
+    size_t payloadLen;
+    uint8_t * maskKey;
 } wsMessageHeader_t;
 
 
 typedef struct {
-	int socket;
+    int socket;
 } client_t;
 
 extern client_t webserverclients[NBCLIENT];
@@ -49,7 +46,7 @@ extern client_t webserverclients[NBCLIENT];
 void websocketinit(void);
 // a demand received, accept it
 void websocketAccept(int wsocket,char* bufin,int buflen);
-// a socket with a websocket . 
+// a socket with a websocket .
 bool websocketnewclient(int socket);
 // a socket with a websocket closed
 void websocketremoveclient(int socket);

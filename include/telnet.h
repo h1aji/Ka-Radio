@@ -18,7 +18,7 @@ extern int telnetclients[NBCLIENTT];
 void telnetinit(void);
 // a demand received, accept it
 bool telnetAccept(int tsocket);
-// a socket with a telnet . 
+// a socket with a telnet
 bool telnetnewclient(int socket);
 // a socket with a telnet closed
 void telnetremoveclient(int socket);

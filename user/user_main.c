@@ -54,7 +54,7 @@ static char localIp[20] = {"0.0.0.0"};
 static mdnsHandle *mdns = NULL;
 void uart_div_modify(int no, unsigned int freq);
 
-//	struct station_config config;
+//struct station_config config;
 uint8_t FlashOn = 5;
 uint8_t FlashCount = 0xFF;
 uint8_t FlashVolume = 0;
@@ -66,8 +66,9 @@ void cb(sc_status stat, void *pdata)
 {
         kprintf(PSTR("SmartConfig status received: %d\n",status));
         status = stat;
-        if (stat == SC_STATUS_LINK_OVER) if (pdata) kprintf("SmartConfig: %d:%d:%d:%d\n",((char*)
-pdata)[0],((char*)pdata)[1],((char*)pdata)[2],((char*)pdata)[3]);
+        if (stat == SC_STATUS_LINK_OVER) 
+            if (pdata) 
+                kprintf("SmartConfig: %d:%d:%d:%d\n", ((char*) pdata)[0], ((char*)pdata)[1], ((char*)pdata)[2], ((char*)pdata)[3]);
 }
 */
 
@@ -75,10 +76,12 @@ char *getIp()
 {
     return (localIp);
 }
+
 mdnsHandle *getMdns()
 {
     return mdns;
 }
+
 void setMdns(mdnsHandle *toset)
 {
     mdns = toset;
@@ -88,9 +91,9 @@ void testtask(void *p)
 {
     struct device_settings *device;
     /*
-            int uxHighWaterMark;
-            uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-            printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
+        int uxHighWaterMark;
+        uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+        printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
     */
 
     while (FlashCount == 0xFF) {
@@ -108,7 +111,7 @@ void testtask(void *p)
             free(device);
         }
     }
-    // printf("t0 end\n");
+    //printf("t0 end\n");
     vTaskDelete(NULL); // stop the task
 }
 
@@ -235,8 +238,8 @@ void initWifi()
     strcpy(config->password, device->pass);
     wifi_station_set_config(config);
     if (!device->dhcpEn) {
-        //		if ((strlen(device->ssid)!=0)&&(device->ssid[0]!=0xff)&&(!device->dhcpEn))
-        //			conn = true;	//static ip
+        //if ((strlen(device->ssid)!=0)&&(device->ssid[0]!=0xff)&&(!device->dhcpEn))
+        //    conn = true;    //static ip
         wifi_station_dhcpc_stop();
         wifi_set_ip_info(STATION_IF, info);
     }
@@ -245,9 +248,9 @@ void initWifi()
     wifi_station_connect();
     //----------------
 
-    //	printf("DHCP: 0x%x\n Device: IP: %d.%d.%d.%d\n",device->dhcpEn,device->ipAddr[0],
-    // device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]); 	printf("\nI: %d status:
-    //%d\n",i,wifi_station_get_connect_status());
+    //printf("DHCP: 0x%x\n Device: IP: %d.%d.%d.%d\n",device->dhcpEn,device->ipAddr[0],
+    // device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]);    printf("\nI: %d status:
+    // %d\n",i,wifi_station_get_connect_status());
 
     i = 0;
 
@@ -291,7 +294,7 @@ void initWifi()
             printf(PSTR("%c"), 0x0d);
             wifi_station_disconnect();
             vTaskDelay(100);
-            // printf(PSTR("Config not found%c%c"),0x0d,0x0d);
+            //printf(PSTR("Config not found%c%c"),0x0d,0x0d);
             saveDeviceSettings(device);
             printf(striDEF0, 0x0d);
             printf(striDEF1, 0x0d);
@@ -303,16 +306,14 @@ void initWifi()
             vTaskDelay(10);
             strcpy(apconfig->ssid, "WifiKaRadio");
             apconfig->ssid_len = 0;
-            // printf("passwd: %s\nhidden: %d\nmaxc: %d\nauth:
-            // %d\n",apconfig->password,apconfig->ssid_hidden,apconfig->max_connection,apconfig->authmode);
+            //printf("passwd: %s\nhidden: %d\nmaxc: %d\nauth: %d\n",apconfig->password,apconfig->ssid_hidden,apconfig->max_connection,apconfig->authmode);
             if (wifi_softap_set_config(apconfig) != true)
                 printf(PSTR("softap failed%c%c"), 0x0d, 0x0d);
             vTaskDelay(1);
             wifi_get_ip_info(1, info);
-            // printf(striSTA1,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff),
-            // ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
+            // printf(striSTA1,(info->ip.addr&0xff), ((info->ip.addr>>8)&0xff), ((info->ip.addr>>16)&0xff), ((info->ip.addr>>24)&0xff));
             vTaskDelay(10);
-            // conn = true;
+            //conn = true;
             free(apconfig);
             break;
         }
@@ -369,9 +370,8 @@ void uartInterfaceTask(void *pvParameters)
     int i = 0;
     uint8_t maxap;
 
-    /*	int uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-            printf("watermark uartInterfaceTask: %d
-       %d\n","uartInterfaceTask",uxHighWaterMark,xPortGetFreeHeapSize( ));
+    /*  int uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+        printf("watermark uartInterfaceTask: %d %d\n","uartInterfaceTask",uxHighWaterMark,xPortGetFreeHeapSize( ));
     */
     int t = 0;
     for (t = 0; t < sizeof(tmp); t++)
@@ -433,9 +433,8 @@ void uartInterfaceTask(void *pvParameters)
         }
         checkCommand(t, tmp);
 
-        /*	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-                printf("watermark uartInterfaceTask: %d
-           heap:%d\n",uxHighWaterMark,xPortGetFreeHeapSize( ));
+        /*  uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+            printf("watermark uartInterfaceTask: %d heap:%d\n",uxHighWaterMark,xPortGetFreeHeapSize( ));
         */
         for (t = 0; t < sizeof(tmp); t++)
             tmp[t] = 0;
@@ -444,7 +443,8 @@ void uartInterfaceTask(void *pvParameters)
 }
 
 /*
-UART_SetBaudrate(uint8_t uart_no, uint32_t baud_rate) {
+UART_SetBaudrate(uint8_t uart_no, uint32_t baud_rate)
+{
         uart_div_modify(uart_no, UART_CLK_FREQ / baud_rate);
 }
 */
@@ -507,19 +507,19 @@ uint32_t user_rf_cal_sector_set(void)
         printf ("Upgrade autotest before %d\n",autotest);
         if (autotest == 3) // old bin before 1.0.6
         {
-                autotest = 0; //patch espressif 1.4.2 see
-http://bbs.espressif.com/viewtopic.php?f=46&t=2349 eeSetOldData(0x0C070, &autotest, 1); printf
-("Upgrade autotest after %d\n",autotest); settings = getOldDeviceSettings();
+                autotest = 0;
+                eeSetOldData(0x0C070, &autotest, 1);
+                printf ("Upgrade autotest after %d\n",autotest);
+                settings = getOldDeviceSettings();
                 saveDeviceSettings(settings);
                 free(settings);
                 eeEraseStations();
                 for(j=0; j<192; j++){
-                        station = getOldStation(j) ;
+                        station = getOldStation(j);
                         saveStation(station, j);
                         free(station);
                         vTaskDelay(1); // avoid watchdog
                 }
-
         }
 }
 */
@@ -553,7 +553,7 @@ void user_init(void)
     struct device_settings *device;
     uint32_t uspeed;
 
-    //	REG_SET_BIT(0x3ff00014, BIT(0));
+    //REG_SET_BIT(0x3ff00014, BIT(0));
     system_update_cpu_freq(SYS_CPU_160MHZ);
 
     xTaskHandle pxCreatedTask;

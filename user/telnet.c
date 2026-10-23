@@ -97,11 +97,11 @@ bool telnetnewclient(int socket)
 void telnetremoveclient(int socket)
 {
     int i;
-    //	printf("ws removeclient:%d\n",socket);
+    //printf("ws removeclient:%d\n",socket);
     for (i = 0; i < NBCLIENTT; i++)
         if (telnetclients[i] == socket) {
             telnetclients[i] = -1;
-            //			printf("ws removeclient:%d removed\n",socket);
+            //printf("ws removeclient:%d removed\n",socket);
             close(socket);
             return;
         }
@@ -126,7 +126,7 @@ ICACHE_FLASH_ATTR bool telnetAccept(int tsocket)
         if (fmt != NULL) {
             flashRead(fmt, (uint32_t)strtWELCOME, strlen(strtWELCOME));
             fmt[strlen(strtWELCOME)] = 0;
-            //			printf("telnet write accept\n");
+            //printf("telnet write accept\n");
             write(tsocket, fmt, strlen(strtWELCOME)); // reply to accept
             free(fmt);
             return true;
@@ -209,10 +209,10 @@ ICACHE_FLASH_ATTR int telnetCommand(int tsocket)
     char *history;
     if (irec == 0)
         return 0;
-    // printf(PSTR("%sHEAPd0: %d #\n"),"##SYS.",xPortGetFreeHeapSize( ));
+    //printf(PSTR("%sHEAPd0: %d #\n"),"##SYS.",xPortGetFreeHeapSize( ));
     brec[irec] = 0x0;
     write(tsocket, "\n> ", 1);
-    // printf("%s\n",brec);
+    //printf("%s\n",brec);
     /* Preserve the previous command if resizing fails; command execution does
      * not depend on history being available. */
     history = realloc(obrec, irec + 1);

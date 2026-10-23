@@ -14,32 +14,39 @@
 #define ICY_HEADERS_COUNT 9
 #define ICY_HEADER_COUNT 10
 
-//2000 1440 1460
-#define RECEIVE 1440
+#define RECEIVE 1440 // 2000 1440 1460
 extern uint16_t currentStation;
 
 struct icyHeader
 {
-	union
-	{
-		struct
-		{
-			char* name;
-			char* notice1;
-			char* notice2;
-			char* url;
-			char* genre;
-			char* bitrate;
-			char* description;
-			char* audioinfo;
-			int metaint;
-			char* metadata;
-		} single;
-		char* mArr[ICY_HEADER_COUNT];
-	} members;
+    union
+    {
+        struct
+        {
+            char* name;
+            char* notice1;
+            char* notice2;
+            char* url;
+            char* genre;
+            char* bitrate;
+            char* description;
+            char* audioinfo;
+            int metaint;
+            char* metadata;
+        } single;
+        char* mArr[ICY_HEADER_COUNT];
+    } members;
 };
 
-enum clientStatus {C_HEADER0, C_HEADER, C_HEADER1,C_METADATA, C_DATA, C_PLAYLIST, C_PLAYLIST1 };
+enum clientStatus {
+    C_HEADER0,
+    C_HEADER,
+    C_HEADER1,
+    C_METADATA,
+    C_DATA,
+    C_PLAYLIST,
+    C_PLAYLIST1
+};
 
 void clientInit();
 uint8_t clientIsConnected();

@@ -18,7 +18,7 @@
 #define PSTR(s) (__extension__({ static const char __c[] STORE_ATTR __attribute__((section(".irom.text"))) = {s}; &__c[0];}))
 #define MAXDATAT 256
 
-extern unsigned short adcdiv;	
+extern unsigned short adcdiv;
 extern char* getIp() ;
 void switchCommand(void );
 void checkCommand(int size, char* s);
@@ -42,8 +42,8 @@ int kasprintf(char *str, const char *format, ...);
 /*
 #define kprintfl(fmt, ...) do {    \
         printf(fmt, ##__VA_ARGS__);   \
-		telnetWrite(1024,fmt, ##__VA_ARGS__); \
-	} while (0)
+        telnetWrite(1024,fmt, ##__VA_ARGS__); \
+    } while (0)
 */
 
 #endif

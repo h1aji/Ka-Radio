@@ -61,14 +61,14 @@ ICACHE_FLASH_ATTR void eeGetDatax(uint32_t eeprom, int address, void *buffer, in
 }
 
 ICACHE_FLASH_ATTR void eeGetData(int address, void *buffer, int size)
-{ 
+{
     // address, size in BYTES !!!!
     // printf("eeGetData, address= %d, size= %d\n", address,  size);
     eeGetDatax(Eeprom_start, address, buffer, size);
 }
 
 ICACHE_FLASH_ATTR void eeGetData1(int address, void *buffer, int size)
-{ 
+{
     // address, size in BYTES !!!!
     eeGetDatax(Eeprom_start1, address, buffer, size);
 }
@@ -131,18 +131,18 @@ done:
 }
 
 ICACHE_FLASH_ATTR bool eeSetData(int address, void *buffer, int size)
-{ 
+{
     // address, size in BYTES !!!!
     return eeSetDatax(Eeprom_start, address, buffer, size);
 }
 ICACHE_FLASH_ATTR bool eeSetData1(int address, void *buffer, int size)
-{ 
+{
     // address, size in BYTES !!!!
     return eeSetDatax(Eeprom_start1, address, buffer, size);
 }
 
 ICACHE_FLASH_ATTR void eeSetClear(int address, uint8_t *eebuf)
-{ 
+{
     // address, size in BYTES !!!!
     int i;
     spi_speed_2mhz();                 // 2MHz
@@ -155,7 +155,7 @@ ICACHE_FLASH_ATTR void eeSetClear(int address, uint8_t *eebuf)
 }
 
 ICACHE_FLASH_ATTR void eeSetClear1(int address, uint8_t *eebuf)
-{ 
+{
     // address, size in BYTES !!!!
     int i;
     spi_speed_2mhz();                 // 2MHz
@@ -171,7 +171,7 @@ ICACHE_FLASH_ATTR void eeEraseAll()
 {
     uint8_t *buffer = malloc(4096);
     int i = 0;
-    //	printf("erase All\n");
+    //printf("erase All\n");
     while (buffer == NULL) {
         if (++i > 4)
             break;
@@ -182,13 +182,13 @@ ICACHE_FLASH_ATTR void eeEraseAll()
         for (i = 0; i < 4096; i++)
             buffer[i] = 0;
         for (i = 0; i < EEPROM_SIZE; i += 4096) {
-            //			printf("erase from %x \n",i);
+            //printf("erase from %x \n",i);
             eeSetClear(i, buffer);
             vTaskDelay(1); // avoid watchdog
             eeSetClear1(i, buffer);
             vTaskDelay(1); // avoid watchdog
         }
-        //		printf("erase All done\n");
+        //printf("erase All done\n");
         free(buffer);
     }
 }
@@ -202,11 +202,11 @@ ICACHE_FLASH_ATTR void eeErasesettings1(void)
             buffer[i] = 0;
         printf(streERASE);
         for (i = 0; i < EEPROM_SIZE; i += 4096) {
-            //			printf("erase from %x \n",i);
+            //printf("erase from %x \n",i);
             eeSetClear1(i, buffer);
             vTaskDelay(1); // avoid watchdog
         }
-        //		printf("erase All done\n");
+        //printf("erase All done\n");
         free(buffer);
     }
 }
@@ -227,7 +227,7 @@ ICACHE_FLASH_ATTR void eeEraseStations()
         eeSetData(256, buffer, 256 * 15); // 0xF00
 
         for (i = 1; i < 16; i++) {
-            //			printf("erase from %x \n",4096*i);
+            //printf("erase from %x \n",4096*i);
             eeSetClear(4096 * i, buffer);
             vTaskDelay(1); // avoid watchdog
         }
@@ -293,7 +293,7 @@ ICACHE_FLASH_ATTR struct shoutcast_info* getOldStation(uint8_t position) {
                         int i = 0;
                         do {
                         i++;
-//			printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
+                        //printf ("Heap size: %d\n",xPortGetFreeHeapSize( ));
                         vTaskDelay(10);
                         printf(PSTR("getOldstation fails for %d\n",256 ));
                         }
@@ -351,9 +351,12 @@ ICACHE_FLASH_ATTR void saveDeviceSettings1(struct device_settings1 *settings)
 ICACHE_FLASH_ATTR struct device_settings* getOldDeviceSettings() {
         uint8_t* buffer = malloc(256);
         if(buffer) {
-                eeGetOldData(0, buffer, 256);
-                return (struct device_settings*)buffer;
-        } else { printf(PSTR("getOldDeviceSetting fails\n"));return NULL;}
+            eeGetOldData(0, buffer, 256);
+            return (struct device_settings*)buffer;
+        } else {
+            printf(PSTR("getOldDeviceSetting fails\n"));
+            return NULL;
+        }
 }
 */
 

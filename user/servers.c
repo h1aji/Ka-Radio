@@ -57,7 +57,7 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
     semclient = xSemaphoreCreateCounting(3, 3);
     semfile = xSemaphoreCreateCounting(1, 1);
 
-    //	portBASE_TYPE uxHighWaterMark;
+    //portBASE_TYPE uxHighWaterMark;
 
     struct timeval timeout;
     timeout.tv_sec = 0; // bug *1000 for seconds
@@ -68,15 +68,15 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
     int ret, sd;
 
     /*
-            uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-            printf(PSTR("watermark serverstask %d\n"),uxHighWaterMark);
+        uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+        printf(PSTR("watermark serverstask %d\n"),uxHighWaterMark);
     */
 
     int i;
     telnetinit();
     websocketinit();
     while (1) {
-        // printf("Server init loop\n"	);
+        //printf("Server init loop\n"  );
         bzero(&tenetserver_addr, sizeof(struct sockaddr_in));
         tenetserver_addr.sin_family = AF_INET;
         tenetserver_addr.sin_addr.s_addr = INADDR_ANY;
@@ -127,7 +127,7 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
         sin_size = sizeof(client_addr);
         while (1) // main loop
         {
-            // printf("Server main loop\n"	);
+            //printf("Server main loop\n");
             // clear the socket set
             FD_ZERO(&readfds);
 
@@ -149,8 +149,8 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
                 // if valid socket descriptor then add to read list
                 if (sd != -1) {
                     FD_SET(sd, &readfds);
-                    // printf("wssocket SD_set %d\n",sd);
-                    //  highest file descriptor number, need it for the select function
+                    //printf("wssocket SD_set %d\n",sd);
+                    // highest file descriptor number, need it for the select function
                     max_sd = sd > max_sd ? sd : max_sd;
                 }
             }
@@ -161,15 +161,15 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
                 // if valid socket descriptor then add to read list
                 if (sd != -1) {
                     FD_SET(sd, &readfds);
-                    // printf("SD_set %d, max_sd: %d\n",sd,max_sd);
-                    //  highest file descriptor number, need it for the select function
+                    //printf("SD_set %d, max_sd: %d\n",sd,max_sd);
+                    // highest file descriptor number, need it for the select function
                     max_sd = sd > max_sd ? sd : max_sd;
                 }
             }
-            // printf("ws call select. Max sd: %d\n",max_sd);
-            //  wait for an activity on one of the sockets ,
+            //printf("ws call select. Max sd: %d\n",max_sd);
+            // wait for an activity on one of the sockets
             activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
-            // if (activity != 0) printf ("Activity %d, max_fd: %d\n",activity,max_sd);
+            //if (activity != 0) printf ("Activity %d, max_fd: %d\n",activity,max_sd);
             if ((activity < 0) && (errno != EINTR) && (errno != 0)) {
                 printf(strsTELNET, "select", errno);
                 vTaskDelay(100);
@@ -180,32 +180,30 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
                 continue;
             }
 
-            // If something happened on the master webserver socket , then its an incoming
-            // connection
+            // If something happened on the master webserver socket , then its an incoming connection
             if (FD_ISSET(server_sock, &readfds)) {
                 FD_CLR(server_sock, &readfds);
-                // printf(PSTR("Server web accept.%c"),0x0d);
+                //printf(PSTR("Server web accept.%c"),0x0d);
                 if ((client_sock =
                          accept(server_sock, (struct sockaddr *)&client_addr, &sin_size)) < 0) {
                     printf(strsWSOCK, "accept", errno);
                     vTaskDelay(10);
                 } else {
                     while (1) {
-                        // printf ("Heap size server: %d\n",xPortGetFreeHeapSize( ));
-                        // printf ("Accept socket %d\n",client_sock);
+                        //printf ("Heap size server: %d\n",xPortGetFreeHeapSize( ));
+                        //printf ("Accept socket %d\n",client_sock);
                         if (xSemaphoreTake(semclient, portMAX_DELAY)) {
                             // printf (PSTR("Take client_sock: %d\n%c"),client_sock,0x0d);
-                            while (xTaskCreate(serverclientTask, "t10", stack, (void *)client_sock,
-                                               6, NULL) != pdPASS) {
+                            while (xTaskCreate(serverclientTask, "t10", stack, (void *)client_sock, 6, NULL) != pdPASS) {
                                 kprintf(PSTR("Low mem. Retrying...\n%c"), 0x0d);
                                 vTaskDelay(200);
                             }
-                            // vTaskDelay(1);
-                            // printf(PSTR("serverClient launched.\n%c"),0x0d);
-                            // xSemaphoreGive(semclient);
+                            //vTaskDelay(1);
+                            //printf(PSTR("serverClient launched.\n%c"),0x0d);
+                            //xSemaphoreGive(semclient);
                             break; // while 1
-                        } else     // xSemaphoreTake fails
-                        {
+                        } else {
+                            // xSemaphoreTake fails
                             vTaskDelay(200);
                             kprintf(PSTR("Busy. Retrying...\n%c"), 0x0d);
                         }
@@ -215,9 +213,7 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
             // If something happened on the master telnet socket , then its an incoming connection
             if (FD_ISSET(telnetServer_sock, &readfds)) {
                 FD_CLR(telnetServer_sock, &readfds);
-                if ((telnetClient_sock =
-                         accept(telnetServer_sock, (struct sockaddr *)&tenetclient_addr,
-                                &telnetSin_size)) < 0) {
+                if ((telnetClient_sock = accept(telnetServer_sock, (struct sockaddr *)&tenetclient_addr, &telnetSin_size)) < 0) {
                     printf(strsTELNET, "accept", errno);
                     close(telnetClient_sock);
                     vTaskDelay(50);
@@ -236,14 +232,14 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
                 if ((sd != -1) && (FD_ISSET(sd, &readfds))) {
                     FD_CLR(sd, &readfds);
                     ret = telnetRead(sd);
-                    // printf("Call telnetRead i: %d, socket: %d, ret: %d\n" ,i, sd,ret);
+                    //printf("Call telnetRead i: %d, socket: %d, ret: %d\n" ,i, sd,ret);
                     if (ret == 0) {
                         telnetremoveclient(sd);
-                        //						printf(strsTELNET,"Clear",errno);
+                        //printf(strsTELNET,"Clear",errno);
                     }
-                    //					if (--activity ==0) break;
+                    //if (--activity ==0) break;
                 }
-                //				vTaskDelay(1);
+                //vTaskDelay(1);
             }
             // websocket sockets
             for (i = 0; i < NBCLIENT; i++) {
@@ -252,17 +248,16 @@ ICACHE_FLASH_ATTR void serversTask(void *pvParams)
                 if ((sd != -1) && (FD_ISSET(sd, &readfds))) {
                     FD_CLR(sd, &readfds);
                     ret = websocketRead(sd);
-                    //					printf("Call websocketRead i: %d, socket:
-                    //%d, ret: %d\n" ,i, sd,ret);
+                    //printf("Call websocketRead i: %d, socket: %d, ret: %d\n" ,i, sd,ret);
                     if (ret <= 0) {
                         websocketremoveclient(sd);
-                        // printf("Clear i: %d, socket: %d, errno: %d\n" ,i, sd,errno);
+                        //printf("Clear i: %d, socket: %d, errno: %d\n" ,i, sd,errno);
                     }
-                    //					if (--activity == 0) break;
+                    //if (--activity == 0) break;
                 }
             }
-            /*			uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-                                    printf(PSTR("watermark middle ssTask: %d\n"),uxHighWaterMark);
+            /*  uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
+                printf(PSTR("watermark middle ssTask: %d\n"),uxHighWaterMark);
             */
         }
     }
