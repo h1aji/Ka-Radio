@@ -40,32 +40,31 @@
     Configuration
    ------------------------------------------------------------------------- */
 
-#define OTA_HOST          "karadio.karawin.fr"   // firmware server
-#define OTA_PORT          80
-#define OTA_URL_SIZE      512                    // size of the request buffer
-#define OTA_CHECK_TIMES   360000                 // upgrade check retries
+#define OTA_HOST "karadio.karawin.fr" // firmware server
+#define OTA_PORT 80
+#define OTA_URL_SIZE 512       // size of the request buffer
+#define OTA_CHECK_TIMES 360000 // upgrade check retries
 
-#define UPGRADE_DATA_SEG_LEN 1460                // the size cannot be bigger
-#define UPGRADE_RETRY_TIMES  10
+#define UPGRADE_DATA_SEG_LEN 1460 // the size cannot be bigger
+#define UPGRADE_RETRY_TIMES 10
 
-#define OTA_STR_(x)       #x
-#define OTA_STR(x)        OTA_STR_(x)
+#define OTA_STR_(x) #x
+#define OTA_STR(x) OTA_STR_(x)
 
 /*
  * HTTP request template, kept in flash.
  *   %d = image slot to download (1 or 2)
  *   %s = release name ("new" or "prv")
  */
-static const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "GET /user%d.4096.%s.4.bin HTTP/1.0\r\n"
-    "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
-    "Connection: keep-alive\r\n"
-    "Cache-Control: no-cache\r\n"
-    "User-Agent: Karadio 2.1 \r\n"
-    "Accept: */*\r\n"
-    "Accept-Encoding: gzip,deflate,sdch\r\n"
-    "\r\n"
-};
+static const char strupd[] ICACHE_RODATA_ATTR
+STORE_ATTR = {"GET /user%d.4096.%s.4.bin HTTP/1.0\r\n"
+              "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
+                                                      "Connection: keep-alive\r\n"
+                                                      "Cache-Control: no-cache\r\n"
+                                                      "User-Agent: Karadio 2.1 \r\n"
+                                                      "Accept: */*\r\n"
+                                                      "Accept-Encoding: gzip,deflate,sdch\r\n"
+                                                      "\r\n"};
 
 /* image CRC check, defined in crc32.c */
 extern int upgrade_crc_check(uint16_t fw_bin_sec, unsigned int sumlength);
@@ -75,11 +74,11 @@ extern int upgrade_crc_check(uint16_t fw_bin_sec, unsigned int sumlength);
    ------------------------------------------------------------------------- */
 
 struct upgrade_param {
-    uint32_t fw_bin_addr;       // next address to program
-    uint16_t fw_bin_sec;        // first sector of the target slot
-    uint16_t fw_bin_sec_num;    // number of sectors of the target slot
-    uint16_t fw_bin_sec_earse;  // next sector to erase
-    uint8_t extra;              // bytes of save[] waiting for a full word
+    uint32_t fw_bin_addr;      // next address to program
+    uint16_t fw_bin_sec;       // first sector of the target slot
+    uint16_t fw_bin_sec_num;   // number of sectors of the target slot
+    uint16_t fw_bin_sec_earse; // next sector to erase
+    uint8_t extra;             // bytes of save[] waiting for a full word
     uint8_t save[4];
     uint8_t *buffer;
 };
@@ -93,8 +92,7 @@ static bool out_of_range(uint16_t erase_sec)
     uint16_t sec_num = 0;
     uint16_t start_sec = 0;
 
-    if (spi_size_map == FLASH_SIZE_8M_MAP_512_512 ||
-        spi_size_map == FLASH_SIZE_16M_MAP_512_512 ||
+    if (spi_size_map == FLASH_SIZE_8M_MAP_512_512 || spi_size_map == FLASH_SIZE_16M_MAP_512_512 ||
         spi_size_map == FLASH_SIZE_32M_MAP_512_512) {
         start_sec = (system_upgrade_userbin_check() == USER_BIN2) ? 1 : 129;
         sec_num = 123;
@@ -126,8 +124,7 @@ void system_upgrade_init(void)
     }
 
     user_bin1_start = 1;
-    if (spi_size_map == FLASH_SIZE_8M_MAP_512_512 ||
-        spi_size_map == FLASH_SIZE_16M_MAP_512_512 ||
+    if (spi_size_map == FLASH_SIZE_8M_MAP_512_512 || spi_size_map == FLASH_SIZE_16M_MAP_512_512 ||
         spi_size_map == FLASH_SIZE_32M_MAP_512_512) {
         user_bin2_start = 129;
         upgrade->fw_bin_sec_num = 123;
@@ -140,7 +137,8 @@ void system_upgrade_init(void)
         upgrade->fw_bin_sec_num = 59;
     }
 
-    upgrade->fw_bin_sec = (system_upgrade_userbin_check() == USER_BIN1) ? user_bin2_start : user_bin1_start;
+    upgrade->fw_bin_sec =
+        (system_upgrade_userbin_check() == USER_BIN1) ? user_bin2_start : user_bin1_start;
     upgrade->fw_bin_addr = upgrade->fw_bin_sec * SPI_FLASH_SEC_SIZE;
     upgrade->fw_bin_sec_earse = upgrade->fw_bin_sec;
 }
@@ -210,11 +208,13 @@ bool system_upgrade(uint8_t *data, uint32_t len)
     memcpy(upgrade->save, upgrade->buffer + len, upgrade->extra);
 
     do {
-        if (upgrade->fw_bin_addr + len >= (upgrade->fw_bin_sec + upgrade->fw_bin_sec_num) * SPI_FLASH_SEC_SIZE) {
+        if (upgrade->fw_bin_addr + len >=
+            (upgrade->fw_bin_sec + upgrade->fw_bin_sec_num) * SPI_FLASH_SEC_SIZE) {
             break;
         }
 
-        if (spi_flash_write(upgrade->fw_bin_addr, (uint32_t *)upgrade->buffer, len) != SPI_FLASH_RESULT_OK) {
+        if (spi_flash_write(upgrade->fw_bin_addr, (uint32_t *)upgrade->buffer, len) !=
+            SPI_FLASH_RESULT_OK) {
             break;
         }
 
@@ -305,7 +305,7 @@ static BOOL upgrade_data_load(char *pusrdata, unsigned short length)
     char lengthbuffer[32];
 
     if (totallength == 0 && (ptr = (char *)strstr(pusrdata, "\r\n\r\n")) != NULL &&
-            (ptr = (char *)strstr(pusrdata, "Content-Length")) != NULL) {
+        (ptr = (char *)strstr(pusrdata, "Content-Length")) != NULL) {
 
         ptr = (char *)strstr(pusrdata, "Content-Length: ");
         if (ptr != NULL) {
@@ -413,7 +413,8 @@ static void upgrade_task(void *pvParameters)
             continue;
         }
 
-        if (0 != connect(sta_socket, (struct sockaddr *)(&server->sockaddrin), sizeof(struct sockaddr))) {
+        if (0 != connect(sta_socket, (struct sockaddr *)(&server->sockaddrin),
+                         sizeof(struct sockaddr))) {
             close(sta_socket);
             vTaskDelay(1000 / portTICK_RATE_MS);
             wsUpgrade("Connect to server failed!", 0, 100);
@@ -554,7 +555,7 @@ BOOL system_upgrade_start(struct upgrade_server_info *server)
 {
     portBASE_TYPE ret;
 
-    giveup = false;     /* a previous timeout must not stop this upgrade */
+    giveup = false; /* a previous timeout must not stop this upgrade */
     wsUpgrade("", 0, 100);
     ret = xTaskCreate(upgrade_task, "upgrade_task", 360, server, 8, NULL);
 
@@ -646,12 +647,12 @@ ICACHE_FLASH_ATTR void update_firmware(char *fname)
     snprintf((char *)server->url, OTA_URL_SIZE, fmt, current_id, fname);
     free(fmt);
 
-    server->check_cb      = user_esp_upgrade_rsp;   /* upgrade check call back */
-    server->check_times   = OTA_CHECK_TIMES;
-    server->upgrade_flag  = true;
+    server->check_cb = user_esp_upgrade_rsp; /* upgrade check call back */
+    server->check_times = OTA_CHECK_TIMES;
+    server->upgrade_flag = true;
 
     server->sockaddrin.sin_family = AF_INET;
-    server->sockaddrin.sin_port   = htons(OTA_PORT);
+    server->sockaddrin.sin_port = htons(OTA_PORT);
     memcpy(&server->sockaddrin.sin_addr, host->h_addr_list[0], sizeof(struct in_addr));
 
     if (system_upgrade_start(server) == false) {
