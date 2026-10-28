@@ -37,7 +37,7 @@
 #include "webserver.h"
 
 const char striDEF0[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "The default AP is  WifiKaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.%c"};
+    "The default AP is KaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.%c"};
 const char striDEF1[] ICACHE_RODATA_ATTR
 STORE_ATTR = {"Erase the database and set ssid, password and ip's field%c"};
 const char striAP[] ICACHE_RODATA_ATTR STORE_ATTR = {"AP1: %s, AP2: %s\n"};
@@ -181,7 +181,7 @@ void initWifi()
     struct device_settings *device;
     struct device_settings1 *device1;
     struct station_config *config;
-    wifi_station_set_hostname("WifiKaRadio");
+    wifi_station_set_hostname("KaRadio");
 
     device = getDeviceSettings();
     device1 = getDeviceSettings1(); // extention of saved data
@@ -304,7 +304,7 @@ void initWifi()
             vTaskDelay(10);
             wifi_softap_get_config(apconfig);
             vTaskDelay(10);
-            strcpy(apconfig->ssid, "WifiKaRadio");
+            strcpy(apconfig->ssid, "KaRadio");
             apconfig->ssid_len = 0;
             //printf("passwd: %s\nhidden: %d\nmaxc: %d\nauth: %d\n",apconfig->password,apconfig->ssid_hidden,apconfig->max_connection,apconfig->authmode);
             if (wifi_softap_set_config(apconfig) != true)
@@ -343,7 +343,7 @@ void initWifi()
     wifi_set_sleep_type(NONE_SLEEP_T);
     if ((strlen(device1->hostname) >= HOSTLEN) || (strlen(device1->hostname) == 0) ||
         (device1->hostname[0] == 0xff)) {
-        strcpy(hostn, "WifiKaRadio");
+        strcpy(hostn, "KaRadio");
         strcpy(device1->hostname, hostn);
         saveDeviceSettings1(device1);
     } else {
