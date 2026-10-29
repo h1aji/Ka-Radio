@@ -1,13 +1,13 @@
 /**
- ***********************************************************************************************************************
- * @file    VS1053.c
- * @author  Piotr Sperka
- * @date    07.08.2015
- * @brief   This file provides VS1053 usage and control functions. Based on VS1003 library by
- * Przemyslaw Stasiak. Copyright 2016 karawin (http://www.karawin.fr) added control treble, bass and
- * spacialisation
- ***********************************************************************************************************************
- */
+  ***********************************************************************************************************************
+  * @file    VS1053.c
+  * @author  Piotr Sperka
+  * @date    07.08.2015
+  * @brief   This file provides VS1053 usage and control functions. Based on VS1003 library by Przemyslaw Stasiak.
+  * Copyright 2016 karawin (http://www.karawin.fr)
+  * added control treble, bass and spacialisation
+  ***********************************************************************************************************************
+*/
 
 #include "esp_common.h"
 #include "esp8266/pin_mux_register.h"
@@ -28,6 +28,7 @@
 #include "eeprom.h"
 #include "interface.h"
 #include "spilib.h"
+#include "spiburst.h"
 
 extern uint8_t clientIvol;
 extern xSemaphoreHandle sSPI; // SPI bus lock, defined in spilib.c
@@ -356,7 +357,7 @@ ICACHE_FLASH_ATTR void VS1053_Start()
     }
 }
 
-ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
+int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
 {
     if (quantity == 0)
         return 0;
@@ -373,6 +374,9 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
         spi_take_semaphore();
         spi_speed_10mhz();
         SDI_ChipSelect(SET);
+
+        //spi_write_buf(music + o, t);	// the 32 bytes in one burst
+
         for (k = o; k < o + t; k++) {
             spi_put_char(music[k]);
         }

@@ -17,10 +17,10 @@
 #include "buffer.h"
 #include "interface.h"
 #include "spilib.h"
+#include "spiburst.h"
 
-/* Direct register access: avoids the SDK's gpio_output_conf(), which is not linked in this project
- */
-#define SPIRAM_CS_LOW() GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, (1 << SPIRAM_CS))
+/* Direct register access: avoids the SDK's gpio_output_conf(), which is not linked in this project */
+#define SPIRAM_CS_LOW()  GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, (1 << SPIRAM_CS))
 #define SPIRAM_CS_HIGH() GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, (1 << SPIRAM_CS))
 
 bool spiram; // true when an external SPIRAM chip was detected at boot
@@ -87,56 +87,50 @@ void spiramInit()
     }
 }
 
-uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst)
-{
-    uint32_t i = 0;
+/* Up to SPI_BURST_MAX bytes per transaction (command + address + data in one go). The chip select goes
+   high between the bursts, every burst starts with its own command and address. */
+uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
+    uint32_t done = 0, n;
     spi_take_semaphore();
     spi_speed_16mhz(); // 16MHz
 
-    SPIRAM_CS_LOW();
+    while (done < size) {
+		n = size - done;
+		if (n > SPI_BURST_MAX) n = SPI_BURST_MAX;
+		SPIRAM_CS_LOW();
+		spi_cmd_read(0x03, address + done, dst + done, n);
+		SPIRAM_CS_HIGH();
+		done += n;
+	}
 
-    spi_put_char(0x03);
-    spi_put_char((address >> 16) & 0xFF);
-    spi_put_char((address >> 8) & 0xFF);
-    spi_put_char(address & 0xFF);
-
-    for (i = 0; i < size; i++)
-        dst[i] = spi_get_char();
-
-    SPIRAM_CS_HIGH();
-
-    //spi_speed_2mhz();
     spi_give_semaphore();
-    return i;
+    return done;
 }
 
 uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data)
 {
-    uint32_t i = 0;
+    uint32_t done = 0, n;
     spi_take_semaphore();
     spi_speed_16mhz();
 
-    SPIRAM_CS_LOW();
-
-    spi_put_char(0x02);
-    spi_put_char((address >> 16) & 0xFF);
-    spi_put_char((address >> 8) & 0xFF);
-    spi_put_char(address & 0xFF);
-
-    for (i = 0; i < size; i++)
-        spi_put_char(data[i]);
-
-    SPIRAM_CS_HIGH();
+	while (done < size) {
+		n = size - done;
+		if (n > SPI_BURST_MAX) n = SPI_BURST_MAX;
+		SPIRAM_CS_LOW();
+		spi_cmd_write(0x02, address + done, data + done, n);
+		SPIRAM_CS_HIGH();
+		done += n;
+	}
 
     spi_give_semaphore();
-    return i;
+    return done;
 }
 
 /* =====================================================================
     Ring buffer (internal RAM, or SPIRAM when detected)
    ===================================================================== */
 
-ICACHE_FLASH_ATTR void bufferInit()
+void bufferInit()
 {
     if (spiram) {
         BUFFER_SIZE = SPIRAM_SIZE;
@@ -152,7 +146,7 @@ ICACHE_FLASH_ATTR void bufferInit()
     bufferReset();
 }
 
-ICACHE_FLASH_ATTR uint32_t getBufferFree()
+uint32_t getBufferFree()
 {
     uint32_t write;
     uint32_t read;
@@ -175,7 +169,7 @@ ICACHE_FLASH_ATTR uint32_t getBufferFree()
     return 0;
 }
 
-ICACHE_FLASH_ATTR bool getBufferEmpty()
+bool getBufferEmpty()
 {
     return bempty;
 }
@@ -222,7 +216,7 @@ ICACHE_FLASH_ATTR uint32_t bufferWrite(uint8_t *data, uint32_t size)
     return size;
 }
 
-ICACHE_FLASH_ATTR uint32_t bufferRead(uint8_t *data, uint32_t size)
+uint32_t bufferRead(uint8_t *data, uint32_t size)
 {
     uint32_t available = getBufferFilled();
     uint32_t position = rptr;
@@ -257,7 +251,7 @@ ICACHE_FLASH_ATTR uint32_t bufferRead(uint8_t *data, uint32_t size)
     return size;
 }
 
-ICACHE_FLASH_ATTR void bufferReset()
+void bufferReset()
 {
     /* Caller must stop/drain playback first; reset does not cancel a transfer. */
     taskENTER_CRITICAL();
