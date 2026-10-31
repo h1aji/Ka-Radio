@@ -83,10 +83,9 @@ def unquote_html_attributes(html):
     space1 = re.compile(r'\w\s+\w', re.MULTILINE)
     space2 = re.compile(r'"\s+>', re.MULTILINE)
     space3 = re.compile(r"'\s+>", re.MULTILINE)
-    space4 = re.compile('"\s\s+\w+="|\'\s\s+\w+=\'|"\s\s+\w+=|\'\s\s+\w+=',
-                        re.MULTILINE)
+    space4 = re.compile(r'"\s\s+\w+="|\'\s\s+\w+=\'|"\s\s+\w+=|\'\s\s+\w+=', re.MULTILINE)
     space6 = re.compile(r"\d\s+>", re.MULTILINE)
-    quotes_in_tag = re.compile('([a-zA-Z]+)="([a-zA-Z0-9-_\.]+)"')
+    quotes_in_tag = re.compile(r'([a-zA-Z]+)="([a-zA-Z0-9-_\.]+)"')
     # iterate on a for loop cleaning stuff up on the html markup.
     for tag in iter(any_tag.findall(html)):
         # exceptions of comments and closing tags
