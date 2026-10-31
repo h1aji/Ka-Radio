@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Minify + gzip web assets and convert them to C arrays for ESP8266 flash.
 
-Python 3 port of generate.sh. For every asset it writes a file (style,
-style1, script, index, logo, favicon) containing a C array placed in flash
-via ICACHE_STORE_ATTR / ICACHE_RODATA_ATTR. The source files are never
-modified.
+For every asset it writes a file (style,style1, script, index, logo, favicon) 
+containing a C array placed in flash via ICACHE_STORE_ATTR / ICACHE_RODATA_ATTR. 
+The source files are never modified.
 
 Requirements:
-    pip install rcssmin rjsmin css-html-js-minify
+    pip install rcssmin rjsmin
 """
 
 import argparse
@@ -18,9 +17,8 @@ from pathlib import Path
 
 import rcssmin
 import rjsmin
-from css_html_js_minify import html_minify
 
-BYTES_PER_LINE = 12  # same as `xxd -i`
+BYTES_PER_LINE = 12
 
 
 def minify_css(data: bytes) -> bytes:
@@ -31,8 +29,97 @@ def minify_js(data: bytes) -> bytes:
     return rjsmin.jsmin(data.decode("utf-8")).encode("utf-8")
 
 
+# ---------------------------------------------------------------------------
+# HTML minifier, inlined from the "HTML Minify" section of css-html-js-minify
+# (https://github.com/juancarlospaco/css-html-js-minify, GPLv3+/LGPLv3+) so
+# generate.py no longer depends on that package being installed.
+# ---------------------------------------------------------------------------
+
+def condense_html_whitespace(html):
+    """Condense HTML, but be safe first if it have textareas or pre tags."""
+    # first space between tags, then empty new lines and in-between.
+    is_ok = "<textarea" not in html.lower() and "<pre" not in html.lower()
+    html = re.sub(r'>\s+<', '> <', html) if is_ok else html
+    return re.sub(r'\s{2,}|[\r\n]', ' ', html) if is_ok else html.strip()
+
+
+def condense_style(html):
+    """Condense style html tags."""
+    return html.replace('<style type="text/css">', '<style>').replace(
+        "<style type='text/css'>", '<style>').replace(
+            "<style type=text/css>", '<style>')
+
+
+def condense_script(html):
+    """Condense script html tags."""
+    return html.replace('<script type="text/javascript">', '<script>').replace(
+        "<style type='text/javascript'>", '<script>').replace(
+            "<style type=text/javascript>", '<script>')
+
+
+def clean_unneeded_html_tags(html):
+    """Clean unneeded optional html tags."""
+    for tag_to_remove in ("""</area> </base> <body> </body> </br> </col>
+        </colgroup> </dd> </dt> <head> </head> </hr> <html> </html> </img>
+        </input> </li> </link> </meta> </option> </param>
+        </td> </tfoot> </th> </thead> </tr> </basefont> </isindex> </param>
+        """.split()):
+            html = html.replace(tag_to_remove, '')
+    return html
+
+
+def remove_html_comments(html):
+    """Remove all HTML comments, Keep all for Grunt, Grymt and IE."""
+    # Grunt uses comments to as build arguments, bad practice but still.
+    return re.compile('<!-- [^(build|endbuild)].*? -->', re.I).sub('', html)
+
+
+def unquote_html_attributes(html):
+    """Remove all HTML quotes on attibutes if possible."""
+    # data-foo=0> might cause errors on IE, we leave 1 space data-foo=0 >
+    # cache all regular expressions on variables before we enter the for loop.
+    any_tag = re.compile(r"<\w.*?>", re.I | re.MULTILINE | re.DOTALL)
+    space = re.compile(r' \s+|\s +', re.MULTILINE)
+    space1 = re.compile(r'\w\s+\w', re.MULTILINE)
+    space2 = re.compile(r'"\s+>', re.MULTILINE)
+    space3 = re.compile(r"'\s+>", re.MULTILINE)
+    space4 = re.compile('"\s\s+\w+="|\'\s\s+\w+=\'|"\s\s+\w+=|\'\s\s+\w+=',
+                        re.MULTILINE)
+    space6 = re.compile(r"\d\s+>", re.MULTILINE)
+    quotes_in_tag = re.compile('([a-zA-Z]+)="([a-zA-Z0-9-_\.]+)"')
+    # iterate on a for loop cleaning stuff up on the html markup.
+    for tag in iter(any_tag.findall(html)):
+        # exceptions of comments and closing tags
+        if tag.startswith('<!') or tag.find('</') > -1:
+            continue
+        original = tag
+        # remove white space inside the tag itself
+        tag = space2.sub('" >', tag)  # preserve 1 white space is safer
+        tag = space3.sub("' >", tag)
+        for each in space1.findall(tag) + space6.findall(tag):
+            tag = tag.replace(each, space.sub(' ', each))
+        for each in space4.findall(tag):
+            tag = tag.replace(each, each[0] + ' ' + each[1:].lstrip())
+        # remove quotes on some attributes
+        tag = quotes_in_tag.sub(r'\1=\2', tag)
+        if original != tag:  # has the tag been improved ?
+            html = html.replace(original, tag)
+    return html.strip()
+
+
+def html_minify_text(html, comments=False):
+    """Minify HTML main function."""
+    html = remove_html_comments(html) if not comments else html
+    html = condense_style(html)
+    html = condense_script(html)
+    html = clean_unneeded_html_tags(html)
+    html = condense_html_whitespace(html)
+    html = unquote_html_attributes(html)
+    return html.strip()
+
+
 def minify_html(data: bytes) -> bytes:
-    return html_minify(data.decode("utf-8")).encode("utf-8")
+    return html_minify_text(data.decode("utf-8")).encode("utf-8")
 
 
 def keep(data: bytes) -> bytes:
