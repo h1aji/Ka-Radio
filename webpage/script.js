@@ -930,55 +930,44 @@ function upgrade()
 	
 //	alert("Rebooting to the new release\nPlease refresh the page in few seconds.");
 }
+// The release server is contacted asynchronously (the page never waits for it).
+// After 3 failed attempts (error or 3 s timeout) it is dropped until the page is reloaded.
+var extFails = 0;
+function extGet(url, onok)
+{
+	if (extFails >= 3) return;
+	var x = new XMLHttpRequest();
+	x.open("GET", url, true);
+	x.timeout = 3000;
+	x.onload = function() {
+		if (x.status == 200) { extFails = 0; onok(x.responseText); }
+		else extFails++;
+	};
+	x.onerror = x.ontimeout = function() { extFails++; };
+	x.send(null);
+}
 function checkhistory()
 {
-    if (window.XDomainRequest) {
-        xhr = new XDomainRequest(); 
-    } else if (window.XMLHttpRequest) {
-        xhr = new XMLHttpRequest(); 
-    }
-	 xhr.onload = function() {
-		document.getElementById('History').innerHTML = xhr.responseText;	
-    }
-	xhr.open("GET","http://KaraDio.karawin.fr/history1.php", false);
-	try{
-		xhr.send(null );
-	}catch(e){;}
-	setMainHeight(curtab);	
+	extGet("http://KaraDio.karawin.fr/history1.php", function(t) {
+		document.getElementById('History').innerHTML = t;
+		setMainHeight(curtab);
+	});
 }
 function checkinfos()
 {
-    if (window.XDomainRequest) {
-        xhr = new XDomainRequest(); 
-    } else if (window.XMLHttpRequest) {
-        xhr = new XMLHttpRequest(); 
-    }
-	 xhr.onload = function() {
-		document.getElementById('Infos').innerHTML = xhr.responseText;	
-    }
-	xhr.open("GET","http://KaraDio.karawin.fr/infos.php", false);
-	try{
-		xhr.send(null );
-	}catch(e){;}
+	extGet("http://karadio.karawin.fr/infos.php", function(t) {
+		document.getElementById('Infos').innerHTML = t;
+	});
 }
 //load the version and history html
 function checkversion()
 {
-    if (window.XDomainRequest) {
-        xhr = new XDomainRequest(); 
-    } else if (window.XMLHttpRequest) {
-        xhr = new XMLHttpRequest(); 
-    }
-	 xhr.onload = function() {
-		document.getElementById('Version').innerHTML = xhr.responseText;	
-		document.getElementById('newrelease').innerHTML = document.getElementById('firmware_last').innerHTML;
-    }
-	xhr.open("GET","http://KaraDio.karawin.fr/version.php", false);
-	try{
-		xhr.send(null );
-	}catch(e){;}
+	extGet("http://karadio.karawin.fr/version.php", function(t) {
+		document.getElementById('Version').innerHTML = t;
+		var fl = document.getElementById('firmware_last');
+		if (fl) document.getElementById('newrelease').innerHTML = fl.innerHTML;
+	});
 	checkinfos();
-	//checkhistory();
 }
 
 // refresh the stations list by reading a file
@@ -1140,7 +1129,7 @@ function stChanged()
 function loadStations() {
 	var new_tbody = document.createElement('tbody'),
 	idlist,select,
-	id = 0;
+	id = 0, tries = 0;
 	function cploadStations(id,arr) {
 			tr = document.createElement('TR'),
 			td = document.createElement('TD');
@@ -1221,7 +1210,8 @@ function loadStations() {
 			xhr.open("POST","getStation",false);
 			xhr.setRequestHeader(content,ctype);
 			xhr.send("idgp=" + id+"&");
-		} catch(e){console.log("error"+e);id--;}
+			tries = 0;
+		} catch(e){console.log("error"+e); if (++tries < 3) id--; else break;} // give up after 3 attempts
 	}
 
 	old_tbody = document.getElementById("stationsTable").getElementsByTagName('tbody')[0];
@@ -1231,7 +1221,7 @@ function loadStations() {
 
 //Load the selection with all stations
 function loadStationsList(max) {
-	var foundNull = false,id,opt,arr,select, liste= [],i;
+	var foundNull = false,id,opt,arr,select, liste= [],i, tries = 0;
 	select = document.getElementById("stationsSelect");
 	//clear Select
     for(i = select.options.length - 1 ; i >= 0 ; i--)
@@ -1275,7 +1265,8 @@ function loadStationsList(max) {
 			xhr.open("POST","getStation",false);
 			xhr.setRequestHeader(content,ctype);
 			xhr.send("idgp=" + id+"&");
-		} catch(e){console.log("error"+e); id--;}
+			tries = 0;
+		} catch(e){console.log("error"+e); if (++tries < 3) id--; else break;} // give up after 3 attempts
 	}
 	
 	promptworking("");
