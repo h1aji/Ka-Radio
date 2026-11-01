@@ -35,4 +35,8 @@ bool ntp_get_time_cached(struct tm **dt);
 // print locale date time in ISO-8601 local time
 void ntp_print_time();
 
+// Shift a UTC tm in place to local time: adds the saved timezone offset and,
+// if applicable, DST. Returns the base timezone offset (without DST) in hours.
+int8_t applyTZ(struct tm *time);
+
 #endif
