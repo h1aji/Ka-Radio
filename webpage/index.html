@@ -200,13 +200,18 @@
 						<br/>-->
 						</p>
 						<h1>Wifi & Network &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="Validate" onclick="valid()" /></h1>
-						<p>
-						<span class="bold">AP SSID:</span>
-						<input  id="ssid" type="text" /> <input  id="ssid2" type="text" />
-						<br/>
-						<span class="bold"> AP PASSWORD:</span>
-						<input id="passwd" type="text"  /> <input id="passwd2" type="text"  />
-						</p>
+						<div class="ap-group">
+							<div class="ap-block">
+								<span class="ap-heading">AP1</span>
+								<span class="bold">SSID:</span><input id="ssid" type="text" /><br/>
+								<span class="bold">PASSWORD:</span><input id="passwd" type="text" />
+							</div>
+							<div class="ap-block">
+								<span class="ap-heading">AP2</span>
+								<span class="bold">SSID:</span><input id="ssid2" type="text" /><br/>
+								<span class="bold">PASSWORD:</span><input id="passwd2" type="text" />
+							</div>
+						</div>
 						<p>
 						<span class="bold"> Mac Address:</span><span id="Mac"></span><br/>		   
 						<span class="bold"> Use DHCP:</span>
