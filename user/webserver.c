@@ -1087,35 +1087,37 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
             //char* macstr = inmalloc(20*sizeof(char));
             wifi_get_macaddr(0, macaddr);
 
-            int json_length;
-            json_length = 95 + 19 + strlen(device->ssid) +
-                          // strlen(ipass11) +
-                          strlen(device->ssid2) +
-                          // strlen(ipass22) +
-                          strlen(device->ua) + strlen(device1->hostname) +
-                          kasprintf(tmptzo, PSTR("%d"), device->tzoffset) +
-                          kasprintf(tmpip, PSTR("%d.%d.%d.%d"), device->ipAddr[0],
-                                    device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]) +
-                          kasprintf(tmpmsk, PSTR("%d.%d.%d.%d"), device->mask[0], device->mask[1],
-                                    device->mask[2], device->mask[3]) +
-                          kasprintf(tmpgw, PSTR("%d.%d.%d.%d"), device->gate[0], device->gate[1],
-                                    device->gate[2], device->gate[3]) +
-                          kasprintf(adhcp, PSTR("%d"), device->dhcpEn) +
-                          kasprintf(macstr, PSTR(MACSTR), MAC2STR(macaddr));
+            kasprintf(tmptzo, PSTR("%d"), device->tzoffset);
+            kasprintf(tmpip, PSTR("%d.%d.%d.%d"), device->ipAddr[0], device->ipAddr[1],
+                      device->ipAddr[2], device->ipAddr[3]);
+            kasprintf(tmpmsk, PSTR("%d.%d.%d.%d"), device->mask[0], device->mask[1],
+                      device->mask[2], device->mask[3]);
+            kasprintf(tmpgw, PSTR("%d.%d.%d.%d"), device->gate[0], device->gate[1],
+                      device->gate[2], device->gate[3]);
+            kasprintf(adhcp, PSTR("%d"), device->dhcpEn);
+            kasprintf(macstr, PSTR(MACSTR), MAC2STR(macaddr));
 
-            char *buf = inmalloc(json_length + 95);
+            /* Render the JSON body first, into a buffer sized from the fields' own
+             * declared max sizes (eeprom.h) rather than a hand-counted literal-text
+             * length: the latter is what overflowed here before (the compiler splices
+             * a multi-line string literal's continuation-line indentation straight
+             * into the string, so the real text was longer than the eye-counted
+             * budget). kasprintf() (like plain vsprintf()) does no bounds checking of
+             * its own, so this buffer has to be sized generously up front instead. */
+            char jsonBody[SSIDLEN + SSIDLEN + USERAGLEN + HOSTLEN + 16 + 16 + 16 + 4 + 20 + 10 + 140];
+            kasprintf(jsonBody,
+                PSTR("{\"ssid\":\"%s\",\"pasw\":\"\",\"ssid2\":\"%s\",\"pasw2\":\"\",\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
+                device->ssid, device->ssid2, tmpip, tmpmsk, tmpgw, device->ua, adhcp, macstr,
+                device1->hostname, tmptzo);
+            int bodyLen = strlen(jsonBody);
+
+            char *buf = inmalloc(bodyLen + 96); // +96 safely covers the fixed header text below
             if ((buf == NULL)) {
                 printf(strsMALLOC1, ("post wifi"));
                 respKo(conn);
             } else {
-				if (kasprintf(
-                    buf,
-                    PSTR("HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"ssid\":\"%s\",\"pasw\":\"%s\",\
-                        \"ssid2\":\"%s\",\"pasw2\":\"%s\",\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\
-                        \"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
-                    json_length,device->ssid,"",device->ssid2,"",tmpip,tmpmsk,tmpgw,device->ua,adhcp,macstr,device1->hostname,tmptzo))
-				{
-                    //printf(PSTR("wifi Buf len:%d\n%s\nfmt:%s\n"),strlen(buf),buf,fmt);
+                if (kasprintf(buf, PSTR("HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n%s"), bodyLen, jsonBody))
+                {
                     write(conn, buf, strlen(buf));
                 }
                 infree(buf);
