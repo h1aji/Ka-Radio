@@ -179,6 +179,9 @@ div.LEFT {
 		flex-direction:column;
 		gap:10px
 	}
+	.ap-block {
+		flex:1 1 auto
+	}
 	.ap-block input[type="text"] {
 		width:60%;
 		max-width:220px;
