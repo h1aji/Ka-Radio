@@ -871,9 +871,8 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
         } break;
         default:
             // Chunk computing
-            lc =
-                len; // lc rest after chunk
-                     //printf("CDATAIN: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
+            lc = len; // lc rest after chunk
+            //printf("CDATAIN: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
             if ((chunked != 0) &&
                 ((cchunk == 0) ||
                  (len >=
@@ -1216,7 +1215,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
                 //printf("st:%d, Client Sent:\n%s\n",cstatus,bufrec);
                 xSemaphoreTake(sConnected, 0);
                 send(sockfd, bufrec, strlen(bufrec), 0);
-                ///// set timeout
+                // set timeout
                 /* if (once == 0)
                         timeout.tv_sec = 10000; // bug *1000 for
                         seconds else timeout.tv_sec = 3000; // bug *1000 for seconds
@@ -1267,9 +1266,9 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
                             }
                         }
                         kprintf(PSTR("Errno: %d, %d%c"), errno, cnterror, 0x0d);
-                        //if (errno != 11)
-                        // vTaskDelay(50); //timeout
-                        //else
+                    /*  if (errno != 11)
+                         vTaskDelay(50); //timeout
+                        else */
                         vTaskDelay(20);
                         if ((errno == 128) || (cnterror >= STREAM_STALL_RETRIES))
                             break;

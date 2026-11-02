@@ -344,6 +344,7 @@ void initWifi()
     // modem sleep makes the AP hold the packets until the next DTIM beacon, which stalls a stream:
     // keep the radio awake. MODEM_SLEEP_T saves power if the stall is not caused by it.
     wifi_set_sleep_type(NONE_SLEEP_T);
+
     if ((strlen(device1->hostname) >= HOSTLEN) || (strlen(device1->hostname) == 0) ||
         (device1->hostname[0] == 0xff)) {
         strcpy(hostn, "KaRadio");
@@ -401,8 +402,7 @@ void uartInterfaceTask(void *pvParameters)
     }
 
     FlashOn = 190;
-    initHousekeeping(); // start the housekeeping timer (volume save). This will kill the testtask
-                        // to free memory
+    initHousekeeping(); // start the housekeeping timer (volume save). This will kill the testtask to free memory
 
     // autostart
     device = getDeviceSettings();
