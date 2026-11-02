@@ -56,18 +56,130 @@
  *   %d = image slot to download (1 or 2)
  *   %s = release name ("new" or "prv")
  */
-static const char strupd[] ICACHE_RODATA_ATTR
-STORE_ATTR = {"GET /user%d.4096.%s.4.bin HTTP/1.0\r\n"
-              "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
-                                                      "Connection: keep-alive\r\n"
-                                                      "Cache-Control: no-cache\r\n"
-                                                      "User-Agent: Karadio 2.1 \r\n"
-                                                      "Accept: */*\r\n"
-                                                      "Accept-Encoding: gzip,deflate,sdch\r\n"
-                                                      "\r\n"};
+static const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR = {
+                    "GET /user%d.4096.%s.4.bin HTTP/1.0\r\n"
+                    "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
+                    "Connection: keep-alive\r\n"
+                    "Cache-Control: no-cache\r\n"
+                    "User-Agent: Karadio 2.1 \r\n"
+                    "Accept: */*\r\n"
+                    "Accept-Encoding: gzip,deflate,sdch\r\n"
+            "\r\n"
+        };
 
-/* image CRC check, defined in crc32.c */
-extern int upgrade_crc_check(uint16_t fw_bin_sec, unsigned int sumlength);
+/* -------------------------------------------------------------------------
+    Image CRC check (formerly crc32.c; folded in here since this is its
+    only caller)
+   ------------------------------------------------------------------------- */
+
+#define CRC_BUFSIZE 512
+#define CRC_BLOCK_SIZE 512
+static uint16_t crc_start_sec;
+static unsigned int *crc_table;
+
+static int ICACHE_FLASH_ATTR init_crc_table(void)
+{
+    unsigned int c;
+    unsigned int i, j;
+
+    crc_table = (unsigned int *)zalloc(256 * sizeof(*crc_table));
+    if (crc_table == NULL) {
+        printf(PSTR("malloc crc table failed\n"));
+        return -1;
+    }
+    for (i = 0; i < 256; i++) {
+        c = (unsigned int)i;
+        for (j = 0; j < 8; j++) {
+            if (c & 1)
+                c = 0xedb88320L ^ (c >> 1);
+            else
+                c = c >> 1;
+        }
+        crc_table[i] = c;
+    }
+    return 0;
+}
+
+static unsigned int ICACHE_FLASH_ATTR crc32(unsigned int crc, unsigned char *buffer,
+                                            unsigned int size)
+{
+    unsigned int i;
+    for (i = 0; i < size; i++) {
+        crc = crc_table[(crc ^ buffer[i]) & 0xff] ^ (crc >> 8);
+    }
+    return crc;
+}
+
+static int ICACHE_FLASH_ATTR calc_img_crc(unsigned int sumlength, unsigned int *img_crc)
+{
+    int i = 0;
+    uint8_t error = 0;
+    unsigned char *buf = zalloc(CRC_BUFSIZE);
+    if (buf == NULL) {
+        printf("malloc crc buf failed\n");
+        free(crc_table);
+        return -1;
+    }
+    unsigned int crc = 0xffffffff;
+    uint16_t sec_block = sumlength / CRC_BLOCK_SIZE;
+    uint32_t sec_last = sumlength % CRC_BLOCK_SIZE;
+    for (i = 0; i < sec_block; i++) {
+        if (0 != (error = spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE,
+                                         (uint32_t *)buf, CRC_BUFSIZE))) {
+            free(crc_table);
+            free(buf);
+            printf(PSTR("spi_flash_read error %d\n"), error);
+            return -1;
+        }
+        crc = crc32(crc, buf, CRC_BUFSIZE);
+    }
+    if (sec_last > 0) {
+        if (0 != (error = spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE,
+                                         (uint32_t *)buf, sec_last))) {
+            free(crc_table);
+            free(buf);
+            printf(PSTR("spi_flash_read error %d\n"), error);
+            return -1;
+        }
+        crc = crc32(crc, buf, sec_last);
+    }
+    *img_crc = crc;
+    free(crc_table);
+    free(buf);
+    return 0;
+}
+
+static int ICACHE_FLASH_ATTR upgrade_crc_check(uint16_t fw_bin_sec, unsigned int sumlength)
+{
+    int ret;
+    unsigned int img_crc;
+    unsigned int flash_crc = 0xFF;
+    /* OTA treats zero as success. Allocation/read failures must therefore
+     * return a negative error, not false (which is also zero in C). */
+    if (sumlength < sizeof(flash_crc))
+        return -1;
+    crc_start_sec = fw_bin_sec;
+    if (0 != init_crc_table()) {
+        return -1;
+    }
+    ret = calc_img_crc(sumlength - 4, &img_crc);
+    if (ret < 0) {
+        return -1;
+    }
+    /* Keep the legacy signed-absolute-value checksum encoding, but perform
+     * negation as unsigned arithmetic so 0x80000000 cannot overflow an int. */
+    if (img_crc & 0x80000000U)
+        img_crc = 0U - img_crc;
+    printf(PSTR("img_crc = %u\n"), img_crc);
+    if (spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + sumlength - 4, &flash_crc, 4) != 0)
+        return -1;
+    printf(PSTR("flash_crc = %u\n"), flash_crc);
+    if (img_crc == flash_crc) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
 
 /* -------------------------------------------------------------------------
     Flash writer
