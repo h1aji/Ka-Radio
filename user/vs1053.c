@@ -365,7 +365,6 @@ int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
     // The bus is held per 32 byte chunk only: XDCS must be released while others (SPIRAM) use the bus
     while (quantity) {
         int t = quantity;
-        int k;
         if (t > 32)
             t = 32;
         while (checkDREQ() == 0) {
@@ -375,12 +374,11 @@ int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
         spi_speed_10mhz();
         SDI_ChipSelect(SET);
 
-        //spi_write_buf(music + o, t);	// the 32 bytes in one burst
-
-        for (k = o; k < o + t; k++) {
-            spi_put_char(music[k]);
-        }
+        spi_sdi_write(music + o, t); // how the chunk is sent is selected by SDI_MODE in spiburst.h
         SDI_ChipSelect(RESET);
+#if SDI_MODE == 2
+        os_delay_us(3); // burst mode: give DREQ a moment to settle before it is read again
+#endif
         spi_speed_2mhz();
         spi_give_semaphore();
         o += t;

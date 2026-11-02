@@ -100,8 +100,7 @@ static int ICACHE_FLASH_ATTR init_crc_table(void)
     return 0;
 }
 
-static unsigned int ICACHE_FLASH_ATTR crc32(unsigned int crc, unsigned char *buffer,
-                                            unsigned int size)
+static unsigned int ICACHE_FLASH_ATTR crc32(unsigned int crc, unsigned char *buffer, unsigned int size)
 {
     unsigned int i;
     for (i = 0; i < size; i++) {
@@ -124,8 +123,7 @@ static int ICACHE_FLASH_ATTR calc_img_crc(unsigned int sumlength, unsigned int *
     uint16_t sec_block = sumlength / CRC_BLOCK_SIZE;
     uint32_t sec_last = sumlength % CRC_BLOCK_SIZE;
     for (i = 0; i < sec_block; i++) {
-        if (0 != (error = spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE,
-                                         (uint32_t *)buf, CRC_BUFSIZE))) {
+        if (0 != (error = spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE, (uint32_t *)buf, CRC_BUFSIZE))) {
             free(crc_table);
             free(buf);
             printf(PSTR("spi_flash_read error %d\n"), error);
@@ -134,8 +132,7 @@ static int ICACHE_FLASH_ATTR calc_img_crc(unsigned int sumlength, unsigned int *
         crc = crc32(crc, buf, CRC_BUFSIZE);
     }
     if (sec_last > 0) {
-        if (0 != (error = spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE,
-                                         (uint32_t *)buf, sec_last))) {
+        if (0 != (error = spi_flash_read(crc_start_sec * SPI_FLASH_SEC_SIZE + i * CRC_BLOCK_SIZE, (uint32_t *)buf, sec_last))) {
             free(crc_table);
             free(buf);
             printf(PSTR("spi_flash_read error %d\n"), error);

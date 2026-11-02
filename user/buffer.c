@@ -64,6 +64,53 @@ static uint32_t spiramProbeSize()
     return n;
 }
 
+/*
+ * Checks the burst transfers against the byte by byte ones, with the SPIRAM as the other end:
+ * written in bursts and read back byte by byte, then written byte by byte and read back in bursts.
+ * A mismatch means the burst packing / byte order is not what this hardware expects.
+ */
+static bool spiramBurstSelfTest() {
+	uint8_t pat[37], back[37];	// 37 bytes: whole words and a partial one
+	uint32_t i, addr = 0x100;
+	bool ok = true;
+
+	for (i = 0; i < sizeof(pat); i++) pat[i] = (uint8_t)(0xA3 ^ (i * 29));
+
+	spi_take_semaphore();
+	spi_speed_2mhz();
+
+	SPIRAM_CS_LOW();
+	spi_cmd_write(0x02, addr, pat, sizeof(pat));
+	SPIRAM_CS_HIGH();
+
+	SPIRAM_CS_LOW();
+	spi_put_char(0x03);
+	spi_put_char((addr>>16)&0xFF);
+	spi_put_char((addr>>8)&0xFF);
+	spi_put_char(addr&0xFF);
+	for (i = 0; i < sizeof(back); i++) back[i] = spi_get_char();
+	SPIRAM_CS_HIGH();
+	if (memcmp(back, pat, sizeof(pat)) != 0) ok = false;
+
+	for (i = 0; i < sizeof(pat); i++) pat[i] = (uint8_t)~pat[i];
+
+	SPIRAM_CS_LOW();
+	spi_put_char(0x02);
+	spi_put_char((addr>>16)&0xFF);
+	spi_put_char((addr>>8)&0xFF);
+	spi_put_char(addr&0xFF);
+	for (i = 0; i < sizeof(pat); i++) spi_put_char(pat[i]);
+	SPIRAM_CS_HIGH();
+
+	SPIRAM_CS_LOW();
+	spi_cmd_read(0x03, addr, back, sizeof(back));
+	SPIRAM_CS_HIGH();
+	if (memcmp(back, pat, sizeof(pat)) != 0) ok = false;
+
+	spi_give_semaphore();
+	return ok;
+}
+
 void spiramInit()
 {
     char test[17] = {"FFFFFFFF"};
@@ -81,6 +128,14 @@ void spiramInit()
     if (memcmp(test, testram, 16) == 0) {
         spiram = true;
         printf(PSTR("\nSPIRAM detected%c"), 0x0d);
+		if (SPI_USE_BURST) {
+			if (spiramBurstSelfTest()) {
+				printf(PSTR("\nSPI burst self-test: ok%c"),0x0d);
+			} else {
+				spi_burst_enabled = 0;	// the bursts do not match the byte by byte transfers here: don't use them
+				printf(PSTR("\nSPI burst self-test FAILED, using byte by byte transfers%c"),0x0d);
+			}
+		}
         printf(PSTR("\nSPIRAM installed size: %d bytes%c"), spiramProbeSize(), 0x0d);
     } else {
         printf(PSTR("\nSPIRAM not detected%c"), 0x0d);
