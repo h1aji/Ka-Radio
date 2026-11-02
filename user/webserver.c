@@ -750,6 +750,7 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
                 file = getParameterFromResponse("file=", data, data_size);
                 pathParse(file);
                 name = getParameterFromResponse("name=", data, data_size);
+                pathParse(name); // the browser encodeURIComponent()s the name (e.g. spaces -> %20)
                 if (getSParameterFromResponse(id, 6, "id=", data, data_size)) {
                     if (i == 0)
                         uid = atoi(id);
