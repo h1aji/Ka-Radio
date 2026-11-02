@@ -892,15 +892,25 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                         len -= 1;
                         cchunk = 1;
                         //printf("leno1:%d, chunked:%d  cchunk:%d, lc:%d, metad:%d\n",len,chunked,cchunk, lc,metad );
-                    } else { 
+                    } else {
                         // a part of end of chunk and beginnining of a new one
                         inpdata = pdata;
                         while (lc != 0) {
+                            uint8_t chunkWaitRetries = 0;
                             while (lc < cchunk + 9) {
                                 vTaskDelay(1);
                                 bread = recvfrom(sockfd, pdata + len, 9, 0, NULL, NULL);
                                 if (bread < 0) {
                                     kprintf(PSTR("Chunk1: errno: %d, read: %d, "), errno, bread);
+                                    // Was an unbounded retry: a stalled/slow stream server would spin
+                                    // here forever. Give up and reconnect after a few failed attempts,
+                                    // same as the header-read retry above this.
+                                    if (++chunkWaitRetries > 5) {
+                                        clientDisconnect(PSTR("chunk wait"));
+                                        clientConnect();
+                                        lc = 0;
+                                        break;
+                                    }
                                 }
                                 if (bread >= 0)
                                     clen = bread;
@@ -910,6 +920,8 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                                 len += clen;
                                 //printf("more:%d, lc:%d\n",clen,lc);
                             } // security to be sure to receive the new length
+                            if (lc == 0)
+                                break; // gave up above; don't parse a chunk header we never received
 
                             //printf("leni0:%d, inpdata:%x, chunked:%d  cchunk:%d, lc:%d, \n",len,inpdata,chunked,cchunk, lc );
                             inpchr = strchr(inpdata + cchunk, 0x0D);
