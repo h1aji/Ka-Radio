@@ -1277,7 +1277,14 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
                         if ((errno == 128) || (cnterror >= STREAM_STALL_RETRIES))
                             break;
                     }
-                    vTaskDelay(1);
+                    // Only force a yield here when idle: the else branch above already
+                    // yields (vTaskDelay(1) + vTaskDelay(20)) on every empty read. Forcing
+                    // another fixed 1-tick sleep after every *successful* read as well caps
+                    // throughput at RECEIVE bytes/tick regardless of bitrate - harmless at
+                    // low bitrates, but it eats into the margin a high-bitrate (e.g. 320kbps)
+                    // stream needs to keep the SPIRAM ring buffer filled in real time.
+                    if (bytes_read <= 0)
+                        vTaskDelay(1);
                     if (xSemaphoreTake(sDisconnect, 0)) {
                         clearHeaders();
                         break;
