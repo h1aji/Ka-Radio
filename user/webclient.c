@@ -830,8 +830,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                     //printf("t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n", t1,cstatus, icyfound,metad, header.members.single.metaint);
                     cstatus = C_DATA; // a stream found
                     t2 = strstr(pdata, "Transfer-Encoding: chunked"); // chunked stream?
-                                                       //                       t2
-                                                       //= NULL;
+
                     chunked = 0;
                     t1 += 4;
 
@@ -873,10 +872,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
             // Chunk computing
             lc = len; // lc rest after chunk
             //printf("CDATAIN: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
-            if ((chunked != 0) &&
-                ((cchunk == 0) ||
-                 (len >=
-                  cchunk - 1))) {
+            if ((chunked != 0) && ((cchunk == 0) || (len >= cchunk - 1))) {
                 // if in chunked mode and chunk received or complete in data
                 //printf("CDATA1: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
                 if (len == cchunk) { // if a complete chunk in pdata, remove crlf
@@ -887,7 +883,6 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                     // an incomplete chunk in progress
                     if (len == cchunk - 1) {
                         // missing lf: remove cr only, wait lf in next data
-
                         len -= 1;
                         cchunk = 1;
                         //printf("leno1:%d, chunked:%d  cchunk:%d, lc:%d, metad:%d\n",len,chunked,cchunk, lc,metad );
@@ -981,16 +976,22 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
             if (rest < 0) {
                 // printf("Negative enter len= %d, metad= %d  rest= %d   pdata= %x
                 // :\"%s\"\n",len,metad,rest,pdata,pdata);
-                if (len > -rest) {
+                if (len >- rest) {
                     // *(pdata+len-rest) = 0; //truncated
                     *(pdata - rest) = 0; // truncated
+                    // This chunk completes the split metadata: append its final
+                    // segment before using `metadata` below. Without this, the
+                    // last part of the title is silently dropped and strlen()
+                    // below reads past the still-unfilled tail of the `l+1`-byte
+                    // buffer into whatever garbage memory follows it.
+                    strcat(metadata, pdata);
                 } else {
                     *(pdata + len) = 0; // truncated
                     strcat(metadata, pdata);
                     //metad = header.members.single.metaint ;
                 }
 
-                if (len > -rest) {
+                if (len >- rest) {
                     //printf("Negaposi   len= %d, metad= %d  rest= %d   pdata= %x :\"%s\"\n",len,metad,rest,pdata,pdata);
                     clientSaveMetadata(metadata, strlen(metadata));
                     metad = header.members.single.metaint;
@@ -1002,7 +1003,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                     pdata += len;
                     rest += len;
                     len = 0;
-                    // printf("Negatafter len= %d, metad= %d  rest= %d   pdata= %x :\"%s\"\n",len,metad,rest,pdata,pdata);
+                    //printf("Negatafter len= %d, metad= %d  rest= %d   pdata= %x :\"%s\"\n",len,metad,rest,pdata,pdata);
                 }
                 //printf("Negative len out = %d, pdata: %x,metad= %d  rest= %d \n",len,pdata,metad,rest);
             }
@@ -1012,17 +1013,14 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                 //printf("metain len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d\n",len,clen,metad, l,inpdata,rest );
                 int jj = 0;
                 while ((clen > metad) && (header.members.single.metaint != 0)) { // in buffer
-                    // printf("metainb len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,
-                    // rest:%d\n",len,clen,metad, l,inpdata,rest );
+                    // printf("metainb len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d\n",len,clen,metad, l,inpdata,rest);
                     jj++;
                     l = inpdata[metad] * 16; // new meta length
                     rest = clen - metad - l - 1;
                     /*
-                    if (l != 0){
-                            printf("metain len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,
-                                    rest:%d\n",len,clen,metad, l,inpdata,rest ); printf("mt len:%d, clen:%d,
-                                    metad:%d ,&l:%x, l:%d, rest:%d, str: %s\n",len,clen,metad,inpdata+metad,
-                                    l,rest,inpdata+metad+1);
+                    if (l != 0) {
+                            printf("metain len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d\n",len,clen,metad, l,inpdata,rest ); 
+                            printf("mt len:%d, clen:%d, metad:%d ,&l:%x, l:%d, rest:%d, str: %s\n",len,clen,metad,inpdata+metad, l,rest,inpdata+metad+1);
                     }
                     else
                         printf("mt len:%d, clen:%d, metad:%d,&l:%x, l:%d, rest:%d\n",len,clen,metad,inpdata+metad, l,rest );
@@ -1182,8 +1180,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
             bzero(&dest, sizeof(dest));
             dest.sin_family = AF_INET;
             dest.sin_port = htons(clientPort);
-            dest.sin_addr.s_addr =
-                inet_addr(inet_ntoa(*(struct in_addr *)(server->h_addr_list[0])));
+            dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr *)(server->h_addr_list[0])));
             bytes_read = 0;
             /*---Connect to server---*/
             if (connect(sockfd, (struct sockaddr *)&dest, sizeof(dest)) >= 0) {
@@ -1201,16 +1198,14 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
                 if (t0 != NULL) { // a playlist asked
                     cstatus = C_PLAYLIST;
                     //printf("sprint%d\n",6);
-                    kasprintf(bufrec, PSTR("GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n"), clientPath,
-                              clientURL); // ask for the playlist
+                    kasprintf(bufrec, PSTR("GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n"), clientPath, clientURL); // ask for the playlist
                 } else {
                     if (strcmp(clientURL, "stream.pcradio.biz") == 0)
                         strcpy(useragent, "pcradio");
                     //printf("sprint%d\n",7);
                     kasprintf(
                         bufrec,
-                        PSTR( "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n"),
-                        clientPath, clientURL, useragent);
+                        PSTR( "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n"), clientPath, clientURL, useragent);
                 }
                 //printf("st:%d, Client Sent:\n%s\n",cstatus,bufrec);
                 xSemaphoreTake(sConnected, 0);
