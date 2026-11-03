@@ -299,10 +299,10 @@ static void displayTick(void)
             dirty = true;
             activity = true;
         }
-        if (ntp_get_time_cached(&dt)) {
+        if (ntp_get_local_time(&dt)) {
             char timeStr[24];
 
-            applyTZ(dt); // ntp_get_time_cached() returns UTC; shift to local time for display
+            applyTZ(dt); // ntp_get_local_time() returns UTC; shift to local time for display
             snprintf(timeStr, sizeof(timeStr), "%04d-%02d-%02d %02d:%02d:%02d",
                 dt->tm_year + 1900, dt->tm_mon + 1, dt->tm_mday,
                 dt->tm_hour, dt->tm_min, dt->tm_sec);

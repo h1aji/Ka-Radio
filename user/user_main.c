@@ -29,6 +29,7 @@
 #include "el_uart.h"
 #include "interface.h"
 #include "ir.h"
+#include "ntp.h"
 #include "servers.h"
 #include "spilib.h"
 #include "user_config.h"
@@ -121,6 +122,8 @@ void testtask(void *p)
 ICACHE_FLASH_ATTR void housekeepingCallback(void *pArg)
 {
     struct device_settings *device;
+
+    ntp_tick10ms(); // this timer fires every real 10ms; drives ntp_get_local_time()'s clock
 
     FlashCount++;
 

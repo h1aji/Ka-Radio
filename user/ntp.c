@@ -105,7 +105,7 @@ ICACHE_FLASH_ATTR int8_t applyTZ(struct tm *time)
 }
 
 // Does one live NTP network round trip and returns the result as a raw
-// UTC Unix timestamp in *out. ntp_get_time() and ntp_get_time_cached()
+// UTC Unix timestamp in *out. ntp_get_time() and ntp_get_local_time()
 // both build on this - it's the only place that actually talks to the
 // network.
 static bool ntp_fetch(time_t *out)
@@ -226,7 +226,7 @@ static bool ntp_fetch(time_t *out)
 // Gets the time from the NTP server and returns an allocated tm struct
 // (UTC). Always does a live network round trip - use this for an
 // on-demand "check right now" query (e.g. the "date" console command).
-// For anything that needs the time regularly, call ntp_get_time_cached()
+// For anything that needs the time regularly, call ntp_get_local_time()
 // instead so the network isn't hit on every call.
 bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt)
 {
@@ -238,42 +238,57 @@ bool ICACHE_FLASH_ATTR ntp_get_time(struct tm **dt)
     return true;
 }
 
+// Real-time clock in milliseconds, advanced by ntp_tick10ms() - a hardware-timer
+// callback (see user_main.c's housekeepingTimer) - rather than by the FreeRTOS
+// scheduler's tick counter. A plain uint32_t is fine: reads/writes of an aligned
+// 32-bit word are already atomic on this single-core target, and wraparound (every
+// ~49.7 days) is handled correctly by taking plain unsigned differences, same as
+// the tick counter this replaces.
+static volatile uint32_t ntpUptimeMs = 0;
+
+void ICACHE_FLASH_ATTR ntp_tick10ms(void)
+{
+    ntpUptimeMs += 10;
+}
+
 // Returns the current UTC time without hitting the network on every call.
 // The NTP server is queried right away the first time (as soon as the station has
 // an IP address), then every NTP_RESYNC_SEC after a success, or every NTP_RETRY_SEC
-// while the sync keeps failing. Between syncs the clock is advanced locally from the
-// FreeRTOS tick counter. Meant for frequent/periodic callers such as a clock display.
-bool ICACHE_FLASH_ATTR ntp_get_time_cached(struct tm **dt)
+// while the sync keeps failing. Between syncs the clock is advanced locally from
+// ntpUptimeMs (see above), NOT from the FreeRTOS tick counter: that used to divide
+// by 1000/portTICK_RATE_MS, which silently drifts the clock by a fixed ratio
+// whenever the RTOS's actual configured tick rate doesn't match that constant.
+// Meant for frequent/periodic callers such as a clock display.
+bool ICACHE_FLASH_ATTR ntp_get_local_time(struct tm **dt)
 {
-    static time_t syncedTime = 0;       // UTC time at the last successful sync, 0 = never synced
-    static portTickType syncedTick = 0; // tick count at that sync
-    static portTickType lastAttemptTick = 0;
-    static portTickType waitTicks = 0; // how long to wait before the next attempt
+    static time_t syncedTime = 0;    // UTC time at the last successful sync, 0 = never synced
+    static uint32_t syncedMs = 0;    // ntpUptimeMs at that sync
+    static uint32_t lastAttemptMs = 0;
+    static uint32_t waitMs = 0; // how long to wait before the next attempt
     static bool everAttempted = false;
-    const portTickType ticksPerSec = 1000 / portTICK_RATE_MS;
-    portTickType now = xTaskGetTickCount();
+    uint32_t now = ntpUptimeMs;
     time_t result;
 
-    if ((!everAttempted || (now - lastAttemptTick) >= waitTicks) &&
+    if ((!everAttempted || (now - lastAttemptMs) >= waitMs) &&
         wifi_station_get_connect_status() == STATION_GOT_IP) {
         time_t fresh;
 
         everAttempted = true;
-        lastAttemptTick = now;
+        lastAttemptMs = now;
         if (ntp_fetch(&fresh)) {
             syncedTime = fresh;
-            syncedTick = xTaskGetTickCount(); // the fetch can take seconds
-            waitTicks = NTP_RESYNC_SEC * ticksPerSec;
+            syncedMs = ntpUptimeMs; // the fetch can take seconds
+            waitMs = NTP_RESYNC_SEC * 1000U;
         } else {
-            waitTicks = NTP_RETRY_SEC * ticksPerSec;
+            waitMs = NTP_RETRY_SEC * 1000U;
         }
-        now = xTaskGetTickCount();
+        now = ntpUptimeMs;
     }
 
     if (syncedTime == 0)
         return false; // never had a successful sync yet
 
-    result = syncedTime + (time_t)((now - syncedTick) / ticksPerSec);
+    result = syncedTime + (time_t)((now - syncedMs) / 1000U);
     *dt = gmtime(&result);
     return true;
 }
