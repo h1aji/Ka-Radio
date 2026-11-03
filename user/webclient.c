@@ -325,6 +325,15 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char *s, int len)
         return;
     }
     t = s;
+    /* `len` is the trusted ICY metadata block size (length-byte * 16). The block is
+     * NOT guaranteed to contain a NUL before that boundary - real servers often fill
+     * it exactly with no padding - and `s` points straight into the live receive
+     * buffer, with raw audio bytes immediately following it. Re-deriving the length
+     * via strlen() without bounding it first lets it run past the real metadata into
+     * that audio data, picking up random binary bytes as "title" until it happens to
+     * hit a zero byte. Terminate at the trusted boundary first; strlen() then only
+     * trims legitimate NUL padding within the block, same as before. */
+    t[len] = 0;
     len = strlen(t);
     // printf("clientSaveMetadata:  len:%d   char:%s\n",len,s);
     t_end = strstr(t, "song_spot=");
