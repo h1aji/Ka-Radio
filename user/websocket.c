@@ -122,9 +122,9 @@ void websocketinit(void)
 }
 
 // decode and build the accept answer to open the websocket
-const char str1[] = {
-    "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: "};
+const char str1[] = {"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: "};
 const char s[3] = "\r\n";
+
 uint32_t decodeHttpMessage(char *inputMessage, char *outputMessage)
 {
     // const char str2[5] = "\r\n\r\n";
@@ -363,8 +363,7 @@ void websocketparsedata(int socket, char *buf, int len)
 
     /*
             if (header.opCode == WSop_text)
-                    printf("ws parsedata data  socket:%d, opcode: %d,  payload:%s
-       len:%d\n",socket,header.opCode,payload,header.payloadLen);
+                    printf("ws parsedata data  socket:%d, opcode: %d,  payload:%s len:%d\n",socket,header.opCode,payload,header.payloadLen);
     */
 
     // ok payload is unmasked now.
@@ -404,8 +403,7 @@ void websocketbroadcast(char *buf, int len)
     int i;
     for (i = 0; i < NBCLIENT; i++)
         if (iswebsocket(webserverclients[i].socket)) {
-            // printf("ws broadcast to %d, freeheap:%d,
-            // msg:\"%s\"\n",webserverclients[i].socket,xPortGetFreeHeapSize( ),buf);
+            // printf("ws broadcast to %d, freeheap:%d, msg:\"%s\"\n",webserverclients[i].socket,xPortGetFreeHeapSize( ),buf);
             websocketwrite(webserverclients[i].socket, buf, len);
         }
 }
@@ -416,8 +414,7 @@ void websocketlimitedbroadcast(int socket, char *buf, int len)
     int i;
     for (i = 0; i < NBCLIENT; i++)
         if (iswebsocket(webserverclients[i].socket)) {
-            // printf("ws broadcast to %d omit %d,freeheap:%d,
-            // msg:\"%s\"\n",webserverclients[i].socket,socket,xPortGetFreeHeapSize( ),buf);
+            // printf("ws broadcast to %d omit %d,freeheap:%d, msg:\"%s\"\n",webserverclients[i].socket,socket,xPortGetFreeHeapSize( ),buf);
             if (webserverclients[i].socket != socket)
                 websocketwrite(webserverclients[i].socket, buf, len);
         }

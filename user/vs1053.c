@@ -1,13 +1,13 @@
 /**
- ***********************************************************************************************************************
- * @file    VS1053.c
- * @author  Piotr Sperka
- * @date    07.08.2015
- * @brief   This file provides VS1053 usage and control functions. Based on VS1003 library by
- * Przemyslaw Stasiak. Copyright 2016 karawin (http://www.karawin.fr) added control treble, bass and
- * spacialisation
- ***********************************************************************************************************************
- */
+  ***********************************************************************************************************************
+  * @file    VS1053.c
+  * @author  Piotr Sperka
+  * @date    07.08.2015
+  * @brief   This file provides VS1053 usage and control functions. Based on VS1003 library by Przemyslaw Stasiak.
+  * Copyright 2016 karawin (http://www.karawin.fr)
+  * added control treble, bass and spacialisation
+  ***********************************************************************************************************************
+*/
 
 #include "esp_common.h"
 #include "esp8266/pin_mux_register.h"
@@ -28,6 +28,7 @@
 #include "eeprom.h"
 #include "interface.h"
 #include "spilib.h"
+#include "spiburst.h"
 
 extern uint8_t clientIvol;
 extern xSemaphoreHandle sSPI; // SPI bus lock, defined in spilib.c
@@ -356,7 +357,7 @@ ICACHE_FLASH_ATTR void VS1053_Start()
     }
 }
 
-ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
+int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
 {
     if (quantity == 0)
         return 0;
@@ -364,7 +365,6 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
     // The bus is held per 32 byte chunk only: XDCS must be released while others (SPIRAM) use the bus
     while (quantity) {
         int t = quantity;
-        int k;
         if (t > 32)
             t = 32;
         while (checkDREQ() == 0) {
@@ -373,10 +373,12 @@ ICACHE_FLASH_ATTR int VS1053_SendMusicBytes(uint8_t *music, uint16_t quantity)
         spi_take_semaphore();
         spi_speed_10mhz();
         SDI_ChipSelect(SET);
-        for (k = o; k < o + t; k++) {
-            spi_put_char(music[k]);
-        }
+
+        spi_sdi_write(music + o, t); // how the chunk is sent is selected by SDI_MODE in spiburst.h
         SDI_ChipSelect(RESET);
+#if SDI_MODE == 2
+        os_delay_us(3); // burst mode: give DREQ a moment to settle before it is read again
+#endif
         spi_speed_2mhz();
         spi_give_semaphore();
         o += t;

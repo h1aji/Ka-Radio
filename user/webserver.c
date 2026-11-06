@@ -34,20 +34,15 @@ static char apMode[] = {"*Hidden*"};
 xSemaphoreHandle semfile = NULL;
 
 const char tryagain[] ICACHE_RODATA_ATTR STORE_ATTR = {"try again"};
-const char strsROK[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: keep-alive\r\n\r\n%s"};
-const char lowmemory[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nlow memory\n"};
+const char strsROK[] ICACHE_RODATA_ATTR STORE_ATTR = {"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %d\r\nConnection: keep-alive\r\n\r\n%s"};
+const char lowmemory[] ICACHE_RODATA_ATTR STORE_ATTR = {"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nlow memory\n"};
 const char strsMALLOC[] ICACHE_RODATA_ATTR STORE_ATTR = {"WebServer inmalloc fails for %d\n"};
 const char strsMALLOC1[] ICACHE_RODATA_ATTR STORE_ATTR = {"WebServer %s malloc fails\n"};
 const char strsSOCKET[] ICACHE_RODATA_ATTR STORE_ATTR = {"WebServer Socket fails %s errno: %d\n"};
 const char strsID[] ICACHE_RODATA_ATTR STORE_ATTR = {"getstation, no id or Wrong id %d\n"};
-// const char strsRAUTO[] ICACHE_RODATA_ATTR STORE_ATTR  = {"HTTP/1.1 200
-// OK\r\nContent-Type:application/json\r\nContent-Length:13\r\n\r\n{\"rauto\":\"%c\"}"};
-const char strsTHEME[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:13\r\n\r\n{\"theme\":\"%c\"}"};
-const char strsICY[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}"};
+// const char strsRAUTO[] ICACHE_RODATA_ATTR STORE_ATTR  = {"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:13\r\n\r\n{\"rauto\":\"%c\"}"};
+const char strsTHEME[] ICACHE_RODATA_ATTR STORE_ATTR = {"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:13\r\n\r\n{\"theme\":\"%c\"}"};
+const char strsICY[] ICACHE_RODATA_ATTR STORE_ATTR = {"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}"};
 
 os_timer_t sleepTimer;
 uint32_t sleepDelay;
@@ -552,8 +547,7 @@ ICACHE_FLASH_ATTR void pathParse(char *str)
     *write = '\0';
 }
 
-static ICACHE_FLASH_ATTR void copyStationField(char *destination, size_t capacity,
-                                               const char *source)
+static ICACHE_FLASH_ATTR void copyStationField(char *destination, size_t capacity, const char *source)
 {
     size_t length;
     if (destination == NULL || capacity == 0)
@@ -750,6 +744,7 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
                 file = getParameterFromResponse("file=", data, data_size);
                 pathParse(file);
                 name = getParameterFromResponse("name=", data, data_size);
+                pathParse(name); // the browser encodeURIComponent()s the name (e.g. spaces -> %20)
                 if (getSParameterFromResponse(id, 6, "id=", data, data_size)) {
                     if (i == 0)
                         uid = atoi(id);
@@ -926,24 +921,18 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
             }
 
             if (kasprintf( buf, strsICY,
-
-                    // sprintf(buf, "HTTP/1.1 200
-                    // OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}",
+                    // sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"curst\":\"%s\",\"descr\":\"%s\",\"name\":\"%s\",\"bitr\":\"%s\",\"url1\":\"%s\",\"not1\":\"%s\",\"not2\":\"%s\",\"genre\":\"%s\",\"meta\":\"%s\",\"vol\":\"%s\",\"treb\":\"%s\",\"bass\":\"%s\",\"tfreq\":\"%s\",\"bfreq\":\"%s\",\"spac\":\"%s\",\"auto\":\"%c\"}",
                     json_length, currentSt,
-                    (header->members.single.description == NULL)
-                        ? ""
-                        : header->members.single.description,
+                    (header->members.single.description == NULL) ? "" : header->members.single.description,
                     (header->members.single.name == NULL) ? "" : header->members.single.name,
                     (header->members.single.bitrate == NULL) ? "" : header->members.single.bitrate,
                     (header->members.single.url == NULL) ? "" : header->members.single.url,
                     (header->members.single.notice1 == NULL) ? "" : header->members.single.notice1,
                     (not2 == NULL) ? "" : not2,
                     (header->members.single.genre == NULL) ? "" : header->members.single.genre,
-                    (header->members.single.metadata == NULL) ? ""
-                                                              : header->members.single.metadata,
+                    (header->members.single.metadata == NULL) ? "" : header->members.single.metadata,
                     vol, treble, bass, tfreq, bfreq, spac, vauto)) {
-                //              printf("test: len fmt:%d %d\n%s\nfmt:
-                //%s",strlen(strsICY),strlen(fmt),buf,fmt);
+                //printf("test: len fmt:%d %d\n%s\nfmt: %s",strlen(strsICY),strlen(fmt),buf,fmt);
                 write(conn, buf, strlen(buf));
                 infree(buf);
                 wsMonitor();
@@ -1009,8 +998,7 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
                         else
                             device->dhcpEn = 0;
                     }
-                // if (adhcp!= NULL) if (strlen(adhcp)!=0) if
-                // (strcmp(adhcp,"true")==0)device->dhcpEn = 1; else device->dhcpEn = 0;
+                // if (adhcp!= NULL) if (strlen(adhcp)!=0) if (strcmp(adhcp,"true")==0)device->dhcpEn = 1; else device->dhcpEn = 0;
                 strcpy(device->ssid, (ssid == NULL) ? "" : ssid);
                 strcpy(device->ssid2, (ssid2 == NULL) ? "" : ssid2);
                 if (pasw != NULL) {
@@ -1087,35 +1075,34 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
             //char* macstr = inmalloc(20*sizeof(char));
             wifi_get_macaddr(0, macaddr);
 
-            int json_length;
-            json_length = 95 + 19 + strlen(device->ssid) +
-                          // strlen(ipass11) +
-                          strlen(device->ssid2) +
-                          // strlen(ipass22) +
-                          strlen(device->ua) + strlen(device1->hostname) +
-                          kasprintf(tmptzo, PSTR("%d"), device->tzoffset) +
-                          kasprintf(tmpip, PSTR("%d.%d.%d.%d"), device->ipAddr[0],
-                                    device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]) +
-                          kasprintf(tmpmsk, PSTR("%d.%d.%d.%d"), device->mask[0], device->mask[1],
-                                    device->mask[2], device->mask[3]) +
-                          kasprintf(tmpgw, PSTR("%d.%d.%d.%d"), device->gate[0], device->gate[1],
-                                    device->gate[2], device->gate[3]) +
-                          kasprintf(adhcp, PSTR("%d"), device->dhcpEn) +
-                          kasprintf(macstr, PSTR(MACSTR), MAC2STR(macaddr));
+            kasprintf(tmptzo, PSTR("%d"), device->tzoffset);
+            kasprintf(tmpip, PSTR("%d.%d.%d.%d"), device->ipAddr[0], device->ipAddr[1], device->ipAddr[2], device->ipAddr[3]);
+            kasprintf(tmpmsk, PSTR("%d.%d.%d.%d"), device->mask[0], device->mask[1], device->mask[2], device->mask[3]);
+            kasprintf(tmpgw, PSTR("%d.%d.%d.%d"), device->gate[0], device->gate[1], device->gate[2], device->gate[3]);
+            kasprintf(adhcp, PSTR("%d"), device->dhcpEn);
+            kasprintf(macstr, PSTR(MACSTR), MAC2STR(macaddr));
 
-            char *buf = inmalloc(json_length + 95);
+            /* Render the JSON body first, into a buffer sized from the fields' own
+             * declared max sizes (eeprom.h) rather than a hand-counted literal-text
+             * length: the latter is what overflowed here before (the compiler splices
+             * a multi-line string literal's continuation-line indentation straight
+             * into the string, so the real text was longer than the eye-counted
+             * budget). kasprintf() (like plain vsprintf()) does no bounds checking of
+             * its own, so this buffer has to be sized generously up front instead. */
+            char jsonBody[SSIDLEN + SSIDLEN + USERAGLEN + HOSTLEN + 16 + 16 + 16 + 4 + 20 + 10 + 140];
+            kasprintf(jsonBody,
+                PSTR("{\"ssid\":\"%s\",\"pasw\":\"\",\"ssid2\":\"%s\",\"pasw2\":\"\",\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
+                device->ssid, device->ssid2, tmpip, tmpmsk, tmpgw, device->ua, adhcp, macstr, device1->hostname, tmptzo);
+
+            int bodyLen = strlen(jsonBody);
+
+            char *buf = inmalloc(bodyLen + 96); // +96 safely covers the fixed header text below
             if ((buf == NULL)) {
                 printf(strsMALLOC1, ("post wifi"));
                 respKo(conn);
             } else {
-				if (kasprintf(
-                    buf,
-                    PSTR("HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"ssid\":\"%s\",\"pasw\":\"%s\",\
-                        \"ssid2\":\"%s\",\"pasw2\":\"%s\",\"ip\":\"%s\",\"msk\":\"%s\",\"gw\":\"%s\",\"ua\":\"%s\",\
-                        \"dhcp\":\"%s\",\"mac\":\"%s\",\"host\":\"%s\",\"tzo\":\"%s\"}"),
-                    json_length,device->ssid,"",device->ssid2,"",tmpip,tmpmsk,tmpgw,device->ua,adhcp,macstr,device1->hostname,tmptzo))
-				{
-                    //printf(PSTR("wifi Buf len:%d\n%s\nfmt:%s\n"),strlen(buf),buf,fmt);
+                if (kasprintf(buf, PSTR("HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n%s"), bodyLen, jsonBody))
+                {
                     write(conn, buf, strlen(buf));
                 }
                 infree(buf);
@@ -1428,7 +1415,7 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams)
         err = close(client_sock);
         if (err != ERR_OK) {
             err = close(client_sock);
-            // printf ("closeERR:%d\n",err);
+            //printf ("closeERR:%d\n",err);
         }
     }
     xSemaphoreGive(semclient);
@@ -1438,6 +1425,6 @@ ICACHE_FLASH_ATTR void serverclientTask(void *pvParams)
         printf("watermark serverClientTask: %x  %d\n",uxHighWaterMark,uxHighWaterMark);
     */
 
-    // printf("Client exit socket:%d result %d \n",client_sock,result);
+    //printf("Client exit socket:%d result %d \n",client_sock,result);
     vTaskDelete(NULL);
 }

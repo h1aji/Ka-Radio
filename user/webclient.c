@@ -325,6 +325,15 @@ ICACHE_FLASH_ATTR void clientSaveMetadata(char *s, int len)
         return;
     }
     t = s;
+    /* `len` is the trusted ICY metadata block size (length-byte * 16). The block is
+     * NOT guaranteed to contain a NUL before that boundary - real servers often fill
+     * it exactly with no padding - and `s` points straight into the live receive
+     * buffer, with raw audio bytes immediately following it. Re-deriving the length
+     * via strlen() without bounding it first lets it run past the real metadata into
+     * that audio data, picking up random binary bytes as "title" until it happens to
+     * hit a zero byte. Terminate at the trusted boundary first; strlen() then only
+     * trims legitimate NUL padding within the block, same as before. */
+    t[len] = 0;
     len = strlen(t);
     // printf("clientSaveMetadata:  len:%d   char:%s\n",len,s);
     t_end = strstr(t, "song_spot=");
@@ -830,8 +839,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                     //printf("t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n", t1,cstatus, icyfound,metad, header.members.single.metaint);
                     cstatus = C_DATA; // a stream found
                     t2 = strstr(pdata, "Transfer-Encoding: chunked"); // chunked stream?
-                                                       //                       t2
-                                                       //= NULL;
+
                     chunked = 0;
                     t1 += 4;
 
@@ -871,13 +879,9 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
         } break;
         default:
             // Chunk computing
-            lc =
-                len; // lc rest after chunk
-                     //printf("CDATAIN: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
-            if ((chunked != 0) &&
-                ((cchunk == 0) ||
-                 (len >=
-                  cchunk - 1))) {
+            lc = len; // lc rest after chunk
+            //printf("CDATAIN: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
+            if ((chunked != 0) && ((cchunk == 0) || (len >= cchunk - 1))) {
                 // if in chunked mode and chunk received or complete in data
                 //printf("CDATA1: chunked: %d, cchunk: %d, len: %d\n",chunked,cchunk,len);
                 if (len == cchunk) { // if a complete chunk in pdata, remove crlf
@@ -888,19 +892,28 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                     // an incomplete chunk in progress
                     if (len == cchunk - 1) {
                         // missing lf: remove cr only, wait lf in next data
-
                         len -= 1;
                         cchunk = 1;
                         //printf("leno1:%d, chunked:%d  cchunk:%d, lc:%d, metad:%d\n",len,chunked,cchunk, lc,metad );
-                    } else { 
+                    } else {
                         // a part of end of chunk and beginnining of a new one
                         inpdata = pdata;
                         while (lc != 0) {
+                            uint8_t chunkWaitRetries = 0;
                             while (lc < cchunk + 9) {
                                 vTaskDelay(1);
                                 bread = recvfrom(sockfd, pdata + len, 9, 0, NULL, NULL);
                                 if (bread < 0) {
                                     kprintf(PSTR("Chunk1: errno: %d, read: %d, "), errno, bread);
+                                    // Was an unbounded retry: a stalled/slow stream server would spin
+                                    // here forever. Give up and reconnect after a few failed attempts,
+                                    // same as the header-read retry above this.
+                                    if (++chunkWaitRetries > 5) {
+                                        clientDisconnect(PSTR("chunk wait"));
+                                        clientConnect();
+                                        lc = 0;
+                                        break;
+                                    }
                                 }
                                 if (bread >= 0)
                                     clen = bread;
@@ -910,6 +923,8 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                                 len += clen;
                                 //printf("more:%d, lc:%d\n",clen,lc);
                             } // security to be sure to receive the new length
+                            if (lc == 0)
+                                break; // gave up above; don't parse a chunk header we never received
 
                             //printf("leni0:%d, inpdata:%x, chunked:%d  cchunk:%d, lc:%d, \n",len,inpdata,chunked,cchunk, lc );
                             inpchr = strchr(inpdata + cchunk, 0x0D);
@@ -970,16 +985,22 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
             if (rest < 0) {
                 // printf("Negative enter len= %d, metad= %d  rest= %d   pdata= %x
                 // :\"%s\"\n",len,metad,rest,pdata,pdata);
-                if (len > -rest) {
+                if (len >- rest) {
                     // *(pdata+len-rest) = 0; //truncated
                     *(pdata - rest) = 0; // truncated
+                    // This chunk completes the split metadata: append its final
+                    // segment before using `metadata` below. Without this, the
+                    // last part of the title is silently dropped and strlen()
+                    // below reads past the still-unfilled tail of the `l+1`-byte
+                    // buffer into whatever garbage memory follows it.
+                    strcat(metadata, pdata);
                 } else {
                     *(pdata + len) = 0; // truncated
                     strcat(metadata, pdata);
                     //metad = header.members.single.metaint ;
                 }
 
-                if (len > -rest) {
+                if (len >- rest) {
                     //printf("Negaposi   len= %d, metad= %d  rest= %d   pdata= %x :\"%s\"\n",len,metad,rest,pdata,pdata);
                     clientSaveMetadata(metadata, strlen(metadata));
                     metad = header.members.single.metaint;
@@ -991,7 +1012,7 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                     pdata += len;
                     rest += len;
                     len = 0;
-                    // printf("Negatafter len= %d, metad= %d  rest= %d   pdata= %x :\"%s\"\n",len,metad,rest,pdata,pdata);
+                    //printf("Negatafter len= %d, metad= %d  rest= %d   pdata= %x :\"%s\"\n",len,metad,rest,pdata,pdata);
                 }
                 //printf("Negative len out = %d, pdata: %x,metad= %d  rest= %d \n",len,pdata,metad,rest);
             }
@@ -1001,17 +1022,14 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
                 //printf("metain len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d\n",len,clen,metad, l,inpdata,rest );
                 int jj = 0;
                 while ((clen > metad) && (header.members.single.metaint != 0)) { // in buffer
-                    // printf("metainb len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,
-                    // rest:%d\n",len,clen,metad, l,inpdata,rest );
+                    // printf("metainb len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d\n",len,clen,metad, l,inpdata,rest);
                     jj++;
                     l = inpdata[metad] * 16; // new meta length
                     rest = clen - metad - l - 1;
                     /*
-                    if (l != 0){
-                            printf("metain len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,
-                                    rest:%d\n",len,clen,metad, l,inpdata,rest ); printf("mt len:%d, clen:%d,
-                                    metad:%d ,&l:%x, l:%d, rest:%d, str: %s\n",len,clen,metad,inpdata+metad,
-                                    l,rest,inpdata+metad+1);
+                    if (l != 0) {
+                            printf("metain len:%d, clen:%d, metad:%d, l:%d, inpdata:%x, rest:%d\n",len,clen,metad, l,inpdata,rest ); 
+                            printf("mt len:%d, clen:%d, metad:%d ,&l:%x, l:%d, rest:%d, str: %s\n",len,clen,metad,inpdata+metad, l,rest,inpdata+metad+1);
                     }
                     else
                         printf("mt len:%d, clen:%d, metad:%d,&l:%x, l:%d, rest:%d\n",len,clen,metad,inpdata+metad, l,rest );
@@ -1171,8 +1189,7 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
             bzero(&dest, sizeof(dest));
             dest.sin_family = AF_INET;
             dest.sin_port = htons(clientPort);
-            dest.sin_addr.s_addr =
-                inet_addr(inet_ntoa(*(struct in_addr *)(server->h_addr_list[0])));
+            dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr *)(server->h_addr_list[0])));
             bytes_read = 0;
             /*---Connect to server---*/
             if (connect(sockfd, (struct sockaddr *)&dest, sizeof(dest)) >= 0) {
@@ -1190,21 +1207,19 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
                 if (t0 != NULL) { // a playlist asked
                     cstatus = C_PLAYLIST;
                     //printf("sprint%d\n",6);
-                    kasprintf(bufrec, PSTR("GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n"), clientPath,
-                              clientURL); // ask for the playlist
+                    kasprintf(bufrec, PSTR("GET %s HTTP/1.0\r\nHOST: %s\r\n\r\n"), clientPath, clientURL); // ask for the playlist
                 } else {
                     if (strcmp(clientURL, "stream.pcradio.biz") == 0)
                         strcpy(useragent, "pcradio");
                     //printf("sprint%d\n",7);
                     kasprintf(
                         bufrec,
-                        PSTR( "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n"),
-                        clientPath, clientURL, useragent);
+                        PSTR( "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n"), clientPath, clientURL, useragent);
                 }
                 //printf("st:%d, Client Sent:\n%s\n",cstatus,bufrec);
                 xSemaphoreTake(sConnected, 0);
                 send(sockfd, bufrec, strlen(bufrec), 0);
-                ///// set timeout
+                // set timeout
                 /* if (once == 0)
                         timeout.tv_sec = 10000; // bug *1000 for
                         seconds else timeout.tv_sec = 3000; // bug *1000 for seconds
@@ -1255,14 +1270,21 @@ ICACHE_FLASH_ATTR void clientTask(void *pvParams)
                             }
                         }
                         kprintf(PSTR("Errno: %d, %d%c"), errno, cnterror, 0x0d);
-                        //if (errno != 11)
-                        // vTaskDelay(50); //timeout
-                        //else
+                    /*  if (errno != 11)
+                         vTaskDelay(50); //timeout
+                        else */
                         vTaskDelay(20);
                         if ((errno == 128) || (cnterror >= STREAM_STALL_RETRIES))
                             break;
                     }
-                    vTaskDelay(1);
+                    // Only force a yield here when idle: the else branch above already
+                    // yields (vTaskDelay(1) + vTaskDelay(20)) on every empty read. Forcing
+                    // another fixed 1-tick sleep after every *successful* read as well caps
+                    // throughput at RECEIVE bytes/tick regardless of bitrate - harmless at
+                    // low bitrates, but it eats into the margin a high-bitrate (e.g. 320kbps)
+                    // stream needs to keep the SPIRAM ring buffer filled in real time.
+                    if (bytes_read <= 0)
+                        vTaskDelay(1);
                     if (xSemaphoreTake(sDisconnect, 0)) {
                         clearHeaders();
                         break;

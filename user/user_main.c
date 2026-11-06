@@ -29,6 +29,7 @@
 #include "el_uart.h"
 #include "interface.h"
 #include "ir.h"
+#include "ntp.h"
 #include "servers.h"
 #include "spilib.h"
 #include "user_config.h"
@@ -37,12 +38,15 @@
 #include "webserver.h"
 
 const char striDEF0[] ICACHE_RODATA_ATTR STORE_ATTR = {
-    "The default AP is KaRadio. Connect your wifi to it.\nThen connect a webbrowser to 192.168.4.1 and go to Setting\nMay be long to load the first time.Be patient.%c"};
+    "The default access point is KaRadio. Connect your device to this Wi-Fi network.\n"
+    "Then open a web browser, navigate to 192.168.4.1, and go to Settings.\n"
+    "The page may take a while to load the first time, so please be patient.%c"
+};
 const char striDEF1[] ICACHE_RODATA_ATTR
 STORE_ATTR = {"Erase the database and set ssid, password and ip's field%c"};
 const char striAP[] ICACHE_RODATA_ATTR STORE_ATTR = {"AP1: %s, AP2: %s\n"};
-const char striSTA1[] ICACHE_RODATA_ATTR STORE_ATTR = {" AP1:Station IP: %d.%d.%d.%d\n"};
-const char striSTA2[] ICACHE_RODATA_ATTR STORE_ATTR = {" AP2:Station IP: %d.%d.%d.%d\n"};
+const char striSTA1[] ICACHE_RODATA_ATTR STORE_ATTR = {" AP1 received IP: %d.%d.%d.%d\n"};
+const char striSTA2[] ICACHE_RODATA_ATTR STORE_ATTR = {" AP2 received IP: %d.%d.%d.%d\n"};
 const char striTRY[] ICACHE_RODATA_ATTR STORE_ATTR = {"Trying AP%d %s ,  I: %d status: %d\n"};
 const char striTASK[] ICACHE_RODATA_ATTR STORE_ATTR = {"%s task: %x\n"};
 const char striHEAP[] ICACHE_RODATA_ATTR STORE_ATTR = {"Heap size: %d\n"};
@@ -118,6 +122,8 @@ void testtask(void *p)
 ICACHE_FLASH_ATTR void housekeepingCallback(void *pArg)
 {
     struct device_settings *device;
+
+    ntp_tick10ms(); // this timer fires every real 10ms; drives ntp_get_local_time()'s clock
 
     FlashCount++;
 
@@ -341,6 +347,7 @@ void initWifi()
     // modem sleep makes the AP hold the packets until the next DTIM beacon, which stalls a stream:
     // keep the radio awake. MODEM_SLEEP_T saves power if the stall is not caused by it.
     wifi_set_sleep_type(NONE_SLEEP_T);
+
     if ((strlen(device1->hostname) >= HOSTLEN) || (strlen(device1->hostname) == 0) ||
         (device1->hostname[0] == 0xff)) {
         strcpy(hostn, "KaRadio");
@@ -398,8 +405,7 @@ void uartInterfaceTask(void *pvParameters)
     }
 
     FlashOn = 190;
-    initHousekeeping(); // start the housekeeping timer (volume save). This will kill the testtask
-                        // to free memory
+    initHousekeeping(); // start the housekeeping timer (volume save). This will kill the testtask to free memory
 
     // autostart
     device = getDeviceSettings();
@@ -442,12 +448,6 @@ void uartInterfaceTask(void *pvParameters)
     }
 }
 
-/*
-UART_SetBaudrate(uint8_t uart_no, uint32_t baud_rate)
-{
-        uart_div_modify(uart_no, UART_CLK_FREQ / baud_rate);
-}
-*/
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -562,8 +562,10 @@ void user_init(void)
     device = getDeviceSettings();
     uspeed = device->uartspeed;
     free(device);
+
+    // Set UART baud rate
     uspeed = checkUart(uspeed);
-    uart_div_modify(0, UART_CLK_FREQ / uspeed); // UART_SetBaudrate(0,uspeed);
+    uart_div_modify(0, UART_CLK_FREQ / uspeed);
     uart_rx_init();
 
     spi_init_semaphore(); // HSPI is shared by the VS1053, the SPIRAM and the flash helpers
