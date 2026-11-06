@@ -18,6 +18,11 @@
 #define PSTR(s) (__extension__({ static const char __c[] STORE_ATTR __attribute__((section(".irom.text"))) = {s}; &__c[0];}))
 #define MAXDATAT 256
 
+// Volume is intentionally never saved to flash: every boot starts at this fixed
+// value instead of whatever was last set (see VS1053_Start() in vs1053.c,
+// vsTask() in webclient.c, and user_init() in user_main.c).
+#define VOLUME_DEFAULT 75
+
 extern unsigned short adcdiv;
 extern char* getIp() ;
 void switchCommand(void );

@@ -281,14 +281,11 @@ ICACHE_FLASH_ATTR void clientSetOvol(int8_t ovol)
 // set the current volume with its offset
 ICACHE_FLASH_ATTR void setOffsetVolume(void)
 {
-    struct device_settings *device;
-    device = getDeviceSettings();
-    int16_t uvol = 0;
-    if (device != NULL) {
-        kprintf(PSTR("##CLI.VOL#: %d\n"), device->vol);
-        uvol = device->vol + clientOvol;
-        infree(device);
-    }
+    // Base is the live volume (clientIvol), not the saved one: volume is never
+    // persisted, so device->vol is frozen and no longer a meaningful "general
+    // preference" to offset from.
+    int16_t uvol = clientIvol + clientOvol;
+    kprintf(PSTR("##CLI.VOL#: %d\n"), clientIvol);
     if (uvol > 254)
         uvol = 254;
     if (uvol <= 0)

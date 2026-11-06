@@ -1113,7 +1113,7 @@ IRAM_ATTR void vsTask(void *pvParams)
 
     device = getDeviceSettings();
     vTaskDelay(10);
-    VS1053_SetVolume(device->vol);
+    VS1053_SetVolume(VOLUME_DEFAULT); // volume is never persisted; always boot at the default
     VS1053_SetTreble(device->treble);
     VS1053_SetBass(device->bass);
     VS1053_SetTrebleFreq(device->freqtreble);

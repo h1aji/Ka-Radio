@@ -345,9 +345,9 @@ ICACHE_FLASH_ATTR void VS1053_Start()
         VS1053_DisableAnalog();
         VS1053_SetVolumeLine(-31);
         Delay(1);
-        printf(PSTR("volume: %d\n"), device->vol);
-        clientIvol = device->vol;
-        VS1053_SetVolume(device->vol);
+        printf(PSTR("volume: %d\n"), VOLUME_DEFAULT); // volume is never persisted; always boot at the default
+        clientIvol = VOLUME_DEFAULT;
+        VS1053_SetVolume(VOLUME_DEFAULT);
         VS1053_SetTreble(device->treble);
         VS1053_SetBass(device->bass);
         VS1053_SetTrebleFreq(device->freqtreble);
