@@ -6,6 +6,7 @@ if [ ! -f "$APP_ENV" ]; then
     echo "Config file not found: $APP_ENV"
     exit 1
 fi
+
 set -a
 # shellcheck disable=SC1090
 . "$APP_ENV"
@@ -15,7 +16,7 @@ set +a
 : "${BIN_PATH:?BIN_PATH is not set in $APP_ENV}"
 
 
-echo "gen_misc.sh version 20150911"
+echo "gen_misc.sh version 20261106"
 echo ""
 
 if [ $SDK_PATH ]; then
