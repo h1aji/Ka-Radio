@@ -17,8 +17,8 @@
 #define NT_THEME    0xFE
 #define T_PATCH     2
 #define NT_PATCH    0xFD
-#define T_LED       4
-#define NT_LED      0xFB
+#define T_IR        4
+#define NT_IR       0xFB
 #define T_LEDPOL    8
 #define NT_LEDPOL   0xF7
 #define T_LOGTEL    0x10
@@ -52,7 +52,7 @@ struct device_settings {
     uint8_t autostart;     // 0: stopped, 1: playing
     uint8_t i2sspeed;      // 0 = 48kHz, 1 = 96kHz, 2 = 128kHz
     uint32_t uartspeed;    // serial baud
-    uint8_t options;       // bit0:0 theme ligth blue, 1 Dark brown, bit1: 0 patch load  1 no patch, bit2: O blink led  1 led on On play
+    uint8_t options;       // bit0:0 theme ligth blue, 1 Dark brown, bit1: 0 patch load 1 no patch, bit2: 0 IR remote enabled, 1 disabled (default)
     char ua[USERAGLEN];    // user agent
     int8_t tzoffset;       // timezone offset
     uint8_t pass2[60];

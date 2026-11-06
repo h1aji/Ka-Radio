@@ -596,7 +596,16 @@ void user_init(void)
     xTaskCreate(serversTask, "t4", 370, NULL, 4, &pxCreatedTask); // 380
     printf(striTASK, "t4", pxCreatedTask);
 
-    irInit();      // infrared remote on GPIO2
+    // Infrared remote on GPIO2: disabled by default (sys.ir("1") to enable, takes
+    // effect at next power on). Skipped entirely rather than just ignoring key
+    // events, so a board without a receiver wired up doesn't pay for the task and
+    // the GPIO interrupt handler it would otherwise run forever.
+    device = getDeviceSettings();
+    if (device != NULL) {
+        if ((device->options & T_IR) == 0)
+            irInit();
+        free(device);
+    }
     displayInit(); // SSD1306 status OLED
 
     printf(striHEAP, xPortGetFreeHeapSize());
