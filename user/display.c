@@ -432,7 +432,14 @@ void ICACHE_FLASH_ATTR displayInit(void)
 
     SSD1306_SetRotation(DISPLAY_ROTATE_180 ? SSD1306_ROTATE_180 : SSD1306_ROTATE_0);
     SSD1306_SetContrast(DISPLAY_CONTRAST_NORMAL);
-    SSD1306_Init();
+    if (!SSD1306_Init()) {
+        /* SSD1306_Init() already probed the panel's known I2C address (its init
+         * commands go out over the bus and it reports back whether they were
+         * acked) - no need for a separate scan. Nothing answered, so don't start
+         * a task that would just spend every cycle redrawing into the void. */
+        printf(PSTR("Display: no SSD1306 found on I2C, skipping%c"), 0x0d);
+        return;
+    }
 
     for (i = 0; i < LINE_COUNT; i++)
         memset(&lines[i], 0, sizeof(lines[i]));
