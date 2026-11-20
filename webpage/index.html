@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <HTML>
 	<head>
-<!--		<meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1"> -->
+<!-- <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1"> -->
 		<meta charset="UTF-8"> 
 		<meta name="viewport" content="width=device-width, minimum-scale=0.25"/>
 		<meta name="apple-mobile-web-app-capable" content="yes" >
@@ -9,7 +9,7 @@
 		<link rel="apple-touch-icon" type="image/png" href="logo.png" >
 		<link rel="icon" type="image/png" href="favicon.png" />
 		<link rel="stylesheet" title="base" href="style.css" type="text/css"/>
-		<title>Karadio, the ultimate Wifi Webradio</title>
+		<title>Karadio: the ultimate Wifi Webradio</title>
 	    <style type="text/css">
 		</style>
 	</head>
@@ -44,14 +44,12 @@
 
 	
 	<div id="MAIN">	
-		<div id="HEADER" onclick="wtop()"> 
-
+		<div id="HEADER" onclick="wtop()">
 			<div class="LEFT"><img title="Click on the logo to change the theme" onClick= "theme()" src="logo.png"></div>
 			<div class="RIGHT">
-			<a href="https://github.com/karawin/Ka-Radio" target="_blank">V2.1 R1</a><br/>
-			<a href="http://www.karawin.fr" target="_blank" >By KaraWin</a><br/>
+			<a href="https://github.com/h1aji/Ka-Radio" target="_blank">V2.2 R1</a><br/>
+			<a href="http://www.karawin.fr" target="_blank">By KaraWin</a><br/>
 			<div id="rssi" >0 dBm</div><br/>
-<!--			<a href="https://github.com/PiotrSperka/ESP8266-WebRadio" style="font-size:8px" target="_blank">From PiotrSperka</a> -->
 			</div>
 			<div id="HEAD">
 			<span class="bold4"><span id="meta">Karadio</span></span>
@@ -86,11 +84,11 @@
 -->					
 					</p></span><p>
 					
-
                      <span class="bold2">Volume: </span>
 					 &nbsp;&nbsp;<span id="vol1_span"></span><br/>
 					<input type="range" id="vol1_range" name="vol1"  onChange="onRangeVolChange(this.value,true)"  min=0 max=254 style="height:25px;">
-					</p>				
+					</p>
+
 				 <h1>Station No <span id="curst"></span>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" checked  id="Full"  onclick="full()"/> Full</h1>				  
 					<p><span class="bold1" >Name: </span><span id="name"></span>&nbsp;&nbsp;<img id="icon" src=""  height="16px" width="16px"> </p>
 					<p><span id="ldescr"> <span class="bold1">Description: </span><span id="descr"></span></span></p>
@@ -101,9 +99,9 @@
 							
 				 <h1>Monitoring</h1>	
 				 <p>
-				 <!-- Play icon by Icons8 -->
+				<!-- Play icon by Icons8 -->
 <img class="icon icons8" width="40" height="40" title="Play monitoring" onClick="mplay()" src="data:image/png;base64,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">&nbsp;
-					<!-- Stop icon by Icons8 -->
+				<!-- Stop icon by Icons8 -->
 <img class="icon icons8" width="40" height="40" title="Stop monitoring" onClick="mstop()" src="data:image/png;base64,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"> 
 <!--
 					<input type="button" value="Play"  onClick="mplay()"> &nbsp;
@@ -154,7 +152,7 @@
 					<input type="radio" name="tabs" id="tab2" />
 					<label for="tab2">EDIT</label>
 					<div id="tab-content2" class="tab-content">
-						<!--<h1>Manage stations</h1>-->
+						<!-- <h1>Manage stations</h1> -->
 						<h1>
 						<input type="button" id="refresh" title="This will reload the stations from the WebRadio" onClick="refreshList()"  value="Refresh locale list(i)">
 						<input type="button" id="stsave" disabled="true" style="margin:0px auto" title="This will save all stations to the WebRadio" onClick="stChanged()"  value="Save the list(i)">
@@ -197,7 +195,7 @@
 						<input type="file" style="width:300px;color:black;" id="fileload"></span><br/>
 <!--						<input type="button" id="refresh" title="This will reload the stations from the WebRadio" onClick="refreshList()"  value="Refresh locale list">
 						<input type="button" style="float:right;" id="clear" title="Warning: This will clear all stations.\n Be sure to save them before." onClick="clearList()"  value="Clear all stations"><br/>				
-						<br/>-->
+						<br/> -->
 						</p>
 						<h1>Wireless network &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="Validate" onclick="valid()" /></h1>
 						<div class="ap-group">
