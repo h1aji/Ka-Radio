@@ -529,9 +529,15 @@ void user_init(void)
 
     xTaskCreate(uartInterfaceTask, "t1", 370, NULL, 2, &pxCreatedTask); // 350
     printf(striTASK, "t1", pxCreatedTask);
-    xTaskCreate(vsTask, "t2", 240, NULL, 5, &pxCreatedTask); // 380 230
+    /* vsTask now outranks clientTask (was 5 vs 6): feeding the VS1053 in real time is a hard,
+     * audible deadline, while filling the ring buffer from the network has ~128KB (seconds) of
+     * slack to absorb being preempted. With clientTask higher, it could stay "ready" almost
+     * continuously under sustained high-bitrate throughput and starve vsTask of the CPU (and the
+     * SPI bus) entirely - not just contend for it - since a strict-priority scheduler never runs
+     * a lower-priority ready task while a higher-priority one is ready. */
+    xTaskCreate(vsTask, "t2", 240, NULL, 6, &pxCreatedTask); // 380 230
     printf(striTASK, "t2", pxCreatedTask);
-    xTaskCreate(clientTask, "t3", 500, NULL, 6, &pxCreatedTask); // 340
+    xTaskCreate(clientTask, "t3", 500, NULL, 5, &pxCreatedTask); // 340
     printf(striTASK, "t3", pxCreatedTask);
     xTaskCreate(serversTask, "t4", 370, NULL, 4, &pxCreatedTask); // 380
     printf(striTASK, "t4", pxCreatedTask);

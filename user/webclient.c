@@ -760,10 +760,18 @@ IRAM_ATTR void clientReceiveCallback(int sockfd, char *pdata, int len)
     bool icyfound;
 /*
     if (cstatus != C_DATA) {
-        printf("cstatus= %d\n",cstatus); 
+        printf("cstatus= %d\n",cstatus);
         printf("Len=%d, Byte_list = %s\n",len,pdata);
     }
 */
+    /* bufrec is allocated once and reused for every recvfrom(); it's never cleared,
+     * and recvfrom() doesn't NUL-terminate what it writes. Without this, every
+     * strstr() below (404/301/302/header-end/...) can scan straight past the `len`
+     * bytes actually just received into stale leftover bytes from some earlier,
+     * unrelated response - e.g. a real "404"+"Not Found" from a past connection -
+     * and false-positive on a perfectly good reconnect. bufrec is RECEIVE+20 bytes
+     * and len is capped at RECEIVE, so this write is always in bounds. */
+    pdata[len] = 0;
     if (cstatus != C_DATA) {
         t1 = strstr(pdata, "404");
         if (t1 != NULL)
