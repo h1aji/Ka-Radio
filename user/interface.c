@@ -40,6 +40,8 @@ const char stritWIFISTATION[] ICACHE_RODATA_ATTR
 STORE_ATTR = {"\n#WIFI.STATION#\n%s\n%s\n##WIFI.STATION#\n"};
 const char stritPATCH[] ICACHE_RODATA_ATTR
 STORE_ATTR = {"\n##VS1053 Patch will be %s after power Off and On#\n"};
+const char stritIR[] ICACHE_RODATA_ATTR
+STORE_ATTR = {"\n##IR remote will be %s after power Off and On#\n"};
 const char stritCMDERROR[] ICACHE_RODATA_ATTR STORE_ATTR = {"##CMD_ERROR#%c"};
 const char stritHELP0[] ICACHE_RODATA_ATTR STORE_ATTR = {" \
 Commands:\n\
@@ -92,6 +94,9 @@ sys.boot: reboot the webradio.\n\
 sys.patch(\"x\"): Change the status of the vs1053 patch at power on.\n\
 0 = Patch will not be loaded, 1 or up = Patch will be loaded (default) at power On \n\
 sys.patch: Display the vs1053 patch status\n\
+sys.ir(\"x\"): Enable or disable the IR remote (takes effect at next power on).\n\
+0 = disabled (default), 1 or up = enabled\n\
+sys.ir: Display the IR remote status\n\
 sys.version: Display the Release and Revision numbers\n\
 sys.tzo(\"xx\"): Set the timezone offset of your country.%c"};
 
@@ -848,6 +853,39 @@ ICACHE_FLASH_ATTR void syspatch(char *s)
     free(device);
 }
 
+// Enable/disable the IR remote (GPIO2 input, its task and its interrupt handler).
+// Takes effect after the next reboot: irInit() is only called once at boot (see
+// user_main.c), gated on this same T_IR bit.
+ICACHE_FLASH_ATTR void sysir(char *s)
+{
+    char *t = strstr(s, parslashquote);
+    struct device_settings *device;
+    device = getDeviceSettings();
+    if (t == NULL) {
+        if ((device->options & T_IR) != 0)
+            kprintf(PSTR("\n##IR remote is disabled#%c"), 0x0d);
+        else
+            kprintf(PSTR("\n##IR remote is enabled#%c"), 0x0d);
+        free(device);
+        return;
+    }
+    char *t_end = strstr(t, parquoteslash);
+    if (t_end == NULL) {
+        kprintf(stritCMDERROR, 0x0d);
+        free(device);
+        return;
+    }
+    uint8_t value = atoi(t + 2);
+    if (value == 0)
+        device->options |= T_IR; // 0 = disabled
+    else
+        device->options &= NT_IR; // 1 or up = enabled
+
+    saveDeviceSettings(device);
+    kprintf(stritIR, (device->options & T_IR) != 0 ? "disabled" : "enabled");
+    free(device);
+}
+
 ICACHE_FLASH_ATTR void tzoffset(char *s)
 {
     char *t = strstr(s, parslashquote);
@@ -956,6 +994,8 @@ ICACHE_FLASH_ATTR void checkCommand(int size, char *s)
             update_firmware("prv");
         else if (startsWith("patch", tmp + 4))
             syspatch(tmp);
+        else if (startsWith("ir", tmp + 4))
+            sysir(tmp);
         else if (strcmp(tmp + 4, "date") == 0)
             ntp_print_time();
         else if (strncmp(tmp + 4, "version", 4) == 0)

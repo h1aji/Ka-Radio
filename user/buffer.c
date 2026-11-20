@@ -143,41 +143,46 @@ void spiramInit()
 }
 
 /* Up to SPI_BURST_MAX bytes per transaction (command + address + data in one go). The chip select goes
-   high between the bursts, every burst starts with its own command and address. */
+   high between the bursts, every burst starts with its own command and address.
+   The bus semaphore is taken and given back around each individual burst, not once for
+   the whole call: holding it for a long multi-burst transfer (e.g. a full ~1.4KB network
+   chunk, 20+ bursts back to back) can make vsTask wait that whole time for the same SPI
+   bus to feed the VS1053, which at high bitrates (320kbps) can starve it enough to cause
+   an audible hiccup even though the ring buffer itself still has plenty of data. */
 uint32_t spiramRead(uint32_t size, uint32_t address, uint8_t *dst) {
     uint32_t done = 0, n;
-    spi_take_semaphore();
-    spi_speed_16mhz(); // 16MHz
 
     while (done < size) {
 		n = size - done;
 		if (n > SPI_BURST_MAX) n = SPI_BURST_MAX;
+		spi_take_semaphore();
+		spi_speed_16mhz(); // 16MHz
 		SPIRAM_CS_LOW();
 		spi_cmd_read(0x03, address + done, dst + done, n);
 		SPIRAM_CS_HIGH();
+		spi_give_semaphore();
 		done += n;
 	}
 
-    spi_give_semaphore();
     return done;
 }
 
 uint32_t spiramWrite(uint32_t size, uint32_t address, uint8_t *data)
 {
     uint32_t done = 0, n;
-    spi_take_semaphore();
-    spi_speed_16mhz();
 
 	while (done < size) {
 		n = size - done;
 		if (n > SPI_BURST_MAX) n = SPI_BURST_MAX;
+		spi_take_semaphore();
+		spi_speed_16mhz();
 		SPIRAM_CS_LOW();
 		spi_cmd_write(0x02, address + done, data + done, n);
 		SPIRAM_CS_HIGH();
+		spi_give_semaphore();
 		done += n;
 	}
 
-    spi_give_semaphore();
     return done;
 }
 

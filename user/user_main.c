@@ -59,9 +59,6 @@ static mdnsHandle *mdns = NULL;
 void uart_div_modify(int no, unsigned int freq);
 
 //struct station_config config;
-uint8_t FlashOn = 5;
-uint8_t FlashCount = 0xFF;
-uint8_t FlashVolume = 0;
 os_timer_t housekeepingTimer;
 sc_status status = 0;
 
@@ -91,68 +88,14 @@ void setMdns(mdnsHandle *toset)
     mdns = toset;
 }
 
-void testtask(void *p)
-{
-    struct device_settings *device;
-    /*
-        int uxHighWaterMark;
-        uxHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-        printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
-    */
-
-    while (FlashCount == 0xFF) {
-        vTaskDelay(10); // yield between volume checks
-
-        // save volume if changed
-        device = getDeviceSettings();
-        if (device != NULL) {
-            if (device->vol != clientIvol) {
-                device->vol = clientIvol;
-                saveDeviceSettings(device);
-                // uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-                // printf(striWATERMARK,"testtask",uxHighWaterMark,xPortGetFreeHeapSize( ));
-            }
-            free(device);
-        }
-    }
-    //printf("t0 end\n");
-    vTaskDelete(NULL); // stop the task
-}
-
 ICACHE_FLASH_ATTR void housekeepingCallback(void *pArg)
 {
-    struct device_settings *device;
-
     ntp_tick10ms(); // this timer fires every real 10ms; drives ntp_get_local_time()'s clock
-
-    FlashCount++;
-
-    if (FlashCount == FlashOn) {
-        if (FlashVolume++ == 5) {
-            // save volume if changed
-            FlashVolume = 0;
-            if (xPortGetFreeHeapSize() > 4096) {
-                device = getDeviceSettingsSilent();
-                if (device != NULL) {
-                    if (device->vol != clientIvol)
-                        if (xPortGetFreeHeapSize() > 4096) {
-                            // printf("save vol %d\n",clientIvol);
-                            device->vol = clientIvol;
-                            saveDeviceSettings(device);
-                        }
-                    free(device);
-                }
-            }
-        }
-    }
-    if (FlashCount == FlashOn)
-        FlashCount = 0; // restart the cycle
 }
 
 ICACHE_FLASH_ATTR void initHousekeeping(void)
 {
     os_timer_disarm(&housekeepingTimer);
-    FlashCount = 0;
     os_timer_setfn(&housekeepingTimer, housekeepingCallback, NULL);
     os_timer_arm(&housekeepingTimer, 10, true); //  and rearm
     vTaskDelay(1);
@@ -404,14 +347,13 @@ void uartInterfaceTask(void *pvParameters)
         kprintf(PSTR("ADC Div: %d from adc: %d\n"), adcdiv, ap);
     }
 
-    FlashOn = 190;
-    initHousekeeping(); // start the housekeeping timer (volume save). This will kill the testtask to free memory
+    initHousekeeping(); // start the housekeeping timer (drives ntp_tick10ms(), see user/ntp.c)
 
     // autostart
     device = getDeviceSettings();
     currentStation = device->currentstation;
     VS1053_I2SRate(device->i2sspeed);
-    clientIvol = device->vol;
+    clientIvol = VOLUME_DEFAULT; // volume is never persisted; always boot at the default
 
     if ((wifi_get_opmode() == STATION_MODE) && (device->autostart == 1)) {
         kprintf(PSTR("autostart: playing:%d, currentstation:%d\n"), device->autostart,
@@ -585,18 +527,31 @@ void user_init(void)
     printf(PSTR("size_map: %d\n"), size_map);
     printf(PSTR("Flash size: %d\n"), getFlashChipRealSize());
 
-    xTaskCreate(testtask, "t0", 140, NULL, 1, &pxCreatedTask); // DEBUG/TEST 130
-    printf(striTASK, "t0", pxCreatedTask);
     xTaskCreate(uartInterfaceTask, "t1", 370, NULL, 2, &pxCreatedTask); // 350
     printf(striTASK, "t1", pxCreatedTask);
-    xTaskCreate(vsTask, "t2", 240, NULL, 5, &pxCreatedTask); // 380 230
+    /* vsTask now outranks clientTask (was 5 vs 6): feeding the VS1053 in real time is a hard,
+     * audible deadline, while filling the ring buffer from the network has ~128KB (seconds) of
+     * slack to absorb being preempted. With clientTask higher, it could stay "ready" almost
+     * continuously under sustained high-bitrate throughput and starve vsTask of the CPU (and the
+     * SPI bus) entirely - not just contend for it - since a strict-priority scheduler never runs
+     * a lower-priority ready task while a higher-priority one is ready. */
+    xTaskCreate(vsTask, "t2", 240, NULL, 6, &pxCreatedTask); // 380 230
     printf(striTASK, "t2", pxCreatedTask);
-    xTaskCreate(clientTask, "t3", 500, NULL, 6, &pxCreatedTask); // 340
+    xTaskCreate(clientTask, "t3", 500, NULL, 5, &pxCreatedTask); // 340
     printf(striTASK, "t3", pxCreatedTask);
     xTaskCreate(serversTask, "t4", 370, NULL, 4, &pxCreatedTask); // 380
     printf(striTASK, "t4", pxCreatedTask);
 
-    irInit();      // infrared remote on GPIO2
+    // Infrared remote on GPIO2: disabled by default (sys.ir("1") to enable, takes
+    // effect at next power on). Skipped entirely rather than just ignoring key
+    // events, so a board without a receiver wired up doesn't pay for the task and
+    // the GPIO interrupt handler it would otherwise run forever.
+    device = getDeviceSettings();
+    if (device != NULL) {
+        if ((device->options & T_IR) == 0)
+            irInit();
+        free(device);
+    }
     displayInit(); // SSD1306 status OLED
 
     printf(striHEAP, xPortGetFreeHeapSize());
