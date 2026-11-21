@@ -30,42 +30,107 @@
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 
+#include "openssl/ssl.h"
+
 #include "ota.h"
 #include "flash.h"
 #include "interface.h"
 #include "webclient.h"
 #include "websocket.h"
+#include "github_ca_crt.h"
+#include "user_config.h"
 
 /* -------------------------------------------------------------------------
     Configuration
    ------------------------------------------------------------------------- */
 
-#define OTA_HOST "karadio.karawin.fr" // firmware server
-#define OTA_PORT 80
+#define OTA_HOST "raw.githubusercontent.com" // firmware server (GitHub raw content, HTTPS only)
+#define OTA_PORT 443
 #define OTA_URL_SIZE 512       // size of the request buffer
 #define OTA_CHECK_TIMES 360000 // upgrade check retries
 
 #define UPGRADE_DATA_SEG_LEN 1460 // the size cannot be bigger
 #define UPGRADE_RETRY_TIMES 10
 
-#define OTA_STR_(x) #x
-#define OTA_STR(x) OTA_STR_(x)
+/* clientDisconnect() only signals clientTask; the task itself notices the
+ * signal and actually stops VS1053/closes the socket on its own schedule,
+ * which can take a few seconds while a stream is playing. Cap how long
+ * update_firmware() waits for that before starting the OTA download
+ * regardless. */
+#define OTA_DISCONNECT_TIMEOUT_MS 5000
 
 /*
  * HTTP request template, kept in flash.
  *   %d = image slot to download (1 or 2)
  *   %s = release name ("new" or "prv")
+ * No Accept-Encoding is sent so the server cannot gzip the body: the
+ * download path writes the response straight to flash, uncompressed.
  */
 static const char strupd[] ICACHE_RODATA_ATTR STORE_ATTR = {
-                    "GET /user%d.4096.%s.4.bin HTTP/1.0\r\n"
-                    "Host: " OTA_HOST ":" OTA_STR(OTA_PORT) "\r\n"
-                    "Connection: keep-alive\r\n"
+                    "GET /h1aji/Ka-Radio/main/bin/upgrade/user%d.4096.%s.4.bin HTTP/1.1\r\n"
+                    "Host: " OTA_HOST "\r\n"
+                    "Connection: close\r\n"
                     "Cache-Control: no-cache\r\n"
                     "User-Agent: Karadio 2.1 \r\n"
                     "Accept: */*\r\n"
-                    "Accept-Encoding: gzip,deflate,sdch\r\n"
             "\r\n"
         };
+
+/*
+ * Request template for the version check: fetches the repo's
+ * include/user_config.h over the same host, to read its RELEASE/REVISION
+ * defines. No %d/%s substitution needed, so this is a plain flash string
+ * rather than the flashRead()-copied strupd[].
+ */
+static const char strver[] =
+                    "GET /h1aji/Ka-Radio/main/include/user_config.h HTTP/1.1\r\n"
+                    "Host: " OTA_HOST "\r\n"
+                    "Connection: close\r\n"
+                    "Cache-Control: no-cache\r\n"
+                    "User-Agent: Karadio 2.1 \r\n"
+                    "Accept: */*\r\n"
+                    "\r\n";
+
+/* Response body is tiny (~100 bytes); this leaves headers plenty of room. */
+#define VERSION_BUF_LEN 2048
+
+/*
+ * Common TLS setup for any connection to OTA_HOST: load the trust anchor
+ * (see github_ca_crt.h for why it is still needed) and build an SSL_CTX
+ * ready for SSL_new(). Returns NULL on failure.
+ */
+static SSL_CTX *ota_ssl_ctx_new(void)
+{
+    uint8_t *ca_buf;
+    X509 *ca_cert;
+    SSL_CTX *ctx;
+
+    ca_buf = (uint8_t *)malloc(GITHUB_CA_CRT_LEN);
+    if (ca_buf == NULL) {
+        kprintf(PSTR("ssl error: out of memory%c"), 0x0d);
+        return NULL;
+    }
+    flashRead(ca_buf, (int)github_ca_crt, GITHUB_CA_CRT_LEN);
+    ca_cert = d2i_X509(NULL, ca_buf, GITHUB_CA_CRT_LEN);
+    free(ca_buf);
+    if (ca_cert == NULL) {
+        kprintf(PSTR("ssl error: CA cert parse failed%c"), 0x0d);
+        return NULL;
+    }
+
+    ctx = SSL_CTX_new(TLSv1_2_client_method());
+    if (ctx == NULL) {
+        kprintf(PSTR("ssl error: SSL context failed%c"), 0x0d);
+        X509_free(ca_cert);
+        return NULL;
+    }
+    SSL_CTX_add_client_CA(ctx, ca_cert);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    /* Mandatory: ssl_pm_new() refuses to create an SSL object unless this is
+     * set within [2048, 8192]. */
+    SSL_CTX_set_default_read_buffer_len(ctx, 2048);
+    return ctx;
+}
 
 /* -------------------------------------------------------------------------
     Image CRC check (formerly crc32.c; folded in here since this is its
@@ -490,6 +555,8 @@ static void upgrade_task(void *pvParameters)
     int sta_socket;
     int retry_count = 0;
     struct ip_info ipconfig;
+    SSL_CTX *ssl_ctx = NULL;
+    SSL *ssl = NULL;
 
     struct upgrade_server_info *server = pvParameters;
 
@@ -497,6 +564,13 @@ static void upgrade_task(void *pvParameters)
     precv_buf = (char *)malloc(UPGRADE_DATA_SEG_LEN);
     if (NULL == precv_buf) {
         kprintf(PSTR("upgrade_task,memory exhausted, check it%c"), 0x0d);
+    }
+
+    ssl_ctx = ota_ssl_ctx_new();
+    if (ssl_ctx == NULL) {
+        server->upgrade_flag = false;
+        system_upgrade_flag_set(UPGRADE_FLAG_IDLE);
+        goto finish;
     }
 
     while (retry_count++ < UPGRADE_RETRY_TIMES) {
@@ -531,10 +605,31 @@ static void upgrade_task(void *pvParameters)
         }
         kprintf(PSTR("Connect ok!%c"), 0x0d);
 
+        ssl = SSL_new(ssl_ctx);
+        if (ssl == NULL) {
+            close(sta_socket);
+            vTaskDelay(1000 / portTICK_RATE_MS);
+            kprintf(PSTR("SSL alloc fail%c"), 0x0d);
+            continue;
+        }
+        SSL_set_fd(ssl, sta_socket);
+        if (SSL_connect(ssl) != 1) {
+            kprintf(PSTR("TLS handshake fail%c"), 0x0d);
+            SSL_free(ssl);
+            ssl = NULL;
+            close(sta_socket);
+            vTaskDelay(1000 / portTICK_RATE_MS);
+            wsUpgrade("TLS handshake failed!", 0, 100);
+            continue;
+        }
+        kprintf(PSTR("TLS handshake ok!%c"), 0x0d);
+
         system_upgrade_init();
         system_upgrade_flag_set(UPGRADE_FLAG_START);
 
-        if (write(sta_socket, server->url, strlen((char *)server->url)) < 0) {
+        if (SSL_write(ssl, server->url, strlen((char *)server->url)) < 0) {
+            SSL_free(ssl);
+            ssl = NULL;
             close(sta_socket);
             vTaskDelay(1000 / portTICK_RATE_MS);
             kprintf(PSTR("send fail%c"), 0x0d);
@@ -542,13 +637,14 @@ static void upgrade_task(void *pvParameters)
         }
         kprintf(PSTR("Request send success%c"), 0x0d);
 
-        while ((recbytes = read(sta_socket, precv_buf, UPGRADE_DATA_SEG_LEN)) > 0) {
+        while ((recbytes = SSL_read(ssl, precv_buf, UPGRADE_DATA_SEG_LEN)) > 0) {
             if (FALSE == flash_erased) {
+                SSL_free(ssl);
+                ssl = NULL;
                 close(sta_socket);
                 kprintf(PSTR("pre erase flash!%c"), 0x0d);
                 if (false == upgrade_data_load(precv_buf, recbytes)) {
                     kprintf(PSTR("upgrade data error!%c"), 0x0d);
-                    close(sta_socket);
                     flash_erased = FALSE;
                     vTaskDelay(1000 / portTICK_RATE_MS);
                 }
@@ -557,6 +653,8 @@ static void upgrade_task(void *pvParameters)
 
             if (false == upgrade_data_load(precv_buf, recbytes)) {
                 kprintf(PSTR("upgrade data error!%c"), 0x0d);
+                SSL_free(ssl);
+                ssl = NULL;
                 close(sta_socket);
                 flash_erased = FALSE;
                 vTaskDelay(1000 / portTICK_RATE_MS);
@@ -567,12 +665,18 @@ static void upgrade_task(void *pvParameters)
              * maybe data wrong or server send extra info, drop it anyway */
             if (totallength >= sumlength) {
                 wsUpgrade("upgrade load ok.", 0, 100);
+                SSL_free(ssl);
+                ssl = NULL;
                 close(sta_socket);
                 goto finish;
             }
         }
 
         if (recbytes <= 0) {
+            if (ssl != NULL) {
+                SSL_free(ssl);
+                ssl = NULL;
+            }
             close(sta_socket);
             flash_erased = FALSE;
             vTaskDelay(1000 / portTICK_RATE_MS);
@@ -584,6 +688,13 @@ static void upgrade_task(void *pvParameters)
     }
 
 finish:
+
+    if (ssl != NULL) {
+        SSL_free(ssl);
+    }
+    if (ssl_ctx != NULL) {
+        SSL_CTX_free(ssl_ctx);
+    }
 
     os_timer_disarm(&upgrade_timer);
 
@@ -666,7 +777,9 @@ BOOL system_upgrade_start(struct upgrade_server_info *server)
 
     giveup = false; /* a previous timeout must not stop this upgrade */
     wsUpgrade("", 0, 100);
-    ret = xTaskCreate(upgrade_task, "upgrade_task", 360, server, 8, NULL);
+    /* 2048 words, matching the SDK's own openssl_client example: the TLS
+     * handshake needs far more stack than the plain-socket download did. */
+    ret = xTaskCreate(upgrade_task, "upgrade_task", 2048, server, 8, NULL);
 
     if (pdPASS == ret) {
         os_timer_disarm(&upgrade_timer);
@@ -717,6 +830,17 @@ ICACHE_FLASH_ATTR void update_firmware(char *fname)
 
     current_id = system_upgrade_userbin_check();
     clientDisconnect(PSTR("Update"));
+
+    {
+        int waited_ms = 0;
+        while (getState() && waited_ms < OTA_DISCONNECT_TIMEOUT_MS) {
+            vTaskDelay(100 / portTICK_RATE_MS);
+            waited_ms += 100;
+        }
+        if (getState()) {
+            kprintf(PSTR("upgrade warning: stream still playing, starting anyway%c"), 0x0d);
+        }
+    }
 
     kprintf(PSTR("flash size  %d\n"), (int)system_get_flash_size_map());
 
@@ -770,4 +894,165 @@ ICACHE_FLASH_ATTR void update_firmware(char *fname)
         free(server->url);
         free(server);
     }
+}
+
+/* -------------------------------------------------------------------------
+    Version check
+   ------------------------------------------------------------------------- */
+
+static void wsVersionCheck(const char *msg)
+{
+    char answer[80];
+    kasprintf(answer, PSTR("{\"versioncheck\":\"%s\"}"), msg);
+    websocketbroadcast(answer, strlen(answer));
+}
+
+/******************************************************************************
+ * FunctionName : version_check_task
+ * Description  : fetch the repo's include/user_config.h over TLS and compare
+ *                its RELEASE/REVISION against the running firmware's. A
+ *                single attempt, no retries: this is a quick on-demand
+ *                check, not the OTA download itself.
+ * Parameters   : pvParameters - unused
+ * Returns      : none, reports to the web page as {"versioncheck":"..."}:
+ *                "latest" if up to date, otherwise the remote version string
+ *****************************************************************************/
+static void version_check_task(void *pvParameters)
+{
+    struct hostent *host;
+    struct sockaddr_in sa;
+    SSL_CTX *ssl_ctx;
+    SSL *ssl;
+    int sta_socket;
+    char *body;
+    int total;
+    int n;
+    char remoteRelease[16];
+    char remoteRevision[16];
+    char *p, *end;
+    char latest[40];
+
+    host = gethostbyname(OTA_HOST);
+    if (host == NULL || host->h_addr_list[0] == NULL) {
+        wsVersionCheck("error:DNS lookup failed");
+        vTaskDelete(NULL);
+    }
+
+    ssl_ctx = ota_ssl_ctx_new();
+    if (ssl_ctx == NULL) {
+        wsVersionCheck("error:SSL setup failed");
+        vTaskDelete(NULL);
+    }
+
+    sta_socket = socket(PF_INET, SOCK_STREAM, 0);
+    if (sta_socket < 0) {
+        SSL_CTX_free(ssl_ctx);
+        wsVersionCheck("error:socket failed");
+        vTaskDelete(NULL);
+    }
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(OTA_PORT);
+    memcpy(&sa.sin_addr, host->h_addr_list[0], sizeof(struct in_addr));
+
+    if (connect(sta_socket, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
+        close(sta_socket);
+        SSL_CTX_free(ssl_ctx);
+        wsVersionCheck("error:connect failed");
+        vTaskDelete(NULL);
+    }
+
+    ssl = SSL_new(ssl_ctx);
+    if (ssl == NULL) {
+        close(sta_socket);
+        SSL_CTX_free(ssl_ctx);
+        wsVersionCheck("error:SSL alloc failed");
+        vTaskDelete(NULL);
+    }
+    SSL_set_fd(ssl, sta_socket);
+    if (SSL_connect(ssl) != 1) {
+        SSL_free(ssl);
+        close(sta_socket);
+        SSL_CTX_free(ssl_ctx);
+        wsVersionCheck("error:TLS handshake failed");
+        vTaskDelete(NULL);
+    }
+
+    if (SSL_write(ssl, strver, strlen(strver)) < 0) {
+        SSL_free(ssl);
+        close(sta_socket);
+        SSL_CTX_free(ssl_ctx);
+        wsVersionCheck("error:request failed");
+        vTaskDelete(NULL);
+    }
+
+    body = (char *)malloc(VERSION_BUF_LEN);
+    if (body == NULL) {
+        SSL_free(ssl);
+        close(sta_socket);
+        SSL_CTX_free(ssl_ctx);
+        wsVersionCheck("error:out of memory");
+        vTaskDelete(NULL);
+    }
+
+    total = 0;
+    while (total < VERSION_BUF_LEN - 1) {
+        n = SSL_read(ssl, body + total, VERSION_BUF_LEN - 1 - total);
+        if (n <= 0)
+            break;
+        total += n;
+    }
+    body[total] = 0;
+
+    SSL_free(ssl);
+    close(sta_socket);
+    SSL_CTX_free(ssl_ctx);
+
+    remoteRelease[0] = 0;
+    remoteRevision[0] = 0;
+
+    p = strstr(body, "#define RELEASE \"");
+    if (p != NULL) {
+        p += strlen("#define RELEASE \"");
+        end = strchr(p, '"');
+        if (end != NULL && (size_t)(end - p) < sizeof(remoteRelease)) {
+            memcpy(remoteRelease, p, end - p);
+            remoteRelease[end - p] = 0;
+        }
+    }
+    p = strstr(body, "#define REVISION \"");
+    if (p != NULL) {
+        p += strlen("#define REVISION \"");
+        end = strchr(p, '"');
+        if (end != NULL && (size_t)(end - p) < sizeof(remoteRevision)) {
+            memcpy(remoteRevision, p, end - p);
+            remoteRevision[end - p] = 0;
+        }
+    }
+
+    free(body);
+
+    if (remoteRelease[0] == 0) {
+        wsVersionCheck("error:check failed");
+    } else if (strcmp(remoteRelease, RELEASE) == 0 && strcmp(remoteRevision, REVISION) == 0) {
+        wsVersionCheck("latest");
+    } else {
+        kasprintf(latest, PSTR("%s.%s"), remoteRelease, remoteRevision);
+        wsVersionCheck(latest);
+    }
+
+    vTaskDelete(NULL);
+}
+
+/******************************************************************************
+ * FunctionName : check_latest_version
+ * Description  : start the background task that checks GitHub for the
+ *                latest RELEASE/REVISION and reports it to the web page
+ * Parameters   : none
+ * Returns      : none
+ *****************************************************************************/
+ICACHE_FLASH_ATTR void check_latest_version(void)
+{
+    xTaskCreate(version_check_task, "version_check", 2048, NULL, 3, NULL);
 }

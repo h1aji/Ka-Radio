@@ -25,6 +25,13 @@ extern "C" {
  */
 void update_firmware(char *fname);
 
+/*
+ * Check GitHub for the latest release and report it to the web page with
+ * the websocket message {"versioncheck":"..."}: "latest" if the running
+ * firmware is already current, otherwise the latest "RELEASE.REVISION".
+ */
+void check_latest_version(void);
+
 #ifdef __cplusplus
 }
 #endif

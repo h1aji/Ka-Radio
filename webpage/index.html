@@ -233,8 +233,9 @@
 						<input id="tzo" type="text" value="" />	
 						<span class="bold">Suggested: </span><span class="bold" id="atzo"> </span><br/>			
 						</p>
-						<h1>Update to: <span id="newrelease"></span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <input type=button value="Update now" onclick="upgrade()" />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span id="updatefb"></span><br/>	</h1>
+						<h1>Update to: <span id="newrelease"></span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <input id="newverbtn" type=button value="Update now" onclick="upgrade()" disabled />  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span id="updatefb"></span><br/>	</h1>
 						<p>
+						<input type=button value="Check latest version" onclick="checkLatestVersion()" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span id="versioncheckresult"></span><br/><br/>
 						<span class="bold4" id="Version"></span><br/>
 						<span class="bold4">To update or reload the current release:</span><br/><br/>		
 						<input type=button value="Update now" onclick="upgrade()" /><br/>	

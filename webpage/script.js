@@ -28,6 +28,7 @@ function openwebsocket(){
 		if (arr["wsstation"]) wsplayStation(arr["wsstation"]); 
 		if (arr["wsrssi"]) {document.getElementById('rssi').innerHTML = arr["wsrssi"]+' dBm';setTimeout(wsaskrssi,5000);}
 		if (arr["upgrade"]) {document.getElementById('updatefb').innerHTML = arr["upgrade"];}
+		if (arr["versioncheck"]) versionCheckResp(arr["versioncheck"]);
 		if (arr["iurl"]) {document.getElementById('instant_url').value  = arr["iurl"];buildURL();}
 		if (arr["ipath"]) {document.getElementById('instant_path').value = arr["ipath"];buildURL();}
 		if (arr["iport"]) {document.getElementById('instant_port').value = arr["iport"];buildURL();}
@@ -926,9 +927,40 @@ function upgrade()
 		xhr.open("POST","upgrade",false);
 		xhr.setRequestHeader(content,ctype);
 		xhr.send();
-	} catch(e){console.log("error"+e);}	
-	
+	} catch(e){console.log("error"+e);}
+
 //	alert("Rebooting to the new release\nPlease refresh the page in few seconds.");
+}
+
+function checkLatestVersion()
+{
+	document.getElementById('versioncheckresult').innerHTML = working;
+	try{
+		xhr = new XMLHttpRequest();
+		xhr.open("POST","checkversion",false);
+		xhr.setRequestHeader(content,ctype);
+		xhr.send();
+	} catch(e){console.log("error"+e);}
+	// the actual result arrives later over the websocket as "versioncheck"
+}
+
+// handles the {"versioncheck":"..."} websocket message: "latest" means the
+// running firmware is current, "error:..." is a failed check, anything else
+// is the newer version available
+function versionCheckResp(v)
+{
+	var btn = document.getElementById('newverbtn');
+	if (v.indexOf("error:") == 0) {
+		document.getElementById('versioncheckresult').innerHTML = "Check failed: " + v.substring(6);
+	} else if (v == "latest") {
+		document.getElementById('versioncheckresult').innerHTML = "You are running latest version";
+		document.getElementById('newrelease').innerHTML = "";
+		if (btn) btn.disabled = true;
+	} else {
+		document.getElementById('versioncheckresult').innerHTML = "Latest version: " + v;
+		document.getElementById('newrelease').innerHTML = v;
+		if (btn) btn.disabled = false;
+	}
 }
 // The release server is contacted asynchronously (the page never waits for it).
 // After 3 failed attempts (error or 3 s timeout) it is dropped until the page is reloaded.

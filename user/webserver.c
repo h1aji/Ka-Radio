@@ -858,6 +858,8 @@ ICACHE_FLASH_ATTR void handlePOST(char *name, char *data, int data_size, int con
         }
     } else if (strcmp(name, "/upgrade") == 0) {
         update_firmware("new"); // start the OTA
+    } else if (strcmp(name, "/checkversion") == 0) {
+        check_latest_version(); // result comes back via {"versioncheck":"..."}
     } else if (strcmp(name, "/icy") == 0) {
         //printf("icy vol \n");
         char currentSt[5];

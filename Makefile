@@ -73,9 +73,11 @@ LINKFLAGS_eagle.app.v6 = \
 	-ljson	\
 	-llwip	\
 	-lmain	\
+	-lmbedtls	\
 	-lmirom	\
 	-lnet80211	\
 	-lnopoll	\
+	-lopenssl	\
 	-lphy	\
 	-lpp	\
 	-lpwm	\
@@ -110,7 +112,7 @@ DDEFINES +=				\
 # Recursion Magic - Don't touch this!!
 #############################################################
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)mdns/include -I $(PDIR)ssd1306/include
+INCLUDES := $(INCLUDES) -I $(PDIR)include -I $(PDIR)mdns/include -I $(PDIR)ssd1306/include -I ../include/openssl
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile
 
